@@ -1,0 +1,184 @@
+import React, { useState } from "react";
+import {
+  Box,
+  Typography,
+  FormGroup,
+  FormControlLabel,
+  Button,
+  Stack,
+  Checkbox,
+  Alert,
+  Snackbar,
+} from "@mui/material";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import CustomTextField from "@/app/(DashboardLayout)/components/forms/theme-elements/CustomTextField";
+
+interface loginType {
+  title?: string;
+  subtitle?: React.ReactNode;
+  subtext?: React.ReactNode;
+}
+
+const AuthLogin = ({ title, subtitle, subtext }: loginType) => {
+  const router = useRouter();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [openToast, setOpenToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState("");
+  const [toastSeverity, setToastSeverity] = useState<"success" | "error">("success");
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+
+    try {
+      const response = await fetch("/api/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Login failed");
+      }
+
+      // Show success toast
+      setToastSeverity("success");
+      setToastMessage("Login successful! Redirecting...");
+      setOpenToast(true);
+
+      // Redirect after a short delay
+      setTimeout(() => {
+        router.push("/");
+      }, 1500);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Login failed");
+      setToastSeverity("error");
+      setToastMessage(err instanceof Error ? err.message : "Login failed");
+      setOpenToast(true);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCloseToast = () => {
+    setOpenToast(false);
+  };
+
+  return (
+    <>
+      {title ? (
+        <Typography fontWeight="700" variant="h2" mb={1}>
+          {title}
+        </Typography>
+      ) : null}
+
+      {subtext}
+
+      <form onSubmit={handleSubmit}>
+        <Stack>
+          <Box>
+            <Typography
+              variant="subtitle1"
+              fontWeight={600}
+              component="label"
+              htmlFor="email"
+              mb="5px"
+            >
+              Email
+            </Typography>
+            <CustomTextField 
+              variant="outlined" 
+              fullWidth 
+              value={email}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
+              type="email"
+              required
+            />
+          </Box>
+          <Box mt="25px">
+            <Typography
+              variant="subtitle1"
+              fontWeight={600}
+              component="label"
+              htmlFor="password"
+              mb="5px"
+            >
+              Password
+            </Typography>
+            <CustomTextField 
+              type="password" 
+              variant="outlined" 
+              fullWidth 
+              value={password}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
+              required
+            />
+          </Box>
+          <Stack
+            justifyContent="space-between"
+            direction="row"
+            alignItems="center"
+            my={2}
+          >
+            <FormGroup>
+              <FormControlLabel
+                control={<Checkbox defaultChecked />}
+                label="Remember this Device"
+              />
+            </FormGroup>
+            <Typography
+              component={Link}
+              href="/authentication/forgot-password"
+              fontWeight="500"
+              sx={{
+                textDecoration: "none",
+                color: "primary.main",
+              }}
+            >
+              Forgot Password?
+            </Typography>
+          </Stack>
+        </Stack>
+        <Box>
+          <Button
+            color="primary"
+            variant="contained"
+            size="large"
+            fullWidth
+            type="submit"
+            disabled={loading}
+          >
+            {loading ? "Signing In..." : "Sign In"}
+          </Button>
+        </Box>
+      </form>
+      {subtitle}
+
+      <Snackbar 
+        open={openToast} 
+        autoHideDuration={6000} 
+        onClose={handleCloseToast}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+      >
+        <Alert 
+          onClose={handleCloseToast} 
+          severity={toastSeverity} 
+          sx={{ width: '100%' }}
+        >
+          {toastMessage}
+        </Alert>
+      </Snackbar>
+    </>
+  );
+};
+
+export default AuthLogin;
