@@ -1,31 +1,19 @@
 import React, { useEffect, useState } from 'react';
-import { Box, AppBar, Toolbar, styled, Stack, IconButton, Badge, Button } from '@mui/material';
+import { Box, AppBar, Toolbar, styled, Stack, IconButton, Button } from '@mui/material';
 import PropTypes from 'prop-types';
-// components
-import Profile from './Profile';
-import { IconBellRinging, IconMenu } from '@tabler/icons-react';
 import Link from 'next/link';
-import { Logo } from 'react-mui-sidebar';
+// components
+import { IconMenu } from '@tabler/icons-react';
 
 interface ItemType {
-  toggleMobileSidebar: (event: React.MouseEvent<HTMLElement>) => void;
+  toggleMobileSidebar:  (event: React.MouseEvent<HTMLElement>) => void;
 }
 
-// LOGGED IN HEADER
-const Header = ({ toggleMobileSidebar }: ItemType) => {
+// NOT LOGGED IN HEADER
+const Header = ({toggleMobileSidebar}: ItemType) => {
 
   // const lgUp = useMediaQuery((theme) => theme.breakpoints.up('lg'));
   // const lgDown = useMediaQuery((theme) => theme.breakpoints.down('lg'));
-
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-
-  useEffect(() => {
-    const userEmail = localStorage.getItem("userEmail");
-    const loggedIn = localStorage.getItem("isLoggedIn");
-    console.log("userEmail:", userEmail);
-    console.log("isLoggedIn:", loggedIn);
-    setIsLoggedIn(localStorage.getItem("isLoggedIn") === "true");
-  }, []);
 
   const AppBarStyled = styled(AppBar)(({ theme }) => ({
     boxShadow: 'none',
@@ -42,9 +30,22 @@ const Header = ({ toggleMobileSidebar }: ItemType) => {
     color: theme.palette.text.secondary,
   }));
 
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    const loggedIn = localStorage.getItem("isLoggedIn") === "true";
+    setIsLoggedIn(loggedIn);
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem("isLoggedIn");
+    localStorage.removeItem("userEmail");
+    window.location.href = "/"; // or use router.push("/")
+  };
+
   return (
     <AppBarStyled position="sticky" color="default">
-      <ToolbarStyled sx={{ position: 'relative' }}>
+      <ToolbarStyled>
         <IconButton
           color="inherit"
           aria-label="menu"
@@ -59,39 +60,26 @@ const Header = ({ toggleMobileSidebar }: ItemType) => {
           <IconMenu width="20" height="20" />
         </IconButton>
 
-        <IconButton
-          size="large"
-          aria-label="show notifications"
-          color="inherit"
-        >
-          <Badge variant="dot" color="primary">
-            <IconBellRinging size="21" stroke="1.5" />
-          </Badge>
-        </IconButton>
-
-        {isLoggedIn && (
-          <Box
-            sx={{
-              position: 'absolute',
-              left: '50%',
-              transform: 'translateX(-50%)',
-              display: {
-                xs: 'block',
-                lg: 'none',
-              },
-            }}
-          >
-            <Logo img="/images/logos/dark-logo.svg" component={Link} to="/">
-              Game Haven
-            </Logo>
-          </Box>
-        )}
-
         <Box flexGrow={1} />
 
         <Stack spacing={1} direction="row" alignItems="center">
           {isLoggedIn ? (
-            <Profile />
+            <>
+              <Button
+                variant="outlined"
+                component={Link}
+                href="/dashboard" // adjust this based on your app
+              >
+                Dashboard
+              </Button>
+              <Button
+                variant="contained"
+                onClick={handleLogout}
+                color="secondary"
+              >
+                Logout
+              </Button>
+            </>
           ) : (
             <Button
               variant="contained"

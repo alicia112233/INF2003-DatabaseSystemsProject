@@ -1,6 +1,7 @@
-import React from "react";
-import Menuitems from "./MenuItems";
-import { Box, Typography } from "@mui/material";
+'use client';
+import React, { useEffect, useState } from "react";
+import { getMenuItems } from "./MenuItems";
+import { Box } from "@mui/material";
 import {
   Logo,
   Sidebar as MUI_Sidebar,
@@ -11,8 +12,6 @@ import {
 import { IconPoint } from '@tabler/icons-react';
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Upgrade } from "./Updrade";
-
 
 const renderMenuItems = (items: any, pathDirect: any) => {
 
@@ -66,10 +65,18 @@ const renderMenuItems = (items: any, pathDirect: any) => {
   });
 };
 
-
 const SidebarItems = () => {
   const pathname = usePathname();
   const pathDirect = pathname;
+
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    const loggedIn = localStorage.getItem("isLoggedIn") === "true";
+    setIsLoggedIn(loggedIn);
+  }, []);
+  
+  const menuItems = getMenuItems(isLoggedIn);
 
   return (
     < >
@@ -77,12 +84,8 @@ const SidebarItems = () => {
 
         <Logo img='/images/logos/dark-logo.svg' component={Link} to="/" >Game Haven</Logo>
 
-        {renderMenuItems(Menuitems, pathDirect)}
-        <Box px={2}>
-          <Upgrade />
-        </Box>
+        {renderMenuItems(menuItems, pathDirect)}
       </MUI_Sidebar>
-
     </>
   );
 };

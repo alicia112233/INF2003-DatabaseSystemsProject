@@ -9,10 +9,14 @@ import {
   Checkbox,
   Alert,
   Snackbar,
+  IconButton,
+  InputAdornment,
 } from "@mui/material";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import CustomTextField from "@/app/(DashboardLayout)/components/forms/theme-elements/CustomTextField";
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 
 interface loginType {
   title?: string;
@@ -29,6 +33,11 @@ const AuthLogin = ({ title, subtitle, subtext }: loginType) => {
   const [openToast, setOpenToast] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
   const [toastSeverity, setToastSeverity] = useState<"success" | "error">("success");
+  const [showPassword, setShowPassword] = useState(false);
+
+  const handleTogglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -54,7 +63,10 @@ const AuthLogin = ({ title, subtitle, subtext }: loginType) => {
       setToastSeverity("success");
       setToastMessage("Login successful! Redirecting...");
       setOpenToast(true);
-
+      localStorage.setItem("isLoggedIn", "true");
+      localStorage.setItem("userEmail", email);
+      localStorage.setItem('userGender', data.user.gender);
+      
       // Redirect after a short delay
       setTimeout(() => {
         router.push("/");
@@ -104,6 +116,7 @@ const AuthLogin = ({ title, subtitle, subtext }: loginType) => {
               required
             />
           </Box>
+
           <Box mt="25px">
             <Typography
               variant="subtitle1"
@@ -115,19 +128,34 @@ const AuthLogin = ({ title, subtitle, subtext }: loginType) => {
               Password
             </Typography>
             <CustomTextField 
-              type="password" 
+              type={showPassword ? "text" : "password"} 
               variant="outlined" 
               fullWidth 
               value={password}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
               required
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      aria-label="toggle password visibility"
+                      onClick={handleTogglePasswordVisibility}
+                      edge="end"
+                    >
+                      {showPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
             />
           </Box>
+          
           <Stack
-            justifyContent="space-between"
-            direction="row"
-            alignItems="center"
+            justifyContent={{ xs: "flex-start", sm: "space-between" }}
+            direction={{ xs: "column", sm: "row" }}
+            alignItems={{ xs: "stretch", sm: "center" }}
             my={2}
+            spacing={{ xs: 1, sm: 0 }}
           >
             <FormGroup>
               <FormControlLabel
@@ -135,19 +163,24 @@ const AuthLogin = ({ title, subtitle, subtext }: loginType) => {
                 label="Remember this Device"
               />
             </FormGroup>
+
             <Typography
               component={Link}
               href="/authentication/forgot-password"
               fontWeight="500"
               sx={{
+                display: { xs: "block", sm: "inline" },
+                textAlign: { xs: "center", sm: "left" },
                 textDecoration: "none",
                 color: "primary.main",
+                mt: { xs: 1, sm: 0 }
               }}
             >
               Forgot Password?
             </Typography>
           </Stack>
         </Stack>
+
         <Box>
           <Button
             color="primary"

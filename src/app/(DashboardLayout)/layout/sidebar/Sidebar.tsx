@@ -1,7 +1,6 @@
 import { useMediaQuery, Box, Drawer } from "@mui/material";
-import SidebarItems from "./SidebarItems";
-
-
+import dynamic from 'next/dynamic';
+const SidebarItems = dynamic(() => import('./SidebarItems'), { ssr: false });
 
 interface ItemType {
   isMobileSidebarOpen: boolean;
@@ -110,8 +109,3 @@ const MSidebar = ({
 };
 
 export default MSidebar;
-
-
-
-
-

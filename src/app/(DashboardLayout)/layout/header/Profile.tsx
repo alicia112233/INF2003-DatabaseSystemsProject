@@ -1,5 +1,4 @@
-import React, { useState } from "react";
-import Link from "next/link";
+import React, { useState, useEffect } from "react";
 import {
   Avatar,
   Box,
@@ -9,21 +8,50 @@ import {
   MenuItem,
   ListItemIcon,
   ListItemText,
+  
 } from "@mui/material";
 
-import { IconListCheck, IconMail, IconUser } from "@tabler/icons-react";
+import { IconShoppingCart, IconStar, IconUser } from "@tabler/icons-react";
+import { CalendarMonth, Inventory, Settings } from "@mui/icons-material";
 
 const Profile = () => {
   const [anchorEl2, setAnchorEl2] = useState(null);
+  const [avatarSrc, setAvatarSrc] = useState("/images/profile/user-1.jpg");
+
+  useEffect(() => {
+    // Get gender from localStorage when component mounts
+    const gender = localStorage.getItem('userGender');
+    if (gender === 'F') {
+      setAvatarSrc("/images/profile/user-2.jpg");
+    } else {
+      setAvatarSrc("/images/profile/user-1.jpg");
+    }
+  }, []);
+
   const handleClick2 = (event: any) => {
     setAnchorEl2(event.currentTarget);
   };
+
   const handleClose2 = () => {
     setAnchorEl2(null);
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem("isLoggedIn");
+    localStorage.removeItem("userEmail");
+    window.location.href = "/"; // or use router.push("/")
+  };
+
   return (
     <Box>
+      <Button 
+        variant="outlined" 
+        color="primary"
+        startIcon={<IconShoppingCart size={20} />}
+      >
+        View Cart
+      </Button>
+
       <IconButton
         size="large"
         aria-label="show 11 new notifications"
@@ -38,8 +66,8 @@ const Profile = () => {
         onClick={handleClick2}
       >
         <Avatar
-          src="/images/profile/user-1.jpg"
-          alt="image"
+          src={avatarSrc}
+          alt="profile image"
           sx={{
             width: 35,
             height: 35,
@@ -59,7 +87,7 @@ const Profile = () => {
         transformOrigin={{ horizontal: "right", vertical: "top" }}
         sx={{
           "& .MuiMenu-paper": {
-            width: "200px",
+            width: "250px",
           },
         }}
       >
@@ -71,22 +99,33 @@ const Profile = () => {
         </MenuItem>
         <MenuItem>
           <ListItemIcon>
-            <IconMail width={20} />
+            <IconStar width={20} />
           </ListItemIcon>
-          <ListItemText>My Account</ListItemText>
+          <ListItemText>My Wish List</ListItemText>
         </MenuItem>
         <MenuItem>
           <ListItemIcon>
-            <IconListCheck width={20} />
+            <Inventory width={20} />
           </ListItemIcon>
-          <ListItemText>My Tasks</ListItemText>
+          <ListItemText>My Purchase History</ListItemText>
+        </MenuItem>
+        <MenuItem>
+          <ListItemIcon>
+            <CalendarMonth width={20} />
+          </ListItemIcon>
+          <ListItemText>My Borrowings History</ListItemText>
+        </MenuItem>
+        <MenuItem>
+          <ListItemIcon>
+            <Settings width={20} />
+          </ListItemIcon>
+          <ListItemText>Settings</ListItemText>
         </MenuItem>
         <Box mt={1} py={1} px={2}>
           <Button
-            href="/authentication/login"
             variant="outlined"
             color="primary"
-            component={Link}
+            onClick={handleLogout}
             fullWidth
           >
             Logout
