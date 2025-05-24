@@ -2,10 +2,8 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 export function middleware(request: NextRequest) {
-  // Get the pathname of the request
   const path = request.nextUrl.pathname;
   
-  // Check if we're on the home page
   if (path === '/') {
     // Get authentication info from cookies
     const isLoggedIn = request.cookies.get('isLoggedIn')?.value;
@@ -16,18 +14,16 @@ export function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL('/authentication/login', request.url));
     }
     
-    // Redirect based on user role
+    // Only redirect admins, let customers stay on home page
     if (userRole === 'admin') {
       return NextResponse.redirect(new URL('/admin-dashboard', request.url));
-    } else if (userRole === 'customer') {
-      return NextResponse.redirect(new URL('/', request.url));
     }
+    // Remove the customer redirect - let them access the home page
   }
   
   return NextResponse.next();
 }
 
-// See "Matching Paths" below to learn more
 export const config = {
   matcher: ['/'],
 };
