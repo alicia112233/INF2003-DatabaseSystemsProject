@@ -1,92 +1,37 @@
 'use client';
-import React, { useEffect, useState } from "react";
-import { getMenuItems } from "./MenuItems";
-import { Box } from "@mui/material";
-import {
-  Logo,
-  Sidebar as MUI_Sidebar,
-  Menu,
-  MenuItem,
-  Submenu,
-} from "react-mui-sidebar";
-import { IconPoint } from '@tabler/icons-react';
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import React from 'react';
+import { Box, List } from '@mui/material';
+import NavItem from './NavItem';
+import NavGroup from './NavGroup';
 
-const renderMenuItems = (items: any, pathDirect: any) => {
+interface MenuItem {
+  navlabel?: boolean;
+  subheader?: string;
+  id?: string;
+  title?: string;
+  icon?: React.ElementType | null;
+  href?: string;
+  content?: React.ReactNode;
+}
 
-  return items.map((item: any) => {
+interface SidebarItemsProps {
+  menuItems: MenuItem[];
+}
 
-    const Icon = item.icon ? item.icon : IconPoint;
-
-    const itemIcon = <Icon stroke={1.5} size="1.3rem" />;
-
-    if (item.subheader) {
-      // Display Subheader
-      return (
-        <Menu
-          subHeading={item.subheader}
-          key={item.subheader}
-        />
-      );
-    }
-
-    //If the item has children (submenu)
-    if (item.children) {
-      return (
-        <Submenu
-          key={item.id}
-          title={item.title}
-          icon={itemIcon}
-          borderRadius='7px'
-        >
-          {renderMenuItems(item.children, pathDirect)}
-        </Submenu>
-      );
-    }
-
-    // If the item has no children, render a MenuItem
-
-    return (
-      <Box px={3} key={item.id}>
-        <MenuItem
-          key={item.id}
-          isSelected={pathDirect === item?.href}
-          borderRadius='8px'
-          icon={itemIcon}
-          link={item.href}
-          component={Link}
-        >
-          {item.title}
-        </MenuItem >
-      </Box>
-
-    );
-  });
-};
-
-const SidebarItems = () => {
-  const pathname = usePathname();
-  const pathDirect = pathname;
-
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-
-  useEffect(() => {
-    const loggedIn = localStorage.getItem("isLoggedIn") === "true";
-    setIsLoggedIn(loggedIn);
-  }, []);
-  
-  const menuItems = getMenuItems(isLoggedIn);
-
+const SidebarItems = ({ menuItems }: SidebarItemsProps) => {
   return (
-    < >
-      <MUI_Sidebar width={"100%"} showProfile={false} themeColor={"#5D87FF"} themeSecondaryColor={'#49beff'} >
-
-        <Logo img='/images/logos/dark-logo.svg' component={Link} to="/" >Game Haven</Logo>
-
-        {renderMenuItems(menuItems, pathDirect)}
-      </MUI_Sidebar>
-    </>
+    <Box sx={{ px: 3 }}>
+      <List sx={{ pt: 0 }} component="div">
+        {menuItems.map((item) => {
+          if (item.navlabel) {
+            return <NavGroup key={item.subheader} item={item} />;
+          } else {
+            return <NavItem key={item.id} item={item} />;
+          }
+        })}
+      </List>
+    </Box>
   );
 };
+
 export default SidebarItems;

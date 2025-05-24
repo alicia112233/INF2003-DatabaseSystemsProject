@@ -13,11 +13,13 @@ import {
 
 import { IconShoppingCart, IconStar, IconUser } from "@tabler/icons-react";
 import { CalendarMonth, Inventory, Settings } from "@mui/icons-material";
+import { useRouter } from "next/navigation";
 
 const Profile = () => {
   const [anchorEl2, setAnchorEl2] = useState(null);
   const [avatarSrc, setAvatarSrc] = useState("/images/profile/user-1.jpg");
-
+  const router = useRouter();
+  
   useEffect(() => {
     // Get gender from localStorage when component mounts
     const gender = localStorage.getItem('userGender');
@@ -34,6 +36,11 @@ const Profile = () => {
 
   const handleClose2 = () => {
     setAnchorEl2(null);
+  };
+
+  const handleMenuItemClick = (path: string) => {
+    handleClose2();
+    router.push(path);
   };
 
   const handleLogout = () => {
@@ -91,7 +98,7 @@ const Profile = () => {
           },
         }}
       >
-        <MenuItem>
+        <MenuItem onClick={() => handleMenuItemClick('/profile')}>
           <ListItemIcon>
             <IconUser width={20} />
           </ListItemIcon>

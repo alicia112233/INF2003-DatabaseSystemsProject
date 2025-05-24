@@ -1,5 +1,7 @@
-import ThemeRegistry from './ThemeRegistry';
-import './global.css'
+'use client';
+import { ThemeProvider } from '@mui/material/styles';
+import CssBaseline from '@mui/material/CssBaseline';
+import theme from '@/utils/theme';
 
 export default function RootLayout({
   children,
@@ -8,13 +10,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <head>
-        <meta name="emotion-insertion-point" content="" />
-      </head>
-      <body suppressHydrationWarning={true}>
-        <ThemeRegistry>
+      <body>
+        <ThemeProvider theme={theme}>
+          <CssBaseline />
           {children}
-        </ThemeRegistry>
+        </ThemeProvider>
       </body>
     </html>
   );

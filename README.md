@@ -29,7 +29,24 @@
 
 ## Getting Started
 
-First, run the development server:
+1. Check that you have node.js installed by running:
+
+> npm run dev
+
+**→** If there is an error, head to [https://nodejs.org/en/download]() .
+
+2. Run this command again `npm run dev` after installation.
+3. Enter this command at your command prompt terminal if there's an error:
+
+> npm install
+
+OR if *`npm install`* cannot work, run this:
+
+> npm install next react react-dom
+
+3. Copy the codes in `.env.example` and **create** a `.env` file in the same directory.
+4. Modify the username and password according to your **own** mysql (workbench) account.
+5. Lastly, run the development server:
 
 ```bash
 npm run dev

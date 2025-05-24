@@ -27,7 +27,6 @@ const Login = () => (
         overflow: "hidden",
         ...gradientAnimation,
 
-        // For stacking the background behind content
         "&::before": {
           content: '""',
           position: "absolute",
@@ -78,7 +77,7 @@ const Login = () => (
             </Typography>
           }
           subtitle={
-            <Stack direction="row" justifyContent="center" spacing={1} mt={3}>
+            <Stack direction="row" justifyContent="center" alignItems="center" spacing={1} mt={3}>
               <Typography
                 color="textSecondary"
                 fontSize="14px"
@@ -90,6 +89,7 @@ const Login = () => (
               <Typography
                 component={Link}
                 href="/authentication/register"
+                fontSize="16px"
                 fontWeight="500"
                 sx={{
                   textDecoration: "none",

@@ -1,0 +1,45 @@
+const mysql = require('mysql2/promise');
+const fs = require('fs');
+const path = require('path');
+const dotenv = require('dotenv');
+
+dotenv.config();
+
+async function setupDatabase() {
+  console.log('Setting up database...');
+  
+  try {
+    // Create connection to MySQL server (without database)
+    const connection = await mysql.createConnection({
+      host: process.env.DB_HOST || 'localhost',
+      user: process.env.DB_USER,
+      password: process.env.DB_PASSWORD,
+    });
+    
+    console.log('Connected to MySQL server');
+    
+    // Read SQL file
+    const sqlFilePath = path.join(process.cwd(), 'backend', 'sample.sql');
+    const sqlScript = fs.readFileSync(sqlFilePath, 'utf8');
+    
+    // Split SQL script into separate statements
+    const statements = sqlScript
+      .split(';')
+      .filter(statement => statement.trim() !== '');
+    
+    // Execute each statement
+    for (const statement of statements) {
+      await connection.query(statement + ';');
+      console.log('Executed SQL statement');
+    }
+    
+    console.log('Database setup completed successfully');
+    await connection.end();
+    
+  } catch (error) {
+    console.error('Database setup failed:', error);
+    process.exit(1);
+  }
+}
+
+module.exports = setupDatabase;

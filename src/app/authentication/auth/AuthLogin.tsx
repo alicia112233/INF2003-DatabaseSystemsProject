@@ -28,7 +28,6 @@ const AuthLogin = ({ title, subtitle, subtext }: loginType) => {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [openToast, setOpenToast] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
@@ -41,7 +40,6 @@ const AuthLogin = ({ title, subtitle, subtext }: loginType) => {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setError("");
     setLoading(true);
 
     try {
@@ -59,20 +57,35 @@ const AuthLogin = ({ title, subtitle, subtext }: loginType) => {
         throw new Error(data.error || "Login failed");
       }
 
+      // Check if the email is an admin email
+      const isAdmin = email.endsWith('@admin.com');
+      
+      // Store user info and role in cookies (more secure than localStorage)
+      document.cookie = `isLoggedIn=true; path=/; max-age=86400`;
+      document.cookie = `userEmail=${email}; path=/; max-age=86400`;
+      document.cookie = `userGender=${data.user.gender}; path=/; max-age=86400`;
+      document.cookie = `userRole=${isAdmin ? 'admin' : 'customer'}; path=/; max-age=86400`;
+      
+      // Also keep localStorage for backward compatibility
+      localStorage.setItem("isLoggedIn", "true");
+      localStorage.setItem("userEmail", email);
+      localStorage.setItem('userGender', data.user.gender);
+      localStorage.setItem('userRole', isAdmin ? 'admin' : 'customer');
+      
       // Show success toast
       setToastSeverity("success");
       setToastMessage("Login successful! Redirecting...");
       setOpenToast(true);
-      localStorage.setItem("isLoggedIn", "true");
-      localStorage.setItem("userEmail", email);
-      localStorage.setItem('userGender', data.user.gender);
       
-      // Redirect after a short delay
+      // Redirect after a short delay to the appropriate dashboard
       setTimeout(() => {
-        router.push("/");
-      }, 1500);
+        if (isAdmin) {
+          window.location.href = "/admin-dashboard"; // Use direct navigation instead of router
+        } else {
+          window.location.href = "/"; // Use direct navigation instead of router
+        }
+      }, 1000);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Login failed");
       setToastSeverity("error");
       setToastMessage(err instanceof Error ? err.message : "Login failed");
       setOpenToast(true);
@@ -84,6 +97,20 @@ const AuthLogin = ({ title, subtitle, subtext }: loginType) => {
   const handleCloseToast = () => {
     setOpenToast(false);
   };
+
+  React.useEffect(() => {
+    console.log("Auth state on load:", {
+      isLoggedIn: localStorage.getItem("isLoggedIn"),
+      userEmail: localStorage.getItem("userEmail"),
+      userRole: localStorage.getItem("userRole")
+    });
+    
+    // Check if we should already be logged in
+    if (localStorage.getItem("isLoggedIn") === "true") {
+      const userRole = localStorage.getItem("userRole");
+      console.log("User already logged in, should redirect to:", userRole === "admin" ? "/admin-dashboard" : "/");
+    }
+  }, []);
 
   return (
     <>
@@ -160,7 +187,7 @@ const AuthLogin = ({ title, subtitle, subtext }: loginType) => {
             <FormGroup>
               <FormControlLabel
                 control={<Checkbox defaultChecked />}
-                label="Remember this Device"
+                label="Remember Me"
               />
             </FormGroup>
 

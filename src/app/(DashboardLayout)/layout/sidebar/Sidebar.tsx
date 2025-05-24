@@ -1,6 +1,10 @@
-import { useMediaQuery, Box, Drawer } from "@mui/material";
-import dynamic from 'next/dynamic';
-const SidebarItems = dynamic(() => import('./SidebarItems'), { ssr: false });
+'use client';
+import { useEffect, useState } from 'react';
+import { usePathname } from 'next/navigation';
+import { Box, Drawer, useMediaQuery } from '@mui/material';
+import Logo from '../shared/logo/Logo';
+import SidebarItems from './SidebarItems';
+import { getMenuItems } from './MenuItems';
 
 interface ItemType {
   isMobileSidebarOpen: boolean;
@@ -8,27 +12,24 @@ interface ItemType {
   isSidebarOpen: boolean;
 }
 
-const MSidebar = ({
-  isMobileSidebarOpen,
-  onSidebarClose,
-  isSidebarOpen,
-}: ItemType) => {
-  const lgUp = useMediaQuery((theme: any) => theme.breakpoints.up("lg"));
+const Sidebar = ({ isMobileSidebarOpen, onSidebarClose, isSidebarOpen }: ItemType) => {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userRole, setUserRole] = useState('customer');
+  const lgUp = useMediaQuery((theme: any) => theme.breakpoints.up('lg'));
+  const pathname = usePathname();
 
-  const sidebarWidth = "270px";
+  useEffect(() => {
+    // Check login status and user role from localStorage
+    const loginStatus = localStorage.getItem('isLoggedIn') === 'true';
+    const role = localStorage.getItem('userRole') || 'customer';
+    
+    setIsLoggedIn(loginStatus);
+    setUserRole(role);
+  }, [pathname]);
 
-  // Custom CSS for short scrollbar
-  const scrollbarStyles = {
-    '&::-webkit-scrollbar': {
-      width: '7px',
+  const menuItems = getMenuItems(isLoggedIn, userRole);
 
-    },
-    '&::-webkit-scrollbar-thumb': {
-      backgroundColor: '#eff2f7',
-      borderRadius: '15px',
-    },
-  };
-
+  const sidebarWidth = '270px';
 
   if (lgUp) {
     return (
@@ -38,9 +39,7 @@ const MSidebar = ({
           flexShrink: 0,
         }}
       >
-        {/* ------------------------------------------- */}
         {/* Sidebar for desktop */}
-        {/* ------------------------------------------- */}
         <Drawer
           anchor="left"
           open={isSidebarOpen}
@@ -48,31 +47,25 @@ const MSidebar = ({
           slotProps={{
             paper: {
               sx: {
-                boxSizing: "border-box",
-                ...scrollbarStyles,
                 width: sidebarWidth,
+                boxSizing: 'border-box',
               },
-            }
+            },
           }}
         >
-          {/* ------------------------------------------- */}
-          {/* Sidebar Box */}
-          {/* ------------------------------------------- */}
+          {/* Sidebar content */}
           <Box
             sx={{
-              height: "100%",
+              height: '100%',
             }}
           >
-
-            <Box>
-              {/* ------------------------------------------- */}
-              {/* Sidebar Items */}
-              {/* ------------------------------------------- */}
-              <SidebarItems />
+            <Box px={3}>
+              <Logo />
             </Box>
+            <SidebarItems menuItems={menuItems} />
           </Box>
         </Drawer>
-      </Box >
+      </Box>
     );
   }
 
@@ -82,30 +75,22 @@ const MSidebar = ({
       open={isMobileSidebarOpen}
       onClose={onSidebarClose}
       variant="temporary"
-
       slotProps={{
         paper: {
           sx: {
+            width: sidebarWidth,
             boxShadow: (theme) => theme.shadows[8],
-            ...scrollbarStyles,
           },
-        }
+        },
       }}
     >
-      {/* ------------------------------------------- */}
-      {/* Sidebar Box */}
-      {/* ------------------------------------------- */}
-      <Box>
-        {/* ------------------------------------------- */}
-        {/* Sidebar Items */}
-        {/* ------------------------------------------- */}
-        <SidebarItems />
+      {/* Mobile sidebar content */}
+      <Box px={2}>
+        <Logo />
       </Box>
-      {/* ------------------------------------------- */}
-      {/* Sidebar For Mobile */}
-      {/* ------------------------------------------- */}
+      <SidebarItems menuItems={menuItems} />
     </Drawer>
   );
 };
 
-export default MSidebar;
+export default Sidebar;
