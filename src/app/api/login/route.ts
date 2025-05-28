@@ -7,12 +7,9 @@ import { RowDataPacket } from 'mysql2';
 export async function POST(req: NextRequest) {
   try {
     const { email, password } = await req.json();
-    
-    console.log("Login attempt for email:", email);
-    
+        
     // Validate input
     if (!email || !password) {
-      console.log("Missing email or password");
       return NextResponse.json(
         { error: 'Email and password are required!' },
         { status: 400 }
@@ -21,20 +18,14 @@ export async function POST(req: NextRequest) {
     
     // First check if user exists in customers table
     const [customers] = await pool.query<(User & RowDataPacket)[]>(
-      'SELECT * FROM customers WHERE email = ?',
-      [email]
+      'SELECT * FROM customers WHERE email = ?', [email]
     );
-    
-    console.log("Found in customers table:", customers.length > 0);
-    
+        
     // If not found in customers, check admin table
     const [admins] = await pool.query<(User & RowDataPacket)[]>(
-      'SELECT * FROM admin WHERE email = ?',
-      [email]
+      'SELECT * FROM admin WHERE email = ?', [email]
     );
-    
-    console.log("Found in admin table:", admins.length > 0);
-    
+        
     // Combine results
     const users = [...(Array.isArray(customers) ? customers : []), ...(Array.isArray(admins) ? admins : [])];
     
@@ -47,15 +38,12 @@ export async function POST(req: NextRequest) {
     }
     
     const user = users[0];
-    console.log("User found:", { email: user.email, hasPassword: !!user.password });
     
     // Compare passwords
     try {
       const passwordMatch = await bcrypt.compare(password, user.password);
-      console.log("Password match result:", passwordMatch);
       
       if (!passwordMatch) {
-        console.log("Password doesn't match");
         return NextResponse.json(
           { error: 'Invalid email or password!' },
           { status: 401 }

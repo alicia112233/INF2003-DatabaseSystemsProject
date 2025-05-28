@@ -9,7 +9,6 @@ export default function Logout() {
     // Clear all user data from localStorage
     localStorage.removeItem('isLoggedIn');
     localStorage.removeItem('userEmail');
-    localStorage.removeItem('userGender');
     localStorage.removeItem('userRole');
     
     // Redirect to login page

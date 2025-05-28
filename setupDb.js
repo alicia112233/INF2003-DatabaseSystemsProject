@@ -11,9 +11,9 @@ async function setupDatabase() {
   try {
     // Create connection to MySQL server (without database)
     const connection = await mysql.createConnection({
-      host: process.env.DB_HOST || 'localhost',
-      user: process.env.DB_USER,
-      password: process.env.DB_PASSWORD,
+      host: process.env.MYSQL_HOST || 'localhost',
+      user: process.env.MYSQL_USER,
+      password: process.env.MYSQL_PASSWORD,
     });
     
     console.log('Connected to MySQL server');
@@ -30,7 +30,6 @@ async function setupDatabase() {
     // Execute each statement
     for (const statement of statements) {
       await connection.query(statement + ';');
-      console.log('Executed SQL statement');
     }
     
     console.log('Database setup completed successfully');
@@ -41,5 +40,8 @@ async function setupDatabase() {
     process.exit(1);
   }
 }
+
+// to actually call the function
+setupDatabase();
 
 module.exports = setupDatabase;

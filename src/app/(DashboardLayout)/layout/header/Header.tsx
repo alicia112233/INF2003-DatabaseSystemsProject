@@ -6,6 +6,7 @@ import Profile from './Profile';
 import { IconBellRinging, IconMenu } from '@tabler/icons-react';
 import Link from 'next/link';
 import { Logo } from 'react-mui-sidebar';
+import { setupInactivityTracker, clearInactivityTracker } from '@/utils/inactivityTracker';
 
 interface ItemType {
   toggleMobileSidebar: (event: React.MouseEvent<HTMLElement>) => void;
@@ -13,10 +14,8 @@ interface ItemType {
 
 // LOGGED IN HEADER
 const Header = ({ toggleMobileSidebar }: ItemType) => {
-
   // const lgUp = useMediaQuery((theme) => theme.breakpoints.up('lg'));
   // const lgDown = useMediaQuery((theme) => theme.breakpoints.down('lg'));
-
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
@@ -24,7 +23,19 @@ const Header = ({ toggleMobileSidebar }: ItemType) => {
     const loggedIn = localStorage.getItem("isLoggedIn");
     console.log("userEmail:", userEmail);
     console.log("isLoggedIn:", loggedIn);
-    setIsLoggedIn(localStorage.getItem("isLoggedIn") === "true");
+    
+    const loginStatus = localStorage.getItem("isLoggedIn") === "true";
+    setIsLoggedIn(loginStatus);
+
+    // Setup inactivity tracker if user is logged in
+    if (loginStatus) {
+      setupInactivityTracker();
+    }
+
+    // Cleanup function
+    return () => {
+      clearInactivityTracker();
+    };
   }, []);
 
   const AppBarStyled = styled(AppBar)(({ theme }) => ({

@@ -13,7 +13,6 @@ import {
   InputAdornment,
 } from "@mui/material";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import CustomTextField from "@/app/(DashboardLayout)/components/forms/theme-elements/CustomTextField";
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
@@ -25,7 +24,6 @@ interface loginType {
 }
 
 const AuthLogin = ({ title, subtitle, subtext }: loginType) => {
-  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -63,13 +61,11 @@ const AuthLogin = ({ title, subtitle, subtext }: loginType) => {
       // Store user info and role in cookies (more secure than localStorage)
       document.cookie = `isLoggedIn=true; path=/; max-age=86400`;
       document.cookie = `userEmail=${email}; path=/; max-age=86400`;
-      document.cookie = `userGender=${data.user.gender}; path=/; max-age=86400`;
       document.cookie = `userRole=${isAdmin ? 'admin' : 'customer'}; path=/; max-age=86400`;
       
       // Also keep localStorage for backward compatibility
       localStorage.setItem("isLoggedIn", "true");
       localStorage.setItem("userEmail", email);
-      localStorage.setItem('userGender', data.user.gender);
       localStorage.setItem('userRole', isAdmin ? 'admin' : 'customer');
       
       // Show success toast
@@ -102,7 +98,7 @@ const AuthLogin = ({ title, subtitle, subtext }: loginType) => {
     console.log("Auth state on load:", {
       isLoggedIn: localStorage.getItem("isLoggedIn"),
       userEmail: localStorage.getItem("userEmail"),
-      userRole: localStorage.getItem("userRole")
+      userRole: localStorage.getItem("userRole"),
     });
     
     // Check if we should already be logged in

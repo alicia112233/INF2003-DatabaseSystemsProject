@@ -8,7 +8,7 @@ import {
   MenuItem,
   ListItemIcon,
   ListItemText,
-  
+
 } from "@mui/material";
 
 import { IconShoppingCart, IconStar, IconUser } from "@tabler/icons-react";
@@ -19,16 +19,6 @@ const Profile = () => {
   const [anchorEl2, setAnchorEl2] = useState(null);
   const [avatarSrc, setAvatarSrc] = useState("/images/profile/user-1.jpg");
   const router = useRouter();
-  
-  useEffect(() => {
-    // Get gender from localStorage when component mounts
-    const gender = localStorage.getItem('userGender');
-    if (gender === 'F') {
-      setAvatarSrc("/images/profile/user-2.jpg");
-    } else {
-      setAvatarSrc("/images/profile/user-1.jpg");
-    }
-  }, []);
 
   const handleClick2 = (event: any) => {
     setAnchorEl2(event.currentTarget);
@@ -49,10 +39,24 @@ const Profile = () => {
     window.location.href = "/"; // or use router.push("/")
   };
 
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const res = await fetch("/api/profile");
+        if (!res.ok) throw new Error("Failed to fetch profile");
+        const data = await res.json();
+        setAvatarSrc(data.avatarUrl || "/images/profile/user-1.jpg");
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    fetchProfile();
+  }, []);
+
   return (
     <Box>
-      <Button 
-        variant="outlined" 
+      <Button
+        variant="outlined"
         color="primary"
         startIcon={<IconShoppingCart size={20} />}
       >

@@ -1,3 +1,4 @@
 1. Add sql queries + data here in this folder (/backend)
 2. Add api routes in src\app\api folder
-3. Edit src\utils\setupDb.js file according to your backend sql files to auto run
+3. Edit setupDb.js file according to your backend sql files to auto run
+4. Change sample.sql to ur needs
