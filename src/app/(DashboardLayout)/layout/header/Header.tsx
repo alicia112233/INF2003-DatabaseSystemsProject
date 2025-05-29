@@ -7,6 +7,7 @@ import { IconBellRinging, IconMenu } from '@tabler/icons-react';
 import Link from 'next/link';
 import { Logo } from 'react-mui-sidebar';
 import { setupInactivityTracker, clearInactivityTracker } from '@/utils/inactivityTracker';
+import { Analytics } from "@vercel/analytics/next"
 
 interface ItemType {
   toggleMobileSidebar: (event: React.MouseEvent<HTMLElement>) => void;
@@ -55,6 +56,7 @@ const Header = ({ toggleMobileSidebar }: ItemType) => {
 
   return (
     <AppBarStyled position="sticky" color="default">
+      <Analytics/>
       <ToolbarStyled sx={{ position: 'relative' }}>
         <IconButton
           color="inherit"

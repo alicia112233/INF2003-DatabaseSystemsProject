@@ -5,6 +5,7 @@ import DashboardCard from '@/app/(DashboardLayout)/components/shared/DashboardCa
 import Layout from '@/components/layout';
 import { useState, useEffect } from 'react';
 import { IconUser, IconMail, IconPhone, IconLock } from '@tabler/icons-react';
+import toast from 'react-hot-toast';
 
 interface UserProfile {
   firstName: string;
@@ -69,6 +70,32 @@ const ProfilePage = () => {
     const file = event.target.files?.[0];
     if (!file) return;
 
+    // Client-side validation before upload
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+    const allowedExtensions = ['.jpg', '.jpeg', '.png'];
+
+    // Get file extension
+    const fileExtension = file.name.toLowerCase().substring(file.name.lastIndexOf('.'));
+
+    // Check both MIME type and file extension
+    const isValidType = allowedTypes.includes(file.type) || allowedExtensions.includes(fileExtension);
+
+    if (!isValidType) {
+      toast.error('Invalid file type. Only JPG, JPEG, and PNG are allowed.');
+      // Reset the input
+      event.target.value = '';
+      return;
+    }
+
+    // Check file size (5MB limit)
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    if (file.size > maxSize) {
+      toast.error('File too large. Maximum size is 5MB.');
+      // Reset the input
+      event.target.value = '';
+      return;
+    }
+
     const formData = new FormData();
     formData.append('avatar', file);
 
@@ -94,15 +121,23 @@ const ProfilePage = () => {
         if (updateRes.ok) {
           // Update the local state
           setUserProfile((prev) => prev ? { ...prev, avatarUrl } : prev);
+          toast.success('Avatar uploaded successfully!');
         } else {
+          const error = await updateRes.json();
+          toast.error(error.message || 'Failed to update avatar');
           console.error('Failed to update avatar URL in database');
         }
       } else {
         const error = await uploadRes.json();
+        toast.error(error.message || 'Upload failed! Check your network.');
         console.error('Upload failed:', error.message);
       }
     } catch (err) {
+      toast.error("Error uploading file!");
       console.error('Error uploading file:', err);
+    } finally {
+      // Reset the input so the same file can be selected again if needed
+      event.target.value = '';
     }
   };
 

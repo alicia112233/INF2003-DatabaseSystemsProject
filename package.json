@@ -17,6 +17,7 @@
     "@mui/material": "^7.1.0",
     "@tabler/icons-react": "^3.33.0",
     "@types/node": "^20.2.3",
+    "@vercel/analytics": "^1.5.0",
     "@vercel/speed-insights": "^1.2.0",
     "apexcharts": "4.7.0",
     "bcrypt": "^6.0.0",
@@ -31,6 +32,7 @@
     "react": "^19.1.0",
     "react-apexcharts": "1.7.0",
     "react-dom": "^19.1.0",
+    "react-hot-toast": "^2.5.2",
     "react-mui-sidebar": "^1.6.3",
     "react-syntax-highlighter": "^15.6.1",
     "typescript": "^5.8.3"

@@ -3,7 +3,8 @@ import { styled, Container, Box } from "@mui/material";
 import React, { useState } from "react";
 import Header from "@/app/(DashboardLayout)/layout/header/Header";
 import Sidebar from "@/app/(DashboardLayout)/layout/sidebar/Sidebar";
-
+import { Analytics } from "@vercel/analytics/next";
+import { Toaster } from 'react-hot-toast';
 
 const MainWrapper = styled("div")(() => ({
   display: "flex",
@@ -19,11 +20,6 @@ const PageWrapper = styled("div")(() => ({
   zIndex: 1,
   backgroundColor: "transparent",
 }));
-
-interface Props {
-  children: React.ReactNode;
-}
-
 
 export default function RootLayout({
   children,
@@ -46,6 +42,8 @@ export default function RootLayout({
       {/* Main Wrapper */}
       {/* ------------------------------------------- */}
       <PageWrapper className="page-wrapper">
+        <Toaster position="top-right" />
+        
         {/* ------------------------------------------- */}
         {/* Header */}
         {/* ------------------------------------------- */}
@@ -59,6 +57,8 @@ export default function RootLayout({
             maxWidth: "1200px",
           }}
         >
+          <Analytics />
+
           {/* ------------------------------------------- */}
           {/* Page Route */}
           {/* ------------------------------------------- */}
