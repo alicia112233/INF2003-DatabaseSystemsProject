@@ -56,6 +56,10 @@ yarn dev
 pnpm dev
 ```
 
+* If there is any errors regarding sql, head to download into your environment:
+
+  [https://dev.mysql.com/downloads/installer/]()
+
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
 ## Meet Our Team Developers:
