@@ -3,7 +3,7 @@ import { Box, Typography, Button } from '@mui/material';
 import PageContainer from '@/app/(DashboardLayout)/components/container/PageContainer';
 import DashboardCard from '@/app/(DashboardLayout)/components/shared/DashboardCard';
 import Blog from '@/app/(DashboardLayout)/components/dashboard/Blog';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import BlankCard from '@/app/(DashboardLayout)/components/shared/BlankCard';
 import { IconChevronLeft, IconChevronRight, IconShoppingCart, IconStar } from '@tabler/icons-react';
@@ -13,33 +13,33 @@ import Layout from '@/components/layout';
 const products = [
     {
         id: 1,
-        title: "PlayStation 5",
-        description: "Next-gen gaming console with stunning graphics",
-        photo: '/images/products/s4.jpg',
-        price: 499,
+        title: "Summoners War",
+        description: "A turn-based mobile RPG where players summon monsters to battle in strategic PvE and PvP combat.",
+        photo: '/images/products/SW.jpg',
+        price: 129,
         rating: 5,
     },
     {
         id: 2,
-        title: "Xbox Series X",
-        description: "Microsoft's flagship gaming console",
-        photo: '/images/products/s5.jpg',
-        price: 499,
+        title: "Once Human",
+        description: "A multiplayer open-world survival game set in a post-apocalyptic world filled with supernatural horrors and alien corruption.",
+        photo: '/images/products/OH.jpg',
+        price: 233,
         rating: 4,
     },
     {
         id: 3,
-        title: "Nintendo Switch OLED",
-        description: "Portable gaming with enhanced display",
-        photo: '/images/products/s7.jpg',
-        price: 349,
+        title: "Dota 2",
+        description: "A competitive multiplayer online battle arena (MOBA) game where two teams of five heroes clash in strategic, high-skill matches to destroy the enemy's Ancient.",
+        photo: '/images/products/dota2.jpg',
+        price: 255,
         rating: 5,
     },
     {
         id: 4,
-        title: "Gaming Headset Pro",
-        description: "Immersive audio experience for gamers",
-        photo: '/images/products/s11.jpg',
+        title: "Wuthering Waves",
+        description: "An open-world action RPG featuring fast-paced combat, deep lore, and exploration in a post-apocalyptic sci-fi setting.",
+        photo: '/images/products/WW.jpg',
         price: 129,
         rating: 4,
     },
@@ -62,10 +62,19 @@ const HomePage = () => {
 
     const currentProduct = products[currentIndex];
 
+    // auto slide every 3 seconds
+    useEffect(() => {
+        const interval = setInterval(() => {
+            nextSlide();
+        }, 3000);
+
+        return () => clearInterval(interval); // Cleanup on unmount
+    }, []);
+
     return (
         <Layout>
             <PageContainer title="Game Haven" description="Your ultimate gaming destination">
-                <DashboardCard title="Featured Product">
+                <DashboardCard title="Featured & Recommended 👍">
                     <Box sx={{ position: 'relative', width: '100%', height: '400px' }}>
                         {/* Left navigation button */}
                         <Button
@@ -172,7 +181,7 @@ const HomePage = () => {
                 </DashboardCard>
 
                 <Box sx={{ mt: 4 }}>
-                    <DashboardCard title="More Products">
+                    <DashboardCard title="More Games">
                         <Blog />
                     </DashboardCard>
                 </Box>

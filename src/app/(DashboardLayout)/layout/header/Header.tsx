@@ -44,9 +44,9 @@ const Header = ({ toggleMobileSidebar }: ItemType) => {
     background: theme.palette.background.paper,
     justifyContent: 'center',
     backdropFilter: 'blur(4px)',
-    [theme.breakpoints.up('lg')]: {
-      minHeight: '70px',
-    },
+    // [theme.breakpoints.up('lg')]: {
+    //   minHeight: '70px',
+    // },
   }));
 
   const ToolbarStyled = styled(Toolbar)(({ theme }) => ({
@@ -94,7 +94,7 @@ const Header = ({ toggleMobileSidebar }: ItemType) => {
               },
             }}
           >
-            <Logo img="/images/logos/dark-logo.svg" component={Link} to="/">
+            <Logo component={Link} to="/">
               Game Haven
             </Logo>
           </Box>

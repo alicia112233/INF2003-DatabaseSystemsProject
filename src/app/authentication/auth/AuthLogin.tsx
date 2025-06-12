@@ -55,8 +55,8 @@ const AuthLogin = ({ title, subtitle, subtext }: loginType) => {
         throw new Error(data.error || "Login failed");
       }
 
-      // Check if the email is an admin email
-      const isAdmin = email.endsWith('@admin.com');
+      // Check if the user is an admin
+      const isAdmin = data.user.isAdmin;
       
       // Store user info and role in cookies (more secure than localStorage)
       document.cookie = `isLoggedIn=true; path=/; max-age=86400`;

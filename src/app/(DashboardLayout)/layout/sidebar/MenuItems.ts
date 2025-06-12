@@ -1,6 +1,5 @@
 import {
   IconLayoutDashboard,
-  IconLogin,
   IconMoodHappy,
   IconShoppingCart,
   IconDeviceGamepad,
@@ -36,30 +35,76 @@ export const getMenuItems = (isLoggedIn: boolean, userRole: string = 'customer')
   // Guest-specific menu items (without Upgrade)
   const guestItems: MenuItem[] = [
     {
-      id: uniqueId(),
-      title: "Login",
-      icon: IconLogin,
-      href: "/authentication/login",
-    },
-    {
       navlabel: true,
       subheader: "GAMES",
     },
     {
       id: uniqueId(),
-      title: "View All Games",
+      title: "Digital Games",
+      icon: IconDeviceGamepad,
+      href: "/view-digitals",
+    },
+    {
+      id: uniqueId(),
+      title: "Board Games",
+      icon: IconDeviceGamepad,
+      href: "/view-boards",
+    },
+    {
+      id: uniqueId(),
+      title: "Card Games",
+      icon: IconDeviceGamepad,
+      href: "/view-cards",
+    },
+    {
+      navlabel: true,
+      subheader: "CATERGORIES",
+    },
+    {
+      id: uniqueId(),
+      title: "Top Sellers",
+      icon: IconDeviceGamepad,
+      href: "/view-top-sellers",
+    },
+    {
+      id: uniqueId(),
+      title: "New Releases",
+      icon: IconDeviceGamepad,
+      href: "/view-new-releases",
+    },
+    {
+      id: uniqueId(),
+      title: "Upcoming Games",
+      icon: IconDeviceGamepad,
+      href: "/view-upcoming",
+    },
+    {
+      navlabel: true,
+      subheader: "Genres",
+    },
+    {
+      id: uniqueId(),
+      title: "All",
       icon: IconDeviceGamepad,
       href: "/view-games",
     },
     {
-      navlabel: true,
-      subheader: "DEVICES",
+      id: uniqueId(),
+      title: "Action",
+      icon: IconDeviceGamepad,
+      href: "/view-action-games",
     },
     {
       id: uniqueId(),
-      title: "View All Devices",
+      title: "Adventure",
       icon: IconDeviceGamepad,
-      href: "/view-devices",
+      href: "/view-adventure-games",
+    },
+    {
+      id: uniqueId(),
+      title: "Horror",
+      icon: IconDeviceGamepad,
+      href: "/view-horror-games",
     },
   ];
 
@@ -101,31 +146,25 @@ export const getMenuItems = (isLoggedIn: boolean, userRole: string = 'customer')
     },
     {
       navlabel: true,
-      subheader: "DEVICES",
+      subheader: "ORDERS MANAGEMENT",
     },
     {
       id: uniqueId(),
-      title: "Add New Devices",
+      title: "View All Orders",
       icon: IconDeviceGamepad,
-      href: "/create-devices",
+      href: "/view-orders",
     },
     {
       id: uniqueId(),
-      title: "View All Devices",
+      title: "Update Orders",
       icon: IconDeviceGamepad,
-      href: "/view-devices",
+      href: "/update-order",
     },
     {
       id: uniqueId(),
-      title: "Update Device",
+      title: "Delete Orders",
       icon: IconDeviceGamepad,
-      href: "/update-devices",
-    },
-    {
-      id: uniqueId(),
-      title: "Delete Device",
-      icon: IconDeviceGamepad,
-      href: "/delete-devices",
+      href: "/delete-order",
     },
     {
       navlabel: true,
@@ -153,35 +192,71 @@ export const getMenuItems = (isLoggedIn: boolean, userRole: string = 'customer')
     },
     {
       id: uniqueId(),
-      title: "View All Games",
+      title: "Digital Games",
+      icon: IconDeviceGamepad,
+      href: "/view-digitals",
+    },
+    {
+      id: uniqueId(),
+      title: "Board Games",
+      icon: IconDeviceGamepad,
+      href: "/view-boards",
+    },
+    {
+      id: uniqueId(),
+      title: "Card Games",
+      icon: IconDeviceGamepad,
+      href: "/view-cards",
+    },
+    {
+      navlabel: true,
+      subheader: "CATERGORIES",
+    },
+    {
+      id: uniqueId(),
+      title: "Top Sellers",
+      icon: IconDeviceGamepad,
+      href: "/view-top-sellers",
+    },
+    {
+      id: uniqueId(),
+      title: "New Releases",
+      icon: IconDeviceGamepad,
+      href: "/view-new-releases",
+    },
+    {
+      id: uniqueId(),
+      title: "Upcoming Games",
+      icon: IconDeviceGamepad,
+      href: "/view-upcoming",
+    },
+    {
+      navlabel: true,
+      subheader: "Genres",
+    },
+    {
+      id: uniqueId(),
+      title: "All",
       icon: IconDeviceGamepad,
       href: "/view-games",
     },
     {
-      navlabel: true,
-      subheader: "DEVICES",
-    },
-    {
       id: uniqueId(),
-      title: "View All Devices",
+      title: "Action",
       icon: IconDeviceGamepad,
-      href: "/view-devices",
-    },
-    {
-      navlabel: true,
-      subheader: "MY ACCOUNT",
+      href: "/view-action-games",
     },
     {
       id: uniqueId(),
-      title: "My Purchases",
-      icon: IconShoppingCart,
-      href: "/my-purchases",
+      title: "Adventure",
+      icon: IconDeviceGamepad,
+      href: "/view-adventure-games",
     },
     {
       id: uniqueId(),
-      title: "Wishlist",
-      icon: IconMoodHappy,
-      href: "/wishlist",
+      title: "Horror",
+      icon: IconDeviceGamepad,
+      href: "/view-horror-games",
     },
   ];
 

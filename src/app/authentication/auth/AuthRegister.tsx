@@ -91,11 +91,13 @@ const AuthRegister = ({ title, subtitle, subtext }: registerType) => {
     }
 
     // Validate contact number
-    if (!contactNumber) {
+    const cleanedNumber = contactNumber.replace(/\s+/g, ''); // remove all spaces
+
+    if (!cleanedNumber) {
       newErrors.contactNumber = 'Contact number is required!';
       isValid = false;
-    } else if (!/^[+\d\s-]{8,15}$/.test(contactNumber)) {
-      newErrors.contactNumber = 'Please enter a valid contact number!';
+    } else if (!/^(?:\+65)?[89]\d{7}$/.test(cleanedNumber)) {
+      newErrors.contactNumber = 'Please enter a valid Singapore contact number!';
       isValid = false;
     }
 

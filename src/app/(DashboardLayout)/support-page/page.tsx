@@ -14,7 +14,7 @@ const products = [
     id: 1,
     title: "PlayStation 5",
     description: "Next-gen gaming console with stunning graphics",
-    photo: '/images/products/s4.jpg',
+    photo: '/images/products/ps5.jpg',
     price: 499,
     rating: 5,
   },

@@ -1,15 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import mysql from 'mysql2/promise';
 import bcrypt from 'bcrypt';
-import { User } from '@/types/user';
 import { RowDataPacket } from 'mysql2';
 
 const dbConfig = {
   host: process.env.MYSQL_HOST,
-  port: Number(process.env.MYSQL_PORT),
   user: process.env.MYSQL_USER,
-  password: process.env.MYSQL_ROOT_PASSWORD,
-  database: process.env.MYSQL_DATABASE || 'game_haven',
+  password: process.env.MYSQL_PASSWORD,
+  port: Number(process.env.MYSQL_PORT),
+  database: process.env.MYSQL_DATABASE,
 };
 
 export async function POST(req: NextRequest) {
@@ -29,20 +28,12 @@ export async function POST(req: NextRequest) {
     // Create direct database connection
     connection = await mysql.createConnection(dbConfig);
 
-    // First check if user exists in customers table
-    const [customers] = await connection.query<(User & RowDataPacket)[]>(
-      'SELECT * FROM customers WHERE email = ?', [email]
+    // Query the unified users table
+    const [users] = await connection.query<(RowDataPacket)[]>(
+      'SELECT * FROM users WHERE email = ?', [email]
     );
 
-    // If not found in customers, check admin table
-    const [admins] = await connection.query<(User & RowDataPacket)[]>(
-      'SELECT * FROM admin WHERE email = ?', [email]
-    );
-
-    // Combine results
-    const users = [...(Array.isArray(customers) ? customers : []), ...(Array.isArray(admins) ? admins : [])];
-
-    if (users.length === 0) {
+    if (!Array.isArray(users) || users.length === 0) {
       console.log("No user found with this email");
       return NextResponse.json(
         { error: 'Invalid email or password!' },
@@ -63,49 +54,68 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      // Determine user role
-      const userRole = customers.length > 0 ? 'customer' : 'admin';
+      // Determine user role based on is_admin field
+      const userRole = user.is_admin === 'T' ? 'admin' : 'customer';
 
-      // Create response with success message
-      const response = NextResponse.json({
-        message: 'Login successful',
-        user: {
-          id: user.id,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          email: user.email,
-          role: userRole
-        }
-      });
+      // Create user object without sensitive data
+      const userResponse = {
+        id: user.id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        gender: user.gender,
+        contactNo: user.contactNo,
+        email: user.email,
+        isAdmin: user.is_admin === 'T',
+        avatarUrl: user.avatarUrl,
+        loyaltyPoints: user.loyaltyPoints,
+        role: userRole,
+        createdAt: user.createdAt
+      };
 
-      // Set cookies for authentication
-      response.cookies.set('isLoggedIn', 'true', {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
-        maxAge: 60 * 60 * 24 * 7 // 7 days
-      });
+      // Create response with cookies
+      const response = NextResponse.json(
+        { 
+          message: 'Login successful!',
+          user: userResponse
+        },
+        { status: 200 }
+      );
 
-      response.cookies.set('userRole', userRole, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
-        maxAge: 60 * 60 * 24 * 7 // 7 days
-      });
-
+      // Set cookies on the server side
       response.cookies.set('userId', user.id.toString(), {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'strict',
-        maxAge: 60 * 60 * 24 * 7 // 7 days
+        maxAge: 86400 // 24 hours
+      });
+
+      response.cookies.set('userRole', userRole, {
+        httpOnly: false, // Allow client-side access for this cookie
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        maxAge: 86400 // 24 hours
+      });
+
+      response.cookies.set('isLoggedIn', 'true', {
+        httpOnly: false, // Allow client-side access for this cookie
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        maxAge: 86400 // 24 hours
+      });
+
+      response.cookies.set('userEmail', email, {
+        httpOnly: false, // Allow client-side access for this cookie
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        maxAge: 86400 // 24 hours
       });
 
       return response;
 
     } catch (bcryptError) {
-      console.error("Bcrypt error:", bcryptError);
+      console.error('Password comparison error:', bcryptError);
       return NextResponse.json(
-        { error: 'Authentication failed' },
+        { error: 'Authentication failed!' },
         { status: 500 }
       );
     }
@@ -113,11 +123,10 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error('Login error:', error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'An error occurred during login!' },
       { status: 500 }
     );
   } finally {
-    // Always close the connection
     if (connection) {
       await connection.end();
     }

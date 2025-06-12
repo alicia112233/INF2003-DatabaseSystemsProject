@@ -4,10 +4,10 @@ import bcrypt from 'bcrypt';
 
 const dbConfig = {
   host: process.env.MYSQL_HOST,
-  port: Number(process.env.MYSQL_PORT),
   user: process.env.MYSQL_USER,
-  password: process.env.MYSQL_ROOT_PASSWORD,
-  database: process.env.MYSQL_DATABASE || 'game_haven',
+  password: process.env.MYSQL_PASSWORD,
+  port: Number(process.env.MYSQL_PORT),
+  database: process.env.MYSQL_DATABASE,
 };
 
 export async function POST(request: NextRequest) {
@@ -27,6 +27,11 @@ export async function POST(request: NextRequest) {
     if (!email) errors.email = 'Email is required';
     if (!password) errors.password = 'Password is required';
 
+    // Validate gender format (should be 'M' or 'F' based on schema)
+    if (gender && !['M', 'F'].includes(gender)) {
+      errors.gender = 'Gender must be M or F';
+    }
+
     if (Object.keys(errors).length > 0) {
       return NextResponse.json({ errors }, { status: 400 });
     }
@@ -36,7 +41,7 @@ export async function POST(request: NextRequest) {
 
     // Check if email already exists
     const [existingUsers] = await connection.execute(
-      'SELECT * FROM customers WHERE email = ?',
+      'SELECT * FROM users WHERE email = ?',
       [email]
     );
 
@@ -48,13 +53,10 @@ export async function POST(request: NextRequest) {
     const saltRounds = 10;
     const hashedPassword = await bcrypt.hash(password, saltRounds);
 
-    // Set default avatar based on gender
-    const defaultAvatarUrl = gender === 'M' ? '/images/profile/user-1.jpg' : '/images/profile/user-2.jpg';
-
-    // Insert new user
+    // Insert new user (trigger will set default avatar based on gender)
     await connection.execute(
-      'INSERT INTO customers (firstName, lastName, gender, contactNo, email, password, avatarUrl, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())',
-      [firstName, lastName, gender, contactNo, email, hashedPassword, defaultAvatarUrl]
+      'INSERT INTO users (firstName, lastName, gender, contactNo, email, password, is_admin, loyaltyPoints) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+      [firstName, lastName, gender, contactNo, email, hashedPassword, 'F', '0']
     );
 
     return NextResponse.json({ message: 'Registration successful' }, { status: 201 });

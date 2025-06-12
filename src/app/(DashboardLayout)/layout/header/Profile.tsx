@@ -118,13 +118,13 @@ const Profile = () => {
           <ListItemIcon>
             <Inventory width={20} />
           </ListItemIcon>
-          <ListItemText>My Purchase History</ListItemText>
+          <ListItemText>My Orders</ListItemText>
         </MenuItem>
         <MenuItem>
           <ListItemIcon>
             <CalendarMonth width={20} />
           </ListItemIcon>
-          <ListItemText>My Borrowings History</ListItemText>
+          <ListItemText>My Rentals</ListItemText>
         </MenuItem>
         <MenuItem>
           <ListItemIcon>

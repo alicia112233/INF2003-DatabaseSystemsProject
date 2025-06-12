@@ -4,10 +4,10 @@ import { RowDataPacket } from 'mysql2';
 
 const dbConfig = {
   host: process.env.MYSQL_HOST,
-  port: Number(process.env.MYSQL_PORT),
   user: process.env.MYSQL_USER,
-  password: process.env.MYSQL_ROOT_PASSWORD,
-  database: process.env.MYSQL_DATABASE || 'game_haven',
+  password: process.env.MYSQL_PASSWORD,
+  port: Number(process.env.MYSQL_PORT),
+  database: process.env.MYSQL_DATABASE,
 };
 
 export async function GET(req: NextRequest) {
@@ -15,6 +15,7 @@ export async function GET(req: NextRequest) {
 
   try {
     const userId = req.cookies.get('userId')?.value;
+    const userRole = req.cookies.get('userRole')?.value;
 
     if (!userId) {
       return NextResponse.json(
@@ -25,41 +26,22 @@ export async function GET(req: NextRequest) {
 
     connection = await mysql.createConnection(dbConfig);
 
-    // First check if user is admin
-    const [adminRows] = await connection.query<RowDataPacket[]>(
-      'SELECT firstName, lastName, email, contactNo, gender, avatarUrl, role FROM admin WHERE id = ?',
+    const [resultRows] = await connection.query<RowDataPacket[]>(
+      'SELECT firstName, lastName, email, contactNo, gender, is_admin, avatarUrl FROM users WHERE id = ?',
       [userId]
     );
 
-    if (Array.isArray(adminRows) && adminRows.length > 0) {
-      const user = adminRows[0];
+    if (Array.isArray(resultRows) && resultRows.length > 0) {
+      const user = resultRows[0];
       return NextResponse.json({
         firstName: user.firstName,
         lastName: user.lastName,
         email: user.email,
         contactNo: user.contactNo,
         gender: user.gender,
-        role: user.role,
-        avatarUrl: user.avatarUrl || '/images/profile/user-1.jpg'
-      });
-    }
-
-    // If not admin, check customers table
-    const [customerRows] = await connection.query<RowDataPacket[]>(
-      'SELECT firstName, lastName, email, contactNo, gender, avatarUrl FROM customers WHERE id = ?',
-      [userId]
-    );
-
-    if (Array.isArray(customerRows) && customerRows.length > 0) {
-      const user = customerRows[0];
-      return NextResponse.json({
-        firstName: user.firstName,
-        lastName: user.lastName,
-        email: user.email,
-        contactNo: user.contactNo,
-        gender: user.gender,
-        role: 'customer',
-        avatarUrl: user.avatarUrl || '/images/profile/user-1.jpg'
+        is_admin: user.is_admin,
+        avatarUrl: user.avatarUrl || '/images/profile/user-1.jpg',
+        userRole: userRole || (user.is_admin === 'T' ? 'admin' : 'customer')
       });
     }
 
@@ -86,6 +68,7 @@ export async function PUT(req: NextRequest) {
 
   try {
     const userId = req.cookies.get('userId')?.value;
+    const userRole = req.cookies.get('userRole')?.value;
 
     if (!userId) {
       return NextResponse.json(
@@ -106,30 +89,16 @@ export async function PUT(req: NextRequest) {
 
     connection = await mysql.createConnection(dbConfig);
 
-    // First try to update admin table
-    const [adminResult] = await connection.execute(
-      'UPDATE admin SET avatarUrl = ? WHERE id = ?',
+    const [resultRows] = await connection.execute(
+      'UPDATE users SET avatarUrl = ? WHERE id = ?',
       [avatarUrl, userId]
     );
 
-    // Check if admin was updated
-    if (Array.isArray(adminResult) === false && (adminResult as any).affectedRows > 0) {
+    if (Array.isArray(resultRows) === false && (resultRows as any).affectedRows > 0) {
       return NextResponse.json({
         success: true,
-        message: 'Avatar updated successfully'
-      });
-    }
-
-    // If not admin, try customers table
-    const [customerResult] = await connection.execute(
-      'UPDATE customers SET avatarUrl = ? WHERE id = ?',
-      [avatarUrl, userId]
-    );
-
-    if (Array.isArray(customerResult) === false && (customerResult as any).affectedRows > 0) {
-      return NextResponse.json({
-        success: true,
-        message: 'Avatar updated successfully'
+        message: 'Avatar updated successfully',
+        userRole: userRole
       });
     }
 

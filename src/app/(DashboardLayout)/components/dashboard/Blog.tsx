@@ -8,44 +8,40 @@ import {
   Fab,
   Avatar
 } from "@mui/material";
-// import img1 from "public/images/products/s4.jpg";
-// import img2 from "public/images/products/s5.jpg";
-// import img3 from "public/images/products/s7.jpg";
-// import img4 from "public/images/products/s11.jpg";
+
 import { Stack } from "@mui/system";
 import { IconBasket } from "@tabler/icons-react";
 import BlankCard from "@/app/(DashboardLayout)/components/shared/BlankCard";
-import Image from "next/image";
 
 const ecoCard = [
   {
-    title: "Boat Headphone",
+    title: "A Plague Tale: Requiem",
     subheader: "September 14, 2023",
-    photo: '/images/products/s4.jpg',
-    salesPrice: 375,
-    price: 285,
+    photo: '/images/products/PR.jpg',
+    salesPrice: 40,
+    price: 100,
     rating: 4,
   },
   {
-    title: "MacBook Air Pro",
+    title: "Super Meat Boy",
     subheader: "September 14, 2023",
-    photo: '/images/products/s5.jpg',
-    salesPrice: 650,
-    price: 900,
+    photo: '/images/products/SMB.jpg',
+    salesPrice: 20,
+    price: 30,
     rating: 5,
   },
   {
-    title: "Red Valvet Dress",
+    title: "Chivalry 2",
     subheader: "September 14, 2023",
-    photo: '/images/products/s7.jpg',
-    salesPrice: 150,
-    price: 200,
+    photo: '/images/products/CHI.jpg',
+    salesPrice: 12.50,
+    price: 20,
     rating: 3,
   },
   {
-    title: "Cute Soft Teddybear",
+    title: "Forza Horizon 5",
     subheader: "September 14, 2023",
-    photo: '/images/products/s11.jpg',
+    photo: '/images/products/FH.jpg',
     salesPrice: 285,
     price: 345,
     rating: 2,
@@ -83,8 +79,28 @@ const Blog = () => {
                 <IconBasket size="16" />
               </Fab>
             </Tooltip>
-            <CardContent sx={{ p: 3, pt: 2 }}>
-              <Typography variant="h6">{product.title}</Typography>
+            <CardContent
+              sx={{
+                p: 3,
+                pt: 2,
+                height: 140,
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between',
+              }}
+            >
+              <Typography
+                variant="h6"
+                sx={{
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  display: '-webkit-box',
+                  WebkitLineClamp: 2,
+                  WebkitBoxOrient: 'vertical',
+                }}
+              >
+                {product.title}
+              </Typography>
               <Stack
                 direction="row"
                 alignItems="center"
@@ -92,13 +108,13 @@ const Blog = () => {
                 mt={1}
               >
                 <Stack direction="row" alignItems="center">
-                  <Typography variant="h6">${product.price}</Typography>
+                  <Typography variant="h6">${product.salesPrice}</Typography>
                   <Typography
                     color="textSecondary"
                     ml={1}
                     sx={{ textDecoration: "line-through" }}
                   >
-                    ${product.salesPrice}
+                    ${product.price}
                   </Typography>
                 </Stack>
                 <Rating

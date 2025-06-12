@@ -1,11 +1,11 @@
 'use client';
-import { Box, Typography, Card, CardContent, Avatar, Divider, Button, Dialog, DialogActions, DialogContent, DialogTitle, TextField } from '@mui/material';
+import { Box, Typography, Card, CardContent, Avatar, Divider, Button, Dialog, DialogActions, DialogContent, DialogTitle, TextField, IconButton, InputAdornment, Snackbar, Alert } from '@mui/material';
 import PageContainer from '@/app/(DashboardLayout)/components/container/PageContainer';
 import DashboardCard from '@/app/(DashboardLayout)/components/shared/DashboardCard';
 import Layout from '@/components/layout';
 import { useState, useEffect } from 'react';
-import { IconUser, IconMail, IconPhone, IconLock } from '@tabler/icons-react';
-import toast from 'react-hot-toast';
+import { IconMail, IconPhone, IconLock } from '@tabler/icons-react';
+import { Visibility, VisibilityOff } from '@mui/icons-material';
 
 interface UserProfile {
   firstName: string;
@@ -19,6 +19,9 @@ interface UserProfile {
 const ProfilePage = () => {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [openToast, setOpenToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState("");
+  const [toastSeverity, setToastSeverity] = useState<"success" | "error">("success");
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
   const [passwordData, setPasswordData] = useState({
     currentPassword: '',
@@ -31,12 +34,12 @@ const ProfilePage = () => {
     setPasswordError('');
 
     if (passwordData.newPassword !== passwordData.confirmPassword) {
-      setPasswordError('New passwords do not match');
+      setPasswordError('New passwords do not match!');
       return;
     }
 
     if (passwordData.newPassword.length < 6) {
-      setPasswordError('Password must be at least 6 characters long');
+      setPasswordError('Password must be at least 6 characters long!');
       return;
     }
 
@@ -55,15 +58,38 @@ const ProfilePage = () => {
       if (response.ok) {
         setShowPasswordDialog(false);
         setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
-        // You might want to show a success message here
+        setToastSeverity("success");
+        setToastMessage("Password changed successfully!");
+        setOpenToast(true);
       } else {
         const error = await response.json();
         setPasswordError(error.message || 'Failed to change password');
+        console.error('Error changing password:', error);
+        setToastSeverity("error");
+        setToastMessage("Error changing password!");
+        setOpenToast(true);
       }
     } catch (err) {
       setPasswordError('Error changing password');
       console.error('Error changing password:', err);
+      setToastSeverity("error");
+      setToastMessage("Error changing password!");
+      setOpenToast(true);
     }
+  };
+
+  const [showPasswords, setShowPasswords] = useState({
+    current: false,
+    new: false,
+    confirm: false
+  });
+
+  const togglePasswordVisibility = (field: 'current' | 'new' | 'confirm') => {
+    setShowPasswords(prev => ({ ...prev, [field]: !prev[field] }));
+  };
+
+  const handleCloseToast = () => {
+    setOpenToast(false);
   };
 
   const handleAvatarChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -81,7 +107,9 @@ const ProfilePage = () => {
     const isValidType = allowedTypes.includes(file.type) || allowedExtensions.includes(fileExtension);
 
     if (!isValidType) {
-      toast.error('Invalid file type. Only JPG, JPEG, and PNG are allowed.');
+      setToastSeverity("error");
+      setToastMessage("Invalid file type. Only JPG, JPEG, and PNG are allowed.");
+      setOpenToast(true);
       // Reset the input
       event.target.value = '';
       return;
@@ -90,7 +118,9 @@ const ProfilePage = () => {
     // Check file size (5MB limit)
     const maxSize = 5 * 1024 * 1024; // 5MB
     if (file.size > maxSize) {
-      toast.error('File too large. Maximum size is 5MB.');
+      setToastSeverity("error");
+      setToastMessage("File too large. Maximum size is 5MB.");
+      setOpenToast(true);
       // Reset the input
       event.target.value = '';
       return;
@@ -121,19 +151,27 @@ const ProfilePage = () => {
         if (updateRes.ok) {
           // Update the local state
           setUserProfile((prev) => prev ? { ...prev, avatarUrl } : prev);
-          toast.success('Avatar uploaded successfully!');
+          setToastSeverity("success");
+          setToastMessage("Avatar uploaded successfully!");
+          setOpenToast(true);
         } else {
           const error = await updateRes.json();
-          toast.error(error.message || 'Failed to update avatar');
-          console.error('Failed to update avatar URL in database');
+          setToastSeverity("error");
+          setToastMessage("Failed to update avatar.");
+          setOpenToast(true);
+          console.error('Failed to update avatar URL in database ', error.message);
         }
       } else {
         const error = await uploadRes.json();
-        toast.error(error.message || 'Upload failed! Check your network.');
+        setToastSeverity("error");
+        setToastMessage("Upload failed! Check your network.");
+        setOpenToast(true);
         console.error('Upload failed:', error.message);
       }
     } catch (err) {
-      toast.error("Error uploading file!");
+      setToastSeverity("error");
+      setToastMessage("Error uploading file!");
+      setOpenToast(true);
       console.error('Error uploading file:', err);
     } finally {
       // Reset the input so the same file can be selected again if needed
@@ -151,9 +189,15 @@ const ProfilePage = () => {
           setUserProfile(data);
         } else {
           console.error('Failed to fetch profile');
+          setToastSeverity("error");
+          setToastMessage("Failed to fetch profile!");
+          setOpenToast(true);
         }
       } catch (error) {
         console.error('Error fetching profile:', error);
+        setToastSeverity("error");
+        setToastMessage("Failed to fetch profile!");
+        setOpenToast(true);
       } finally {
         setLoading(false);
       }
@@ -359,28 +403,58 @@ const ProfilePage = () => {
         <DialogContent>
           <TextField
             fullWidth
-            type="password"
+            type={showPasswords.current ? 'text' : 'password'}
             label="Current Password"
             value={passwordData.currentPassword}
             onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
             margin="normal"
+            InputProps={{
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton onClick={() => togglePasswordVisibility('current')} edge="end">
+                    {showPasswords.current ? <VisibilityOff /> : <Visibility />}
+                  </IconButton>
+                </InputAdornment>
+              )
+            }}
           />
+
           <TextField
             fullWidth
-            type="password"
+            type={showPasswords.new ? 'text' : 'password'}
             label="New Password"
             value={passwordData.newPassword}
             onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
             margin="normal"
+            InputProps={{
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton onClick={() => togglePasswordVisibility('new')} edge="end">
+                    {showPasswords.new ? <VisibilityOff /> : <Visibility />}
+                  </IconButton>
+                </InputAdornment>
+              )
+            }}
           />
+
           <TextField
             fullWidth
-            type="password"
+            type={showPasswords.confirm ? 'text' : 'password'}
             label="Confirm New Password"
             value={passwordData.confirmPassword}
             onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
             margin="normal"
+            InputProps={{
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton onClick={() => togglePasswordVisibility('confirm')} edge="end">
+                    {showPasswords.confirm ? <VisibilityOff /> : <Visibility />}
+                  </IconButton>
+                </InputAdornment>
+              )
+            }}
           />
+
           {passwordError && (
             <Typography color="error" variant="body2" sx={{ mt: 1 }}>
               {passwordError}
@@ -394,6 +468,21 @@ const ProfilePage = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      <Snackbar 
+        open={openToast} 
+        autoHideDuration={6000} 
+        onClose={handleCloseToast}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+      >
+        <Alert 
+          onClose={handleCloseToast} 
+          severity={toastSeverity} 
+          sx={{ width: '100%' }}
+        >
+          {toastMessage}
+        </Alert>
+      </Snackbar>
     </Layout>
   );
 };
