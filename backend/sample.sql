@@ -1,7 +1,7 @@
 -- This script sets up the initial database and tables for our application.
 
 -- Uncomment this command below if your tables are different
--- DROP DATABASE IF EXISTS game_haven; 
+DROP DATABASE IF EXISTS game_haven; 
 
 SET profiling = 1;
 
@@ -42,13 +42,34 @@ SET NEW.avatarUrl =
     ELSE NEW.avatarUrl
   END;
 
+-- Default password: Password1234
 INSERT IGNORE INTO game_haven.users (firstName, lastName, gender, contactNo, email, password, is_admin, avatarUrl)
 VALUES ('Qwerty', 'Tan', 'M', '84738837', 'qwerty@admin.com', '$2b$10$lk0vHQMPHYMtbX4BtCzJ.OCGgQ6qcSYQGOixa4Y4hEsrmNMC7P.v2', 'T', '/images/profile/user-1.jpg');
 
 INSERT IGNORE INTO game_haven.users (firstName, lastName, gender, contactNo, email, password, is_admin, avatarUrl) 
 VALUES ('alicia', 'tang', 'F', '80354633', 'aliciatangweishan@gmail.com', '$2b$10$lk0vHQMPHYMtbX4BtCzJ.OCGgQ6qcSYQGOixa4Y4hEsrmNMC7P.v2', 'F', '/images/profile/user-2.jpg');
 
--- 3. Game Table
+-- 3. Genre Table
+CREATE TABLE Genre (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(50) UNIQUE NOT NULL
+);
+
+-- 4. Promotion Table
+CREATE TABLE Promotion (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    code VARCHAR(100) NOT NULL UNIQUE,
+    description VARCHAR(255) NOT NULL,
+    discountValue DECIMAL(10, 2) NOT NULL,
+    maxUsage INT DEFAULT NULL,
+    usedCount INT DEFAULT 0,
+    startDate DATE NOT NULL,
+    endDate DATE NOT NULL,
+    isActive BOOLEAN DEFAULT TRUE,
+    applicableToAll BOOLEAN DEFAULT TRUE
+);
+
+-- 5. Game Table (references Promotion table)
 CREATE TABLE Game (
     id INT AUTO_INCREMENT PRIMARY KEY,
     title VARCHAR(150) NOT NULL,
@@ -61,7 +82,7 @@ CREATE TABLE Game (
     FOREIGN KEY (promo_id) REFERENCES Promotion(id)
 );
 
--- 4.GameGenre Table
+-- 6. GameGenre Table (references Game and Genre tables)
 CREATE TABLE GameGenre (
     game_id INT NOT NULL,
     genre_id INT NOT NULL,
@@ -70,21 +91,15 @@ CREATE TABLE GameGenre (
     FOREIGN KEY (genre_id) REFERENCES Genre(id)
 );
 
--- 5. Genre Table
-CREATE TABLE Genre (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(50) UNIQUE NOT NULL
-);
-
--- 6. Order Table (for many-to-many relationship)
+-- 7. Order Table
 CREATE TABLE Orders (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
     purchase_date DATE NOT NULL,
-    FOREIGN KEY (user_id) REFERENCES Users(id)
+    FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
--- 7. RentalTable
+-- 8. Rental Table
 CREATE TABLE RentalRecord (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
@@ -93,20 +108,6 @@ CREATE TABLE RentalRecord (
     return_date DATE,
     duration INT,
     returned BOOLEAN DEFAULT FALSE,
-    FOREIGN KEY (user_id) REFERENCES Users(id),
+    FOREIGN KEY (user_id) REFERENCES users(id),
     FOREIGN KEY (game_id) REFERENCES Game(id)
-);
-
--- 8. PromotionTable
-CREATE TABLE Promotion (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    code VARCHAR(100) NOT NULL UNIQUE,
-    description VARCHAR(255) NOT NULL,
-    discountValue DECIMAL(10, 2) NOT NULL,
-    maxUsage INT DEFAULT NULL,
-    usedCount INT DEFAULT 0,
-    startDate DATE NOT NULL,
-    endDate DATE NOT NULL,
-    isActive BOOLEAN DEFAULT TRUE,
-    applicableToAll BOOLEAN DEFAULT TRUE
 );
