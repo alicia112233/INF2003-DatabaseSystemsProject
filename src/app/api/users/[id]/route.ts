@@ -12,69 +12,58 @@ const dbConfig = {
 };
 
 // PUT - Update user
-export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(req: NextRequest, context: { params: { id: string }}) {
   let connection;
 
   try {
+    const { id } = context.params;
+    const { firstName, lastName, gender, contactNo, email, is_admin, password } = await req.json();
+
     const userRole = req.cookies.get('userRole')?.value;
-    const currentUserId = req.cookies.get('userId')?.value;
 
     if (userRole !== 'admin') {
-      return NextResponse.json(
-        { error: 'Unauthorized access' },
-        { status: 403 }
-      );
+      return NextResponse.json({ error: 'Unauthorized access' }, { status: 403 });
     }
-
-    const userId = params.id;
-    const { firstName, lastName, gender, contactNo, email, is_admin, password } = await req.json();
 
     connection = await mysql.createConnection(dbConfig);
 
-    // Check if email already exists for other users
+    // Check if email already exists for another user
     const [existingUsers] = await connection.query<RowDataPacket[]>(
       'SELECT id FROM users WHERE email = ? AND id != ?',
-      [email, userId]
+      [email, id]
     );
 
     if (Array.isArray(existingUsers) && existingUsers.length > 0) {
-      return NextResponse.json(
-        { error: 'Email already exists' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Email already exists' }, { status: 400 });
     }
 
     let updateQuery = `UPDATE users SET firstName = ?, lastName = ?, gender = ?, 
-                       contactNo = ?, email = ?, is_admin = ? WHERE id = ?`;
-    let updateParams = [firstName, lastName, gender, contactNo, email, is_admin, userId];
+                       contactNo = ?, email = ?, is_admin = ?`;
+    const updateParams: any[] = [firstName, lastName, gender, contactNo, email, is_admin];
 
-    // If password is provided, hash and update it
+    // Include password only if it's provided and non-empty
     if (password && password.trim() !== '') {
       const hashedPassword = await bcrypt.hash(password, 10);
-      updateQuery = `UPDATE users SET firstName = ?, lastName = ?, gender = ?, 
-                     contactNo = ?, email = ?, is_admin = ?, password = ? WHERE id = ?`;
-      updateParams = [firstName, lastName, gender, contactNo, email, is_admin, hashedPassword, userId];
+      updateQuery += `, password = ?`;
+      updateParams.push(hashedPassword);
     }
+
+    updateQuery += ` WHERE id = ?`;
+    updateParams.push(id);
 
     await connection.execute(updateQuery, updateParams);
 
     return NextResponse.json({ message: 'User updated successfully' });
-
   } catch (error) {
     console.error('Error updating user:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   } finally {
-    if (connection) {
-      await connection.end();
-    }
+    if (connection) await connection.end();
   }
 }
 
 // DELETE - Delete user
-export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(req: NextRequest, context: { params: { id: string } }) {
   let connection;
 
   try {
@@ -88,10 +77,10 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
       );
     }
 
-    const userId = params.id;
+    const { id } = context.params;
 
     // Prevent admin from deleting themselves
-    if (currentUserId === userId) {
+    if (currentUserId === id) {
       return NextResponse.json(
         { error: 'Cannot delete your own account' },
         { status: 400 }
@@ -100,7 +89,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
 
     connection = await mysql.createConnection(dbConfig);
 
-    await connection.execute('DELETE FROM users WHERE id = ?', [userId]);
+    await connection.execute('DELETE FROM users WHERE id = ?', [id]);
 
     return NextResponse.json({ message: 'User deleted successfully' });
 

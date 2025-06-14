@@ -107,10 +107,6 @@ const UserManagement = () => {
     customerUsers: 0,
   });
 
-  useEffect(() => {
-    fetchUsers();
-  }, []);
-
   // Filtered users based on search and filters
   const filteredUsers = useMemo(() => {
     return users.filter(user => {
@@ -131,25 +127,6 @@ const UserManagement = () => {
     const startIndex = page * rowsPerPage;
     return filteredUsers.slice(startIndex, startIndex + rowsPerPage);
   }, [filteredUsers, page, rowsPerPage]);
-
-  const fetchUsers = async () => {
-    try {
-      setLoading(true);
-      const response = await fetch('/api/users');
-      const data = await response.json();
-
-      if (response.ok) {
-        setUsers(data.users);
-        calculateStats(data.users);
-      } else {
-        setError(data.error || 'Failed to fetch users');
-      }
-    } catch (error) {
-      setError('Failed to fetch users');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const calculateStats = (userList: User[]) => {
     const totalUsers = userList.length;
@@ -215,7 +192,6 @@ const UserManagement = () => {
       if (response.ok) {
         setSuccess(data.message);
         handleCloseDialog();
-        fetchUsers();
       } else {
         setError(data.error || 'Operation failed');
       }
@@ -238,7 +214,6 @@ const UserManagement = () => {
         setSuccess(data.message);
         setDeleteDialog(false);
         setUserToDelete(null);
-        fetchUsers();
       } else {
         setError(data.error || 'Failed to delete user');
       }
@@ -259,6 +234,29 @@ const UserManagement = () => {
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString();
   };
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch('/api/users');
+        const data = await response.json();
+
+        if (response.ok) {
+          setUsers(data.users);
+          calculateStats(data.users);
+        } else {
+          setError(data.error || 'Failed to fetch users');
+        }
+      } catch (error) {
+        setError('Failed to fetch users');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUsers();
+  }, []);
 
   if (loading) {
     return (
@@ -364,7 +362,7 @@ const UserManagement = () => {
                   <TableCell>Gender</TableCell>
                   <TableCell>Role</TableCell>
                   <TableCell>Loyalty Points</TableCell>
-                  <TableCell>Created</TableCell>
+                  <TableCell>Created At</TableCell>
                   <TableCell>Actions</TableCell>
                 </TableRow>
               </TableHead>
@@ -498,6 +496,7 @@ const UserManagement = () => {
                   <Select
                     value={formData.gender}
                     label="Gender"
+                    displayEmpty
                     onChange={(e) => setFormData({ ...formData, gender: e.target.value as 'M' | 'F' })}
                   >
                     <MenuItem value="M">Male</MenuItem>

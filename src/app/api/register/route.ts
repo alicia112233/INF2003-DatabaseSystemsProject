@@ -20,12 +20,12 @@ export async function POST(request: NextRequest) {
     // Validate input
     const errors: Record<string, string> = {};
 
-    if (!firstName) errors.firstname = 'First name is required';
-    if (!lastName) errors.lastname = 'Last name is required';
-    if (!gender) errors.gender = 'Gender is required';
-    if (!contactNo) errors.contactNumber = 'Contact number is required';
-    if (!email) errors.email = 'Email is required';
-    if (!password) errors.password = 'Password is required';
+    if (!firstName?.trim()) errors.firstName = 'First name is required';
+    if (!lastName?.trim()) errors.lastName = 'Last name is required';
+    if (!gender || !['M', 'F'].includes(gender)) errors.gender = 'Valid gender is required';
+    if (!contactNo?.trim()) errors.contactNo = 'Contact number is required';
+    if (!email?.trim()) errors.email = 'Email is required';
+    if (!password || password.length < 6) errors.password = 'Password must be at least 6 characters';
 
     // Validate gender format (should be 'M' or 'F' based on schema)
     if (gender && !['M', 'F'].includes(gender)) {
