@@ -12,11 +12,11 @@ const dbConfig = {
 };
 
 // PUT - Update user
-export async function PUT(req: NextRequest, context: { params: { id: string }}) {
+export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   let connection;
 
   try {
-    const { id } = context.params;
+    const { id } = await params;
     const { firstName, lastName, gender, contactNo, email, is_admin, password } = await req.json();
 
     const userRole = req.cookies.get('userRole')?.value;
@@ -63,7 +63,7 @@ export async function PUT(req: NextRequest, context: { params: { id: string }}) 
 }
 
 // DELETE - Delete user
-export async function DELETE(req: NextRequest, context: { params: { id: string } }) {
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   let connection;
 
   try {
@@ -77,7 +77,7 @@ export async function DELETE(req: NextRequest, context: { params: { id: string }
       );
     }
 
-    const { id } = context.params;
+    const { id } = await params;
 
     // Prevent admin from deleting themselves
     if (currentUserId === id) {

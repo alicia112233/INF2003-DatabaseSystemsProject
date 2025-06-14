@@ -33,7 +33,13 @@ const UserFilters: React.FC<UserFiltersProps> = ({
   return (
     <Box sx={{ mb: 3 }}>
       <Grid container spacing={2}>
-        <Grid item xs={12} md={6}>
+        <Grid 
+          size={{
+            xs: 12,
+            md: 6,
+            lg: 6,
+          }}
+        >
           <TextField
             fullWidth
             placeholder="Search users by name or email..."
@@ -48,7 +54,13 @@ const UserFilters: React.FC<UserFiltersProps> = ({
             }}
           />
         </Grid>
-        <Grid item xs={12} md={3}>
+        <Grid 
+          size={{
+            xs: 12,
+            md: 6,
+            lg: 3,
+          }}
+        >
           <FormControl fullWidth>
             <InputLabel>Role</InputLabel>
             <Select
@@ -62,7 +74,13 @@ const UserFilters: React.FC<UserFiltersProps> = ({
             </Select>
           </FormControl>
         </Grid>
-        <Grid item xs={12} md={3}>
+        <Grid 
+          size={{
+            xs: 12,
+            md: 6,
+            lg: 3,
+          }}
+        >
           <FormControl fullWidth>
             <InputLabel>Gender</InputLabel>
             <Select

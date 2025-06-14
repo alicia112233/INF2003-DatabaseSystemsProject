@@ -283,7 +283,12 @@ const UserManagement = () => {
 
         {/* Statistics Cards */}
         <Grid container spacing={3} sx={{ mb: 3 }}>
-          <Grid item xs={12} md={4}>
+          <Grid 
+            size={{
+              xs: 12,
+              md: 4,
+            }}
+          >
             <Card>
               <CardContent>
                 <Box display="flex" alignItems="center">
@@ -297,7 +302,12 @@ const UserManagement = () => {
             </Card>
           </Grid>
           
-          <Grid item xs={12} md={4}>
+          <Grid 
+            size={{
+              xs: 12,
+              md: 4,
+            }}
+          >
             <Card>
               <CardContent>
                 <Box display="flex" alignItems="center">
@@ -311,7 +321,12 @@ const UserManagement = () => {
             </Card>
           </Grid>
           
-          <Grid item xs={12} md={4}>
+          <Grid 
+            size={{
+              xs: 12,
+              md: 4,
+            }}
+          >
             <Card>
               <CardContent>
                 <Box display="flex" alignItems="center">
@@ -453,7 +468,13 @@ const UserManagement = () => {
           </DialogTitle>
           <DialogContent>
             <Grid container spacing={2} sx={{ mt: 1 }}>
-              <Grid item xs={12} sm={6}>
+              <Grid 
+                size={{
+                  xs: 12,
+                  md: 6,
+                  lg: 6,
+                }}
+              >
                 <TextField
                   fullWidth
                   label="First Name"
@@ -462,7 +483,13 @@ const UserManagement = () => {
                   required
                 />
               </Grid>
-              <Grid item xs={12} sm={6}>
+              <Grid 
+                size={{
+                  xs: 12,
+                  md: 6,
+                  lg: 6,
+                }}
+              >
                 <TextField
                   fullWidth
                   label="Last Name"
@@ -471,7 +498,13 @@ const UserManagement = () => {
                   required
                 />
               </Grid>
-              <Grid item xs={12}>
+              <Grid 
+                size={{
+                  xs: 12,
+                  md: 6,
+                  lg: 8,
+                }}
+              >
                 <TextField
                   fullWidth
                   label="Email"
@@ -481,7 +514,13 @@ const UserManagement = () => {
                   required
                 />
               </Grid>
-              <Grid item xs={12} sm={6}>
+              <Grid 
+                size={{
+                  xs: 12,
+                  md: 6,
+                  lg: 4,
+                }}
+              >
                 <TextField
                   fullWidth
                   label="Contact Number"
@@ -490,7 +529,13 @@ const UserManagement = () => {
                   required
                 />
               </Grid>
-              <Grid item xs={12} sm={6}>
+              <Grid 
+                size={{
+                  xs: 12,
+                  sm: 6,
+                  lg: 6,
+                }}
+              >
                 <FormControl fullWidth required>
                   <InputLabel>Gender</InputLabel>
                   <Select
@@ -504,7 +549,13 @@ const UserManagement = () => {
                   </Select>
                 </FormControl>
               </Grid>
-              <Grid item xs={12}>
+              <Grid 
+                size={{
+                  xs: 12,
+                  md: 6,
+                  lg: 6,
+                }}
+              >
                 <FormControl fullWidth>
                   <InputLabel>Role</InputLabel>
                   <Select
@@ -517,7 +568,13 @@ const UserManagement = () => {
                   </Select>
                 </FormControl>
               </Grid>
-              <Grid item xs={12}>
+              <Grid 
+                size={{
+                  xs: 12,
+                  md: 6,
+                  lg: 12,
+                }}
+              >
                 <TextField
                   fullWidth
                   label={dialogMode === 'create' ? 'Password' : 'New Password (leave blank to keep current)'}
