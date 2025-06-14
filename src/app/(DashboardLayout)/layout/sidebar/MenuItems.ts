@@ -58,7 +58,7 @@ export const getMenuItems = (isLoggedIn: boolean, userRole: string = 'customer')
     },
     {
       navlabel: true,
-      subheader: "CATERGORIES",
+      subheader: "CATEGORIES",
     },
     {
       id: uniqueId(),
@@ -210,7 +210,7 @@ export const getMenuItems = (isLoggedIn: boolean, userRole: string = 'customer')
     },
     {
       navlabel: true,
-      subheader: "CATERGORIES",
+      subheader: "CATEGORIES",
     },
     {
       id: uniqueId(),
