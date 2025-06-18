@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS users (
   password VARCHAR(200) NOT NULL,
   is_admin CHAR(1) NOT NULL DEFAULT 'F',
   avatarUrl VARCHAR(200) NOT NULL,
-  createdAt VARCHAR(45) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  createdAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   paymentMethod VARCHAR(45) NULL,
   loyaltyPoints INT NULL DEFAULT 0,
   resetToken VARCHAR(255) NULL,
@@ -50,8 +50,8 @@ INSERT IGNORE INTO game_haven.users (firstName, lastName, gender, contactNo, ema
 VALUES ('alicia', 'tang', 'F', '80354633', 'aliciatangweishan@gmail.com', '$2b$10$lk0vHQMPHYMtbX4BtCzJ.OCGgQ6qcSYQGOixa4Y4hEsrmNMC7P.v2', 'F', '/images/profile/user-2.jpg');
 
 -- 3. Genre Table
-CREATE TABLE Genre (
-    id INT AUTO_INCREMENT PRIMARY KEY,
+CREATE TABLE IF NOT EXISTS Genre (
+    id INT PRIMARY KEY,
     name VARCHAR(50) UNIQUE NOT NULL
 );
 
@@ -70,11 +70,13 @@ CREATE TABLE Promotion (
 );
 
 -- 5. Game Table (references Promotion table)
-CREATE TABLE Game (
-    id INT AUTO_INCREMENT PRIMARY KEY,
+CREATE TABLE IF NOT EXISTS Game (
+    id INT PRIMARY KEY,
     title VARCHAR(150) NOT NULL,
+    description TEXT,
     platform VARCHAR(50),
     price DECIMAL(10,2),
+    image_url VARCHAR(512),
     release_date DATE,
     is_digital BOOLEAN DEFAULT FALSE,
     stock_count INT DEFAULT 0,
@@ -83,7 +85,7 @@ CREATE TABLE Game (
 );
 
 -- 6. GameGenre Table (references Game and Genre tables)
-CREATE TABLE GameGenre (
+CREATE TABLE IF NOT EXISTS GameGenre (
     game_id INT NOT NULL,
     genre_id INT NOT NULL,
     PRIMARY KEY (game_id, genre_id),
@@ -110,4 +112,15 @@ CREATE TABLE RentalRecord (
     returned BOOLEAN DEFAULT FALSE,
     FOREIGN KEY (user_id) REFERENCES users(id),
     FOREIGN KEY (game_id) REFERENCES Game(id)
+);
+
+-- 9. Wishlist Table
+CREATE TABLE IF NOT EXISTS Wishlist (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    game_id INT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id),
+    FOREIGN KEY (game_id) REFERENCES Game(id),
+    UNIQUE KEY unique_wishlist (user_id, game_id)
 );

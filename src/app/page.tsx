@@ -1,193 +1,115 @@
 'use client';
-import { Box, Typography, Button } from '@mui/material';
+import { useState, useEffect } from 'react';
+import { Box, Typography, Button, Card, CardContent, CardMedia, Stack } from '@mui/material';
+import Grid from '@mui/material/Grid';
 import PageContainer from '@/app/(DashboardLayout)/components/container/PageContainer';
 import DashboardCard from '@/app/(DashboardLayout)/components/shared/DashboardCard';
-import Blog from '@/app/(DashboardLayout)/components/dashboard/Blog';
-import { useState, useEffect } from 'react';
-import Image from 'next/image';
-import BlankCard from '@/app/(DashboardLayout)/components/shared/BlankCard';
-import { IconChevronLeft, IconChevronRight, IconShoppingCart, IconStar } from '@tabler/icons-react';
 import Layout from '@/components/layout';
 
-// Sample customer home product data page
-const products = [
-    {
-        id: 1,
-        title: "Summoners War",
-        description: "A turn-based mobile RPG where players summon monsters to battle in strategic PvE and PvP combat.",
-        photo: '/images/products/SW.jpg',
-        price: 129,
-        rating: 5,
-    },
-    {
-        id: 2,
-        title: "Once Human",
-        description: "A multiplayer open-world survival game set in a post-apocalyptic world filled with supernatural horrors and alien corruption.",
-        photo: '/images/products/OH.jpg',
-        price: 233,
-        rating: 4,
-    },
-    {
-        id: 3,
-        title: "Dota 2",
-        description: "A competitive multiplayer online battle arena (MOBA) game where two teams of five heroes clash in strategic, high-skill matches to destroy the enemy's Ancient.",
-        photo: '/images/products/dota2.jpg',
-        price: 255,
-        rating: 5,
-    },
-    {
-        id: 4,
-        title: "Wuthering Waves",
-        description: "An open-world action RPG featuring fast-paced combat, deep lore, and exploration in a post-apocalyptic sci-fi setting.",
-        photo: '/images/products/WW.jpg',
-        price: 129,
-        rating: 4,
-    },
-];
-
-const HomePage = () => {
-    const [currentIndex, setCurrentIndex] = useState(0);
-
-    const nextSlide = () => {
-        setCurrentIndex((prevIndex) =>
-            prevIndex === products.length - 1 ? 0 : prevIndex + 1
-        );
-    };
-
-    const prevSlide = () => {
-        setCurrentIndex((prevIndex) =>
-            prevIndex === 0 ? products.length - 1 : prevIndex - 1
-        );
-    };
-
-    const currentProduct = products[currentIndex];
-
-    // auto slide every 3 seconds
-    useEffect(() => {
-        const interval = setInterval(() => {
-            nextSlide();
-        }, 3000);
-
-        return () => clearInterval(interval); // Cleanup on unmount
-    }, []);
-
-    return (
-        <Layout>
-            <PageContainer title="Game Haven" description="Your ultimate gaming destination">
-                <DashboardCard title="Featured & Recommended 👍">
-                    <Box sx={{ position: 'relative', width: '100%', height: '400px' }}>
-                        {/* Left navigation button */}
-                        <Button
-                            variant="contained"
-                            color="primary"
-                            onClick={prevSlide}
-                            sx={{
-                                minWidth: '40px',
-                                width: '40px',
-                                height: '40px',
-                                borderRadius: '50%',
-                                position: 'absolute',
-                                left: '10px',
-                                top: '50%',
-                                transform: 'translateY(-50%)',
-                                zIndex: 10
-                            }}
-                        >
-                            <IconChevronLeft size={20} />
-                        </Button>
-
-                        <BlankCard>
-                            <Box sx={{
-                                display: 'flex',
-                                flexDirection: { xs: 'column', md: 'row' },
-                                alignItems: 'center',
-                                p: 3
-                            }}>
-                                <Box sx={{
-                                    position: 'relative',
-                                    width: { xs: '100%', md: '50%' },
-                                    height: '300px'
-                                }}>
-                                    <Image
-                                        src={currentProduct.photo}
-                                        alt={currentProduct.title}
-                                        layout="fill"
-                                        objectFit="contain"
-                                    />
-                                </Box>
-                                <Box sx={{
-                                    width: { xs: '100%', md: '50%' },
-                                    p: 3,
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    justifyContent: 'center'
-                                }}>
-                                    <Typography variant="h3" sx={{ mb: 2 }}>
-                                        {currentProduct.title}
-                                    </Typography>
-                                    <Typography variant="body1" sx={{ mb: 3 }}>
-                                        {currentProduct.description}
-                                    </Typography>
-                                    <Typography variant="h4" color="primary" sx={{ mb: 3 }}>
-                                        ${currentProduct.price}
-                                    </Typography>
-                                    <Box sx={{ display: 'flex', gap: 2 }}>
-                                        <Button
-                                            variant="contained"
-                                            color="primary"
-                                            startIcon={<IconShoppingCart size={20} />}
-                                            sx={{ maxWidth: '200px' }}
-                                        >
-                                            Add to Cart
-                                        </Button>
-                                        <Button
-                                            variant="contained"
-                                            startIcon={<IconStar size={20} />}
-                                            sx={{
-                                                maxWidth: '200px',
-                                                bgcolor: '#B8860B', // Dark yellow/goldenrod color
-                                                '&:hover': {
-                                                    bgcolor: '#9A7209', // Slightly darker on hover
-                                                }
-                                            }}
-                                        >
-                                            Add to WishList
-                                        </Button>
-                                    </Box>
-                                </Box>
-                            </Box>
-                        </BlankCard>
-
-                        {/* Right navigation button */}
-                        <Button
-                            variant="contained"
-                            color="primary"
-                            onClick={nextSlide}
-                            sx={{
-                                minWidth: '40px',
-                                width: '40px',
-                                height: '40px',
-                                borderRadius: '50%',
-                                position: 'absolute',
-                                right: '10px',
-                                top: '50%',
-                                transform: 'translateY(-50%)',
-                                zIndex: 10
-                            }}
-                        >
-                            <IconChevronRight size={20} />
-                        </Button>
-                    </Box>
-                </DashboardCard>
-
-                <Box sx={{ mt: 4 }}>
-                    <DashboardCard title="More Games">
-                        <Blog />
-                    </DashboardCard>
-                </Box>
-            </PageContainer>
-        </Layout>
-    );
+type Game = {
+  id: number;
+  title: string;
+  description?: string;
+  image_url?: string;
+  price: number;
 };
 
-export default HomePage;
+const Recommendations = () => {
+  const [games, setGames] = useState<Game[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch('/api/recommendations')
+      .then(res => res.json())
+      .then(data => {
+        setGames(data.recommendations || []);
+        setLoading(false);
+      });
+  }, []);
+
+  if (loading) return <Typography>Loading recommendations...</Typography>;
+  if (games.length === 0) return <Typography>No recommendations available.</Typography>;
+
+  return (
+    <Box sx={{ display: 'flex', flexDirection: 'row', gap: 3, flexWrap: 'wrap', justifyContent: 'center' }}>
+      {games.map(game => (
+        <Card key={game.id} sx={{ width: 340, minHeight: 420, display: 'flex', flexDirection: 'column', boxShadow: 3 }}>
+          {game.image_url && (
+            <CardMedia
+              component="img"
+              height="180"
+              image={game.image_url}
+              alt={game.title}
+            />
+          )}
+          <CardContent sx={{ flexGrow: 1 }}>
+            <Typography variant="h5" gutterBottom>{game.title}</Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2, minHeight: 60 }}>
+              {game.description ? game.description.slice(0, 100) + (game.description.length > 100 ? '...' : '') : ''}
+            </Typography>
+            <Typography variant="h6" color="primary" sx={{ mb: 2 }}>
+              ${game.price}
+            </Typography>
+            <Stack direction="row" spacing={2}>
+              <Button variant="contained" color="primary">Add to Cart</Button>
+              <Button variant="contained" sx={{ bgcolor: '#B8860B', '&:hover': { bgcolor: '#9A7209' } }}>
+                Add to Wishlist
+              </Button>
+            </Stack>
+          </CardContent>
+        </Card>
+      ))}
+    </Box>
+  );
+};
+
+// Example MoreGames component (replace with your actual implementation)
+const MoreGames = () => {
+  const [games, setGames] = useState<Game[]>([]);
+  useEffect(() => {
+    fetch('/api/games') // Replace with your actual endpoint for all games
+      .then(res => res.json())
+      .then (data => setGames(data.games || []));
+  }, []);
+  return (
+    <Box sx={{ mt: 6 }}>
+      <Typography variant="h5" sx={{ mb: 2 }}>More Games</Typography>
+      <Grid container spacing={3}>
+        {games.map(game => (
+          <Grid item xs={12} sm={6} md={3} key={game.id}>
+            <Card sx={{ height: 320, display: 'flex', flexDirection: 'column' }}>
+              {game.image_url && (
+                <CardMedia
+                  component="img"
+                  height="140"
+                  image={game.image_url}
+                  alt={game.title}
+                  sx={{ objectFit: 'cover' }}
+                />
+              )}
+              <CardContent>
+                <Typography variant="subtitle1">{game.title}</Typography>
+                <Typography variant="body2" color="text.secondary">
+                  ${game.price}
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+        ))}
+      </Grid>
+    </Box>
+  );
+};
+
+export default function HomePage() {
+  return (
+    <Layout>
+      <PageContainer title="Game Haven" description="Your ultimate gaming destination">
+        <DashboardCard title="Featured & Recommended 👍">
+          <Recommendations />
+        </DashboardCard>
+        <MoreGames />
+      </PageContainer>
+    </Layout>
+  );
+}
