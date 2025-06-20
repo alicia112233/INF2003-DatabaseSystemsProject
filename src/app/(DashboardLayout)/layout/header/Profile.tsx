@@ -8,16 +8,21 @@ import {
   MenuItem,
   ListItemIcon,
   ListItemText,
-
 } from "@mui/material";
 
 import { IconShoppingCart, IconStar, IconUser } from "@tabler/icons-react";
 import { CalendarMonth, Inventory, Settings } from "@mui/icons-material";
 import { useRouter } from "next/navigation";
 
+// Global variable to track if profile has been fetched
+let profileFetched = false;
+let cachedAvatarUrl: string | null = null;
+
 const Profile = () => {
   const [anchorEl2, setAnchorEl2] = useState(null);
-  const [avatarSrc, setAvatarSrc] = useState("/images/profile/user-1.jpg");
+  const [avatarSrc, setAvatarSrc] = useState(
+    cachedAvatarUrl || "/images/profile/user-1.jpg"
+  );
   const router = useRouter();
 
   const handleClick2 = (event: any) => {
@@ -36,23 +41,46 @@ const Profile = () => {
   const handleLogout = () => {
     localStorage.removeItem("isLoggedIn");
     localStorage.removeItem("userEmail");
-    window.location.href = "/"; // or use router.push("/")
+    // Reset the global cache on logout
+    profileFetched = false;
+    cachedAvatarUrl = null;
+    window.location.href = "/";
   };
 
   useEffect(() => {
+    if (profileFetched) {
+      console.log("Profile already fetched globally, using cached data");
+      if (cachedAvatarUrl) {
+        setAvatarSrc(cachedAvatarUrl);
+      }
+      return;
+    }
+
+    console.log("Fetching profile for the first time globally...");
+    profileFetched = true;
+
     const fetchProfile = async () => {
       try {
         const res = await fetch("/api/profile");
         if (!res.ok) throw new Error("Failed to fetch profile");
         const data = await res.json();
-        setAvatarSrc(data.avatarUrl || "/images/profile/user-1.jpg");
+        const avatarUrl = data.avatarUrl || "/images/profile/user-1.jpg";
+        
+        // Cache the result globally
+        cachedAvatarUrl = avatarUrl;
+        setAvatarSrc(avatarUrl);
+        console.log("Profile fetched and cached successfully");
       } catch (err) {
-        console.error(err);
+        console.error("Error fetching profile:", err);
+        // Reset on error so it can retry
+        profileFetched = false;
       }
     };
+
     fetchProfile();
   }, []);
 
+  // Rest of your component remains the same...
   return (
     <Box>
       <Button
@@ -85,9 +113,7 @@ const Profile = () => {
           }}
         />
       </IconButton>
-      {/* ------------------------------------------- */}
-      {/* Message Dropdown */}
-      {/* ------------------------------------------- */}
+      
       <Menu
         id="msgs-menu"
         anchorEl={anchorEl2}

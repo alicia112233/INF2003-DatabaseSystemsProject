@@ -55,18 +55,51 @@ CREATE TABLE Genre (
     name VARCHAR(50) UNIQUE NOT NULL
 );
 
+-- Insert Genre data
+INSERT IGNORE INTO Genre (genre_id, name) VALUES
+(1, 'action'),
+(2, 'adventure'),
+(3, 'animation modeling'),
+(4, 'audio production'),
+(5, 'casual'),
+(6, 'design illustration'),
+(7, 'early access'),
+(8, 'education'),
+(9, 'free to play'),
+(10, 'game development'),
+(11, 'gore'),
+(12, 'indie'),
+(13, 'massively multiplayer'),
+(14, 'nudity'),
+(15, 'photo editing'),
+(16, 'racing'),
+(17, 'rpg'),
+(18, 'sexual content'),
+(19, 'simulation'),
+(20, 'software training'),
+(21, 'sports'),
+(22, 'strategy'),
+(23, 'survival'),
+(24, 'utilities'),
+(25, 'video production'),
+(26, 'violent'),
+(27, 'web publishing');
+
 -- 4. Promotion Table
 CREATE TABLE Promotion (
     id INT AUTO_INCREMENT PRIMARY KEY,
     code VARCHAR(100) NOT NULL UNIQUE,
     description VARCHAR(255) NOT NULL,
     discountValue DECIMAL(10, 2) NOT NULL,
+    discountType ENUM('percentage', 'fixed') NOT NULL DEFAULT 'fixed',
     maxUsage INT DEFAULT NULL,
     usedCount INT DEFAULT 0,
     startDate DATE NOT NULL,
     endDate DATE NOT NULL,
     isActive BOOLEAN DEFAULT TRUE,
-    applicableToAll BOOLEAN DEFAULT TRUE
+    applicableToAll BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
 -- 5. Game Table (references Promotion table)
@@ -79,6 +112,8 @@ CREATE TABLE Game (
     is_digital BOOLEAN DEFAULT FALSE,
     stock_count INT DEFAULT 0,
     promo_id INT,
+    head_image_url VARCHAR(255),
+    screenshot_url VARCHAR(255),
     FOREIGN KEY (promo_id) REFERENCES Promotion(id)
 );
 

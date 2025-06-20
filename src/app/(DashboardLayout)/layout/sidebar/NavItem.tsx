@@ -62,7 +62,7 @@ const NavItem = ({ item }: NavItemProps) => {
   }
 
   return (
-    <List component="li" disablePadding key={item.id}>
+    <List disablePadding key={item.id}>
       <ListItemStyled>
         <Link href={item.href || '#'} style={{ textDecoration: 'none', width: '100%' }}>
           <ListItemButtonStyled>

@@ -1,10 +1,9 @@
 import {
   IconLayoutDashboard,
-  IconMoodHappy,
-  IconShoppingCart,
   IconDeviceGamepad,
   IconUsers,
   IconReportAnalytics,
+  IconDiscount,
 } from "@tabler/icons-react";
 import { Upgrade } from "./Upgrade";
 import { uniqueId } from "lodash";
@@ -168,13 +167,19 @@ export const getMenuItems = (isLoggedIn: boolean, userRole: string = 'customer')
     },
     {
       navlabel: true,
-      subheader: "ADMIN",
+      subheader: "ADMIN MANAGEMENT",
     },
     {
       id: uniqueId(),
-      title: "User Management",
+      title: "Users",
       icon: IconUsers,
       href: "/user-management",
+    },
+    {
+      id: uniqueId(),
+      title: 'Promotions',
+      icon: IconDiscount,
+      href: '/promotion-management',
     },
     {
       id: uniqueId(),

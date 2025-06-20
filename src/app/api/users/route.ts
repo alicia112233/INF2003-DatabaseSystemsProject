@@ -109,12 +109,12 @@ export async function POST(req: NextRequest) {
       [firstName.trim(), lastName.trim(), gender, contactNo.trim(), email.trim(), hashedPassword, is_admin || 'F']
     );
 
-    return NextResponse.json({ message: 'User created successfully' });
+    return NextResponse.json({ message: 'User created successfully!' });
 
   } catch (error) {
     console.error('Error creating user:', error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Failed to create user!' },
       { status: 500 }
     );
   } finally {
