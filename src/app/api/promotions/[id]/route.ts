@@ -10,30 +10,45 @@ const dbConfig = {
     database: process.env.MYSQL_DATABASE,
 };
 
-// GET single promotion
+// GET single promotion which includes selected games
 export async function GET(
     request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        // Await params before using
         const { id } = await params;
-
         const connection = await mysql.createConnection(dbConfig);
 
-        const [rows] = await connection.execute(
-            'SELECT * FROM promotion WHERE id = ?',
+        // Get promotion details
+        const [promotionRows] = await connection.execute(
+            'SELECT * FROM Promotion WHERE id = ?',
             [id]
         );
 
-        await connection.end();
-
-        const promotions = rows as any[];
+        const promotions = promotionRows as any[];
         if (promotions.length === 0) {
+            await connection.end();
             return NextResponse.json({ error: 'Promotion not found' }, { status: 404 });
         }
 
-        return NextResponse.json(promotions[0]);
+        const promotion = promotions[0];
+
+        // Get selected games for this promotion (if not applicable to all)
+        let selectedGameIds: number[] = [];
+        if (!promotion.applicableToAll) {
+            const [gameRows] = await connection.execute(
+                'SELECT id FROM Game WHERE promo_id = ?',
+                [id]
+            );
+            selectedGameIds = (gameRows as any[]).map(row => row.id);
+        }
+
+        await connection.end();
+
+        return NextResponse.json({
+            ...promotion,
+            selectedGameIds
+        });
     } catch (error) {
         console.error('Error fetching promotion:', error);
         return NextResponse.json({ error: 'Failed to fetch promotion' }, { status: 500 });
@@ -45,10 +60,10 @@ export async function PUT(
     request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
 ) {
-    try {
-        // Await params before using
-        const { id } = await params;
+    let connection;
 
+    try {
+        const { id } = await params;
         const body = await request.json();
         const {
             code,
@@ -59,25 +74,60 @@ export async function PUT(
             startDate,
             endDate,
             isActive,
-            applicableToAll
+            applicableToAll,
+            selectedGameIds,
         } = body;
 
-        const connection = await mysql.createConnection(dbConfig);
+        connection = await mysql.createConnection(dbConfig);
 
+        // Update the promotion
         await connection.execute(
-            `UPDATE promotion SET 
-        code = ?, description = ?, discountValue = ?, discountType = ?, maxUsage = ?, 
-        startDate = ?, endDate = ?, isActive = ?, applicableToAll = ?
-        WHERE id = ?`,
-            [code, description, discountValue, discountType, maxUsage, startDate, endDate, isActive, applicableToAll, id]
+            `UPDATE Promotion SET 
+       code = ?, description = ?, discountValue = ?, discountType = ?, maxUsage = ?, 
+       startDate = ?, endDate = ?, isActive = ?, applicableToAll = ?
+       WHERE id = ?`,
+            [
+                code,
+                description,
+                discountValue,
+                discountType,
+                maxUsage,
+                startDate,
+                endDate,
+                isActive,
+                applicableToAll,
+                id,
+            ]
         );
 
-        await connection.end();
+        // Unset this promotion from all games
+        await connection.execute(
+            'UPDATE Game SET promo_id = NULL WHERE promo_id = ?',
+            [id]
+        );
+
+        // Apply the promotion again
+        if (applicableToAll) {
+            await connection.execute('UPDATE Game SET promo_id = ?', [id]);
+        } else if (selectedGameIds && selectedGameIds.length > 0) {
+            const placeholders = selectedGameIds.map(() => '?').join(',');
+            await connection.execute(
+                `UPDATE Game SET promo_id = ? WHERE id IN (${placeholders})`,
+                [id, ...selectedGameIds]
+            );
+        }
 
         return NextResponse.json({ message: 'Promotion updated successfully' });
     } catch (error) {
         console.error('Error updating promotion:', error);
-        return NextResponse.json({ error: 'Failed to update promotion' }, { status: 500 });
+        return NextResponse.json(
+            { error: 'Failed to update promotion' },
+            { status: 500 }
+        );
+    } finally {
+        if (connection) {
+            await connection.end();
+        }
     }
 }
 

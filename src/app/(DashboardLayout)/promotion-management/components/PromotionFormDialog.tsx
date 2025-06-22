@@ -15,8 +15,18 @@ import {
     InputLabel,
     Select,
     MenuItem,
+    Chip,
+    OutlinedInput,
+    ListItemText,
+    Checkbox,
 } from '@mui/material';
 import { Promotion, CreatePromotionRequest } from '@/types/promotion';
+
+interface Game {
+    id: number;
+    title: string;
+    // Add other game properties as needed
+}
 
 interface PromotionFormDialogProps {
     open: boolean;
@@ -24,6 +34,15 @@ interface PromotionFormDialogProps {
     onSubmit: (data: CreatePromotionRequest) => void;
     promotion?: Promotion | null;
     loading?: boolean;
+}
+
+interface UpdatePromotionRequest extends CreatePromotionRequest {
+    id?: number;
+}
+
+interface GameWithPromotion extends Game {
+    promo_id?: number | null;
+    promo_code?: string | null;
 }
 
 // Helper function to format date for input[type="date"]
@@ -67,21 +86,74 @@ const PromotionFormDialog: React.FC<PromotionFormDialogProps> = ({
         endDate: '',
         isActive: true,
         applicableToAll: true,
+        selectedGameIds: [],
     });
+
+    // Game state
+    const [games, setGames] = useState<GameWithPromotion[]>([]);
+    const [loadingGames, setLoadingGames] = useState(false);
+
+    // Fetch games when component mounts or when applicableToAll changes to false
+    useEffect(() => {
+        if (open && (!formData.applicableToAll || (promotion && !promotion.applicableToAll))) {
+            fetchGames();
+        }
+    }, [open, formData.applicableToAll, promotion]);
+
+    const fetchGames = async (): Promise<void> => {
+        setLoadingGames(true);
+        try {
+            const response = await fetch('/api/games/with-promotions');
+            if (response.ok) {
+                const gamesData = await response.json();
+                setGames(gamesData);
+            } else {
+                console.error('Failed to fetch games');
+            }
+        } catch (error) {
+            console.error('Error fetching games:', error);
+        } finally {
+            setLoadingGames(false);
+        }
+    };
 
     useEffect(() => {
         if (promotion) {
-            setFormData({
-                code: promotion.code,
-                description: promotion.description,
-                discountValue: promotion.discountValue,
-                discountType: promotion.discountType,
-                maxUsage: promotion.maxUsage || undefined,
-                startDate: formatDateForInput(promotion.startDate),
-                endDate: formatDateForInput(promotion.endDate),
-                isActive: promotion.isActive,
-                applicableToAll: promotion.applicableToAll,
-            });
+            // If promotion is not applicable to all, fetch games first
+            if (!promotion.applicableToAll) {
+                fetchGames().then(() => {
+                    // Fetch assigned games for this promotion
+                    fetchAssignedGames(promotion.id).then((assignedGameIds) => {
+                        // Set form data after games and assigned games are fetched
+                        setFormData({
+                            code: promotion.code,
+                            description: promotion.description,
+                            discountValue: promotion.discountValue,
+                            discountType: promotion.discountType,
+                            maxUsage: promotion.maxUsage || undefined,
+                            startDate: formatDateForInput(promotion.startDate),
+                            endDate: formatDateForInput(promotion.endDate),
+                            isActive: promotion.isActive,
+                            applicableToAll: promotion.applicableToAll,
+                            selectedGameIds: assignedGameIds,
+                        });
+                    });
+                });
+            } else {
+                // If applicable to all, set form data immediately
+                setFormData({
+                    code: promotion.code,
+                    description: promotion.description,
+                    discountValue: promotion.discountValue,
+                    discountType: promotion.discountType,
+                    maxUsage: promotion.maxUsage || undefined,
+                    startDate: formatDateForInput(promotion.startDate),
+                    endDate: formatDateForInput(promotion.endDate),
+                    isActive: promotion.isActive,
+                    applicableToAll: promotion.applicableToAll,
+                    selectedGameIds: [],
+                });
+            }
         } else {
             setFormData({
                 code: '',
@@ -93,10 +165,12 @@ const PromotionFormDialog: React.FC<PromotionFormDialogProps> = ({
                 endDate: '',
                 isActive: true,
                 applicableToAll: true,
+                selectedGameIds: [],
             });
         }
         // Clear errors when dialog opens/closes or promotion changes
         setErrors({});
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [promotion, open]);
 
     const [errors, setErrors] = useState<{
@@ -106,6 +180,7 @@ const PromotionFormDialog: React.FC<PromotionFormDialogProps> = ({
         description?: string;
         dateRange?: string;
         startDate?: string;
+        selectedGames?: string;
     }>({});
 
     // Helper function to validate dates and clear errors when requirements are met
@@ -155,6 +230,7 @@ const PromotionFormDialog: React.FC<PromotionFormDialogProps> = ({
     const validateForm = (): boolean => {
         const newErrors: typeof errors = {};
         const today = getTodayDate();
+
         // Required field validation
         if (!formData.code.trim()) {
             newErrors.code = 'Promotion code is required';
@@ -173,6 +249,11 @@ const PromotionFormDialog: React.FC<PromotionFormDialogProps> = ({
             newErrors.discountValue = 'Percentage discount cannot exceed 100%';
         }
 
+        // Validate game selection when not applicable to all
+        if (!formData.applicableToAll && (!formData.selectedGameIds || formData.selectedGameIds.length === 0)) {
+            newErrors.selectedGames = 'Please select at least one game when not applicable to all';
+        }
+
         // Date validation
         if (!formData.startDate || !formData.endDate) {
             const missingDates = [];
@@ -183,11 +264,6 @@ const PromotionFormDialog: React.FC<PromotionFormDialogProps> = ({
             // Validate start date is not in the past
             if (formData.startDate < today) {
                 newErrors.startDate = 'Start date cannot be in the past';
-            }
-            
-            // Validate end date is after start date
-            if (formData.startDate > formData.endDate) {
-                newErrors.dateRange = 'End date must be after start date';
             }
         }
 
@@ -202,16 +278,40 @@ const PromotionFormDialog: React.FC<PromotionFormDialogProps> = ({
             return;
         }
         
-        const submitData = {
+        const submitData: UpdatePromotionRequest = {
             ...formData,
             code: formData.code.replace(/\s/g, '').toUpperCase(),
             discountValue: formData.discountValue,
             maxUsage: formData.maxUsage ?? null,
+            selectedGameIds: formData.applicableToAll ? [] : formData.selectedGameIds,
         };
+
+        // Add promotion ID if editing
+        if (promotion) {
+            submitData.id = promotion.id;
+        }
 
         onSubmit(submitData);
     };
 
+    // function to fetch games assigned to a specific promotion
+    const fetchAssignedGames = async (promotionId: number): Promise<number[]> => {
+        try {
+            const response = await fetch(`/api/promotions/${promotionId}/assigned-games`);
+            if (response.ok) {
+                const assignedGames = await response.json();
+                return assignedGames.map((game: any) => game.id);
+            } else {
+                console.error('Failed to fetch assigned games');
+                return [];
+            }
+        } catch (error) {
+            console.error('Error fetching assigned games:', error);
+            return [];
+        }
+    };
+
+    // Update the handleChange function for applicableToAll
     const handleChange = (field: keyof CreatePromotionRequest) => (
         e: React.ChangeEvent<HTMLInputElement>
     ) => {
@@ -246,6 +346,32 @@ const PromotionFormDialog: React.FC<PromotionFormDialogProps> = ({
             ...formData,
             [field]: value,
         };
+
+        // If switching applicableToAll to true, clear selected games
+        if (field === 'applicableToAll' && value === true) {
+            newFormData.selectedGameIds = [];
+            // Clear game selection error
+            const newErrors = { ...errors };
+            delete newErrors.selectedGames;
+            setErrors(newErrors);
+        }
+
+        // If switching applicableToAll to false, fetch games and assigned games
+        if (field === 'applicableToAll' && value === false) {
+            if (games.length === 0) {
+                fetchGames();
+            }
+            
+            // If editing an existing promotion, fetch currently assigned games
+            if (promotion && promotion.id) {
+                fetchAssignedGames(promotion.id).then((assignedGameIds) => {
+                    setFormData(prev => ({
+                        ...prev,
+                        selectedGameIds: assignedGameIds,
+                    }));
+                });
+            }
+        }
 
         setFormData(newFormData);
 
@@ -293,6 +419,24 @@ const PromotionFormDialog: React.FC<PromotionFormDialogProps> = ({
         }
     };
 
+    const handleGameSelection = (event: any) => {
+        const value = event.target.value;
+        // Ensure we always have an array of numbers
+        const selectedIds = Array.isArray(value) ? value : [value];
+        
+        setFormData(prev => ({
+            ...prev,
+            selectedGameIds: selectedIds,
+        }));
+
+        // Clear game selection error when games are selected
+        if (selectedIds.length > 0) {
+            const newErrors = { ...errors };
+            delete newErrors.selectedGames;
+            setErrors(newErrors);
+        }
+    };
+
     return (
         <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
             <form onSubmit={handleSubmit}>
@@ -319,6 +463,13 @@ const PromotionFormDialog: React.FC<PromotionFormDialogProps> = ({
                         {errors.dateRange && (
                             <Alert severity="error" sx={{ mb: 2 }}>
                                 {errors.dateRange}
+                            </Alert>
+                        )}
+
+                        {/* Game Selection Error Alert */}
+                        {errors.selectedGames && (
+                            <Alert severity="error" sx={{ mb: 2 }}>
+                                {errors.selectedGames}
                             </Alert>
                         )}
 
@@ -478,6 +629,115 @@ const PromotionFormDialog: React.FC<PromotionFormDialogProps> = ({
                                     />
                                 </Box>
                             </Grid>
+
+                            {/* Game Selection Field - Only show when not applicable to all */}
+                            {!formData.applicableToAll && (
+                                <Grid 
+                                    size={{
+                                        xs: 12,
+                                    }}
+                                >
+                                    <FormControl fullWidth error={!!errors.selectedGames}>
+                                        <InputLabel>Select Games</InputLabel>
+                                        <Select
+                                            multiple
+                                            value={formData.selectedGameIds || []}
+                                            onChange={handleGameSelection}
+                                            input={<OutlinedInput label="Select Games" />}
+                                            renderValue={(selected) => (
+                                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                                                    {(selected as number[]).map((gameId) => {
+                                                        const game = games.find(g => g.id === gameId);
+                                                        return (
+                                                            <Chip 
+                                                                key={gameId} 
+                                                                label={game?.title || `Game ${gameId}`}
+                                                                size="small"
+                                                            />
+                                                        );
+                                                    })}
+                                                </Box>
+                                            )}
+                                            disabled={loadingGames}
+                                            MenuProps={{
+                                                PaperProps: {
+                                                    style: {
+                                                        maxHeight: 400,
+                                                    },
+                                                },
+                                            }}
+                                        >
+                                            {loadingGames ? (
+                                                <MenuItem disabled>
+                                                    <em>Loading games...</em>
+                                                </MenuItem>
+                                            ) : games.length === 0 ? (
+                                                <MenuItem disabled>
+                                                    <em>No games available</em>
+                                                </MenuItem>
+                                            ) : (
+                                                games.map((game) => {
+                                                    const isSelected = (formData.selectedGameIds || []).indexOf(game.id) > -1;
+                                                    const hasOtherPromotion = Boolean(game.promo_id && game.promo_id !== promotion?.id);
+                                                    const hasCurrentPromotion = game.promo_id === promotion?.id;
+                                                    
+                                                    return (
+                                                        <MenuItem 
+                                                            key={game.id} 
+                                                            value={game.id}
+                                                            // disabled={hasOtherPromotion}
+                                                            // sx={{
+                                                            //     opacity: hasOtherPromotion ? 0.6 : 1,
+                                                            // }}
+                                                        >
+                                                            <Checkbox 
+                                                                checked={isSelected}
+                                                                // disabled={hasOtherPromotion}
+                                                            />
+                                                            <ListItemText 
+                                                                primary={
+                                                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                                        <span>{game.title}</span>
+                                                                        {hasCurrentPromotion && (
+                                                                            <Chip 
+                                                                                label="Current Promo" 
+                                                                                size="small" 
+                                                                                color="primary"
+                                                                                variant="outlined"
+                                                                            />
+                                                                        )}
+                                                                        {hasOtherPromotion && (
+                                                                            <Chip 
+                                                                                label={`Assigned to: ${game.promo_code || 'Other Promo'}`}
+                                                                                size="small" 
+                                                                                color="warning"
+                                                                                variant="outlined"
+                                                                            />
+                                                                        )}
+                                                                        {!game.promo_id && (
+                                                                            <Chip 
+                                                                                label="No Promo" 
+                                                                                size="small" 
+                                                                                color="default"
+                                                                                variant="outlined"
+                                                                            />
+                                                                        )}
+                                                                    </Box>
+                                                                }
+                                                            />
+                                                        </MenuItem>
+                                                    );
+                                                })
+                                            )}
+                                        </Select>
+                                        {errors.selectedGames && (
+                                            <Box sx={{ color: 'error.main', fontSize: '0.75rem', mt: 0.5, ml: 1.75 }}>
+                                                {errors.selectedGames}
+                                            </Box>
+                                        )}
+                                    </FormControl>
+                                </Grid>
+                            )}
                         </Grid>
                     </Box>
                 </DialogContent>

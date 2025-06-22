@@ -10,6 +10,7 @@ export interface Promotion {
   endDate: string;
   isActive: boolean;
   applicableToAll: boolean;
+  selectedGameIds?: number[];
   created_at: string;
   updated_at: string;
 }
@@ -24,6 +25,7 @@ export interface CreatePromotionRequest {
   endDate: string;
   isActive: boolean;
   applicableToAll: boolean;
+  selectedGameIds?: number[];
 }
 
 export interface UpdatePromotionRequest extends Partial<CreatePromotionRequest> {

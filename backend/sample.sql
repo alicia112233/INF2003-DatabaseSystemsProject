@@ -56,7 +56,7 @@ CREATE TABLE Genre (
 );
 
 -- Insert Genre data
-INSERT IGNORE INTO Genre (genre_id, name) VALUES
+INSERT IGNORE INTO game_haven.Genre (id, name) VALUES
 (1, 'action'),
 (2, 'adventure'),
 (3, 'animation modeling'),
@@ -102,6 +102,11 @@ CREATE TABLE Promotion (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
+-- Insert Promotion data
+INSERT IGNORE INTO game_haven.Promotion (id, code, description, discountValue, discountType, maxUsage, startDate, endDate, isActive, applicableToAll) VALUES
+(1, 'BLACKFRIDAY', 'Black Friday Sale', 20.00, 'percentage', 100, '2023-11-24', '2023-11-30', TRUE, TRUE),
+(2, 'SUMMER2023', 'Summer Sale 2023', 15.00, 'fixed', 50, '2023-06-01', '2023-06-30', TRUE, TRUE);
+
 -- 5. Game Table (references Promotion table)
 CREATE TABLE Game (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -116,6 +121,11 @@ CREATE TABLE Game (
     screenshot_url VARCHAR(255),
     FOREIGN KEY (promo_id) REFERENCES Promotion(id)
 );
+
+-- Insert Game data
+INSERT IGNORE INTO game_haven.Game (id, title, platform, price, release_date, is_digital, stock_count, promo_id, head_image_url, screenshot_url) VALUES
+(1, 'Game Title 1', 'PC', 59.99, '2023-01-01', TRUE, 100, 1, '/images/products/WW.jpg', '/images/products/game1_screenshot.jpg'),
+(2, 'Game Title 2', 'Console', 49.99, '2023-02-01', FALSE, 50, 2, '/images/products/OH.jpg', '/images/products/game2_screenshot.jpg');
 
 -- 6. GameGenre Table (references Game and Genre tables)
 CREATE TABLE GameGenre (

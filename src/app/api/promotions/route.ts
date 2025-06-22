@@ -17,7 +17,7 @@ export async function GET() {
       'SELECT * FROM promotion ORDER BY id DESC'
     );
     await connection.end();
-    
+
     return NextResponse.json(rows);
   } catch (error) {
     return NextResponse.json(
@@ -29,6 +29,8 @@ export async function GET() {
 
 // POST - Create new promotion
 export async function POST(request: NextRequest) {
+  let connection;
+
   try {
     const body = await request.json();
     const {
@@ -40,27 +42,52 @@ export async function POST(request: NextRequest) {
       startDate,
       endDate,
       isActive,
-      applicableToAll
+      applicableToAll,
+      selectedGameIds,
     } = body;
 
-    const connection = await mysql.createConnection(dbConfig);
-    const [result] = await connection.execute(
-      `INSERT INTO promotion (code, description, discountValue, discountType, maxUsage, startDate, endDate, isActive, applicableToAll)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [code, description, discountValue, discountType, maxUsage, startDate, endDate, isActive, applicableToAll]
-    );
-    await connection.end();
+    connection = await mysql.createConnection(dbConfig);
 
-    return NextResponse.json({ message: 'Promotion created successfully!', id: (result as any).insertId });
-  } catch (error: any) {
-    if (error.code === 'ER_DUP_ENTRY') {
-      return NextResponse.json(
-        { error: 'Promotion code already exists!' },
-        { status: 400 }
+    // Insert new promotion
+    const [result] = await connection.execute(
+      `INSERT INTO promotion 
+        (code, description, discountValue, discountType, maxUsage, startDate, endDate, isActive, applicableToAll)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        code,
+        description,
+        discountValue,
+        discountType,
+        maxUsage,
+        startDate,
+        endDate,
+        isActive,
+        applicableToAll,
+      ]
+    );
+
+    const promotionId = (result as any).insertId;
+
+    // Update games with the new promotion ID
+    if (applicableToAll) {
+      await connection.execute('UPDATE Game SET promo_id = ?', [promotionId]);
+    } else if (selectedGameIds && selectedGameIds.length > 0) {
+      const placeholders = selectedGameIds.map(() => '?').join(',');
+      await connection.execute(
+        `UPDATE Game SET promo_id = ? WHERE id IN (${placeholders})`,
+        [promotionId, ...selectedGameIds]
       );
     }
+
+    await connection.end();
+
+    return NextResponse.json({ message: 'Promotion created', id: promotionId });
+  } catch (error) {
+    console.error('Error creating promotion:', error);
+    if (connection) await connection.end(); // Ensure cleanup even on error
+
     return NextResponse.json(
-      { error: 'Failed to create promotion!' },
+      { error: 'Failed to create promotion' },
       { status: 500 }
     );
   }

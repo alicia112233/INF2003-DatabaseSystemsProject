@@ -228,15 +228,20 @@ const PromotionManagement = () => {
         const endDate = new Date(promotion.endDate);
         const startDate = new Date(promotion.startDate);
 
+        // Normalize all dates to midnight for comparison
+        const today = new Date(currentDate).setHours(0, 0, 0, 0);
+        const endDateNormalized = new Date(endDate).setHours(0, 0, 0, 0);
+        const startDateNormalized = new Date(startDate).setHours(0, 0, 0, 0);
+
         if (!promotion.isActive) {
             return { label: 'Inactive', color: 'default' as const };
         }
 
-        if (endDate < currentDate) {
+        if (endDateNormalized < today) {
             return { label: 'Expired', color: 'error' as const };
         }
 
-        if (startDate > currentDate) {
+        if (startDateNormalized > today) {
             return { label: 'Scheduled', color: 'warning' as const };
         }
 
