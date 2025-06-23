@@ -1,7 +1,7 @@
 -- This script sets up the initial database and tables for our application.
 
 -- Uncomment this command below if your tables are different
-DROP DATABASE IF EXISTS game_haven; 
+-- DROP DATABASE IF EXISTS game_haven;
 
 SET profiling = 1;
 
@@ -50,13 +50,13 @@ INSERT IGNORE INTO game_haven.users (firstName, lastName, gender, contactNo, ema
 VALUES ('alicia', 'tang', 'F', '80354633', 'aliciatangweishan@gmail.com', '$2b$10$lk0vHQMPHYMtbX4BtCzJ.OCGgQ6qcSYQGOixa4Y4hEsrmNMC7P.v2', 'F', '/images/profile/user-2.jpg');
 
 -- 3. Genre Table
-CREATE TABLE Genre (
+CREATE TABLE IF NOT EXISTS Genre (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(50) UNIQUE NOT NULL
 );
 
 -- 4. Promotion Table
-CREATE TABLE Promotion (
+CREATE TABLE IF NOT EXISTS Promotion (
     id INT AUTO_INCREMENT PRIMARY KEY,
     code VARCHAR(100) NOT NULL UNIQUE,
     description VARCHAR(255) NOT NULL,
@@ -70,7 +70,7 @@ CREATE TABLE Promotion (
 );
 
 -- 5. Game Table (references Promotion table)
-CREATE TABLE Game (
+CREATE TABLE IF NOT EXISTS Game (
     id INT AUTO_INCREMENT PRIMARY KEY,
     title VARCHAR(150) NOT NULL,
     platform VARCHAR(50),
@@ -83,7 +83,7 @@ CREATE TABLE Game (
 );
 
 -- 6. GameGenre Table (references Game and Genre tables)
-CREATE TABLE GameGenre (
+CREATE TABLE IF NOT EXISTS GameGenre (
     game_id INT NOT NULL,
     genre_id INT NOT NULL,
     PRIMARY KEY (game_id, genre_id),
@@ -92,7 +92,7 @@ CREATE TABLE GameGenre (
 );
 
 -- 7. Order Table
-CREATE TABLE Orders (
+CREATE TABLE IF NOT EXISTS Orders (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
     purchase_date DATE NOT NULL,
@@ -100,7 +100,7 @@ CREATE TABLE Orders (
 );
 
 -- 8. Rental Table
-CREATE TABLE RentalRecord (
+CREATE TABLE IF NOT EXISTS RentalRecord (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
     game_id INT NOT NULL,

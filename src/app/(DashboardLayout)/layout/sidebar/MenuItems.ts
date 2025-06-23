@@ -150,21 +150,9 @@ export const getMenuItems = (isLoggedIn: boolean, userRole: string = 'customer')
     },
     {
       id: uniqueId(),
-      title: "View All Orders",
+      title: "Orders Management",
       icon: IconDeviceGamepad,
-      href: "/view-orders",
-    },
-    {
-      id: uniqueId(),
-      title: "Update Orders",
-      icon: IconDeviceGamepad,
-      href: "/update-order",
-    },
-    {
-      id: uniqueId(),
-      title: "Delete Orders",
-      icon: IconDeviceGamepad,
-      href: "/delete-order",
+      href: "/orders-management",
     },
     {
       navlabel: true,
