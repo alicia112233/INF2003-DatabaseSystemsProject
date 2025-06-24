@@ -60,9 +60,21 @@ const RecommendationsCarousel = () => {
           </Typography>
           <Stack direction="row" spacing={2}>
             <Button variant="contained" color="primary">Add to Cart</Button>
-            <Button variant="contained" sx={{ bgcolor: '#B8860B', '&:hover': { bgcolor: '#9A7209' } }}>
-              Add to Wishlist
-            </Button>
+            <Button
+  variant="contained"
+  sx={{ bgcolor: '#B8860B', '&:hover': { bgcolor: '#9A7209' } }}
+  onClick={async () => {
+    await fetch('/api/wishlist', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ gameId: game.id }),
+    });
+    // Optional: show a toast/snackbar and/or update UI state
+  }}
+>
+  Add to Wishlist
+</Button>
+
           </Stack>
         </CardContent>
       </Card>
@@ -104,9 +116,21 @@ const MoreGames = () => {
               </Typography>
               <Stack direction="row" spacing={1}>
                 <Button variant="contained" color="primary" size="small">Add to Cart</Button>
-                <Button variant="contained" size="small" sx={{ bgcolor: '#B8860B', '&:hover': { bgcolor: '#9A7209' } }}>
-                  Add to Wishlist
-                </Button>
+                <Button
+  variant="contained"
+  sx={{ bgcolor: '#B8860B', '&:hover': { bgcolor: '#9A7209' } }}
+  onClick={async () => {
+    await fetch('/api/wishlist', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ gameId: game.id }),
+    });
+    // Optional: show a toast/snackbar and/or update UI state
+  }}
+>
+  Add to Wishlist
+</Button>
+
               </Stack>
             </CardContent>
           </Card>
