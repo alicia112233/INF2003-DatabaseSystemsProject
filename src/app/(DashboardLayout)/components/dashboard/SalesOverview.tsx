@@ -65,7 +65,7 @@ const SalesOverview = () => {
 
         async function fetchSalesData() {
             try {
-                const res = await fetch(`/api/admin/totalSales?month=${month}&year=2025`);
+                const res = await fetch(`/api/admin/total-sales?month=${month}&year=2025`);
                 if (!res.ok) throw new Error('Failed to fetch sales data');
                 const data = await res.json();
 
