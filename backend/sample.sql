@@ -56,7 +56,7 @@ CREATE TABLE IF NOT EXISTS Genre (
 );
 
 -- 4. Promotion Table
-CREATE TABLE Promotion (
+CREATE TABLE IF NOT EXISTS Promotion (
     id INT AUTO_INCREMENT PRIMARY KEY,
     code VARCHAR(100) NOT NULL UNIQUE,
     description VARCHAR(255) NOT NULL,
@@ -94,7 +94,7 @@ CREATE TABLE IF NOT EXISTS GameGenre (
 );
 
 -- 7. Order Table
-CREATE TABLE Orders (
+CREATE TABLE IF NOT EXISTS Orders (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
     purchase_date DATE NOT NULL,
@@ -102,7 +102,7 @@ CREATE TABLE Orders (
 );
 
 -- 8. Rental Table
-CREATE TABLE RentalRecord (
+CREATE TABLE IF NOT EXISTS RentalRecord (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
     game_id INT NOT NULL,

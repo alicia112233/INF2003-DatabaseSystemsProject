@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
            g.price)
       ) AS total
       FROM orders o
-      JOIN game g ON g.id = o.game_id
+      JOIN game g ON g.title = o.gameTitle
       LEFT JOIN promotion p ON g.promo_id = p.id
       WHERE YEAR(o.purchase_date) = 2024;
       `
