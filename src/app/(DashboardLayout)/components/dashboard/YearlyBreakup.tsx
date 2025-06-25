@@ -130,14 +130,14 @@ const YearlyBreakup = () => {
             sm: 7
           }}>
           <Typography variant="h3" fontWeight="700">
-            ${typeof total === 'number' ? `${total.toLocaleString()}` : '0'}
+            ${typeof total === 'number' ? `${total.toLocaleString()}` : '0.00'}
           </Typography>
           <Stack direction="row" spacing={1} mt={1} alignItems="center">
             <Avatar sx={{ bgcolor: percentBg, width: 27, height: 27 }}>
               {percentIcon}
             </Avatar>
             <Typography variant="subtitle2" fontWeight="600">
-              {percentNum > 0 ? `+${percentNum}` : `0.00`}%
+              {percentNum > 0 ? `+${percentNum}` : `0`}%
             </Typography>
             <Typography variant="subtitle2" color="textSecondary">
               last year
