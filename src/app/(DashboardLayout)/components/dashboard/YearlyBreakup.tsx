@@ -15,10 +15,44 @@ const YearlyBreakup = () => {
   const primary = theme.palette.primary.main;
   const primarylight = '#ecf2ff';
   const successlight = theme.palette.success.light;
+  const errorlight = theme.palette.error.light;
+  const warninglight = theme.palette.warning.light;
 
   const [total, setTotal] = useState(0);
   const [percent, setPercent] = useState("0");
   const [series, setSeries] = useState([0, 0, 0]);
+
+  // Determine styles and icon direction based on percent
+
+  const percentNum = parseFloat(percent); // safely convert string to number
+  const isPositive = percentNum > 0;
+  const isNegative = percentNum < 0;
+
+  const percentBg = isPositive
+    ? '#e0f8dd' // green
+    : isNegative
+    ? '#feebe9' // red
+    : '#fff8de'; // yellow
+
+  const percentColor = isPositive
+    ? successlight
+    : isNegative
+    ? errorlight
+    : warninglight;
+
+  const percentIcon = (
+    <IconArrowUpLeft
+      width={20}
+      color={percentColor}
+      style={{
+        transform: isPositive
+          ? 'rotate(90deg)'     // ↖ up
+          : isNegative
+          ? 'rotate(180deg)'   // ↙ down
+          : 'rotate(135deg)',   // → neutral
+      }}
+    />
+  );
 
   useEffect(() => {
     fetch('/api/admin/yearly')
@@ -26,7 +60,11 @@ const YearlyBreakup = () => {
       .then(data => {
         setTotal(data.total2025);
         setPercent(data.percentageChange);
-        setSeries([data.total2024, data.total2025, 100]); // third one just fills donut
+        setSeries([
+          data.total2024 || 0,
+          data.total2025 || 0,
+          0  // filler slice so chart gets 3 values
+        ]);
       })
       .catch(err => console.error("Yearly data error:", err));
   }, []);
@@ -77,7 +115,10 @@ const YearlyBreakup = () => {
       },
     ],
   };
-  const seriescolumnchart: any = [38, 40, 25];
+  const seriescolumnchart: number[] = 
+  series.length === 3 && series.some(val => val > 0)
+    ? series
+    : [25, 50, 0]; //fallback
 
   return (
     <DashboardCard title="Yearly Breakup">
@@ -89,14 +130,14 @@ const YearlyBreakup = () => {
             sm: 7
           }}>
           <Typography variant="h3" fontWeight="700">
-            ${total.toLocaleString()}
+            ${typeof total === 'number' ? `${total.toLocaleString()}` : '0'}
           </Typography>
           <Stack direction="row" spacing={1} mt={1} alignItems="center">
-            <Avatar sx={{ bgcolor: successlight, width: 27, height: 27 }}>
-              <IconArrowUpLeft width={20} color="#39B69A" />
+            <Avatar sx={{ bgcolor: percentBg, width: 27, height: 27 }}>
+              {percentIcon}
             </Avatar>
             <Typography variant="subtitle2" fontWeight="600">
-              +{percent}%
+              {percentNum > 0 ? `+${percentNum}` : `0.00`}%
             </Typography>
             <Typography variant="subtitle2" color="textSecondary">
               last year
