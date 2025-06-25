@@ -146,7 +146,7 @@ export const getMenuItems = (isLoggedIn: boolean, userRole: string = 'customer')
     },
     {
       navlabel: true,
-      subheader: "ORDERS MANAGEMENT",
+      subheader: "ORDERS",
     },
     {
       id: uniqueId(),
