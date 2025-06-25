@@ -25,16 +25,16 @@ const ViewGames = () => {
     const [visibleCount, setVisibleCount] = useState(8);
 
     useEffect(() => {
-        fetch('/api/game-listings/view-games')
+        fetch('/api/game-listings/view-boards')
         .then((res) => res.json())
         .then(data => setGames(data.games || []))
-        .catch((err) => console.error('Error fetching games:', err));
+        .catch((err) => console.error('Error fetching boards games:', err));
     }, []);
 
     if (games.length === 0) {
         return (
             <Box sx={{ mt: 4 }}>
-                <Typography variant="h6" color="text.secondary">No games found.</Typography>
+                <Typography variant="h6" color="text.secondary">No board games found.</Typography>
             </Box>
         );
     }
@@ -42,7 +42,7 @@ const ViewGames = () => {
   
     return (
     <Box sx={{ mt: 3 }}>
-        <Typography variant="h6" sx={{ mb: 6 }} color="text.secondary">Can't decide? Browse our full collection and find your next gaming obsession.</Typography>
+        <Typography variant="h6" sx={{ mb: 6 }} color="text.secondary">Bring the gang together! Classic and modern tabletop fun for families, friends, and game nights.</Typography>
         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
         {games.slice(0, visibleCount).map(game => (
             <Card key={game.id} sx={{ width: 260, minHeight: 340, display: 'flex', flexDirection: 'column' }}>
@@ -104,7 +104,7 @@ export default function DigitalsPage(){
     return (
         <Layout>
             <PageContainer title="Game Haven" description="Your ultimate gaming destination">
-                <Typography variant="h4" fontWeight={600} mb={1}>All Games</Typography>
+                <Typography variant="h4" fontWeight={600} mb={1}>Board Games</Typography>
                     <ViewGames />
             </PageContainer>
         </Layout>
