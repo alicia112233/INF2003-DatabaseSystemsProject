@@ -19,7 +19,8 @@ export async function GET(req: NextRequest) {
         FROM gamegenre gg
         JOIN game g ON gg.game_id = g.id
         JOIN genre gen ON gg.genre_id = gen.id
-        WHERE gen.name = "adventure"
+        WHERE gen.name = "adventure" 
+        ORDER BY RAND()
     `);
 
     await connection.end();
