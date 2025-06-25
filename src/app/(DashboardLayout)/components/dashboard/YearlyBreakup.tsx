@@ -6,6 +6,8 @@ import { Grid, Stack, Typography, Avatar } from '@mui/material';
 import { IconArrowUpLeft } from '@tabler/icons-react';
 
 import DashboardCard from '@/app/(DashboardLayout)/components/shared/DashboardCard';
+import React, { useEffect, useState } from "react";
+import { TextRotationAngledown } from "@mui/icons-material";
 
 const YearlyBreakup = () => {
   // chart color
@@ -13,6 +15,21 @@ const YearlyBreakup = () => {
   const primary = theme.palette.primary.main;
   const primarylight = '#ecf2ff';
   const successlight = theme.palette.success.light;
+
+  const [total, setTotal] = useState(0);
+  const [percent, setPercent] = useState("0");
+  const [series, setSeries] = useState([0, 0, 0]);
+
+  useEffect(() => {
+    fetch('/api/admin/yearly')
+      .then(res => res.json())
+      .then(data => {
+        setTotal(data.total2025);
+        setPercent(data.percentageChange);
+        setSeries([data.total2024, data.total2025, 100]); // third one just fills donut
+      })
+      .catch(err => console.error("Yearly data error:", err));
+  }, []);
 
   // chart
   const optionscolumnchart: any = {
@@ -72,14 +89,14 @@ const YearlyBreakup = () => {
             sm: 7
           }}>
           <Typography variant="h3" fontWeight="700">
-            $36,358
+            ${total.toLocaleString()}
           </Typography>
           <Stack direction="row" spacing={1} mt={1} alignItems="center">
             <Avatar sx={{ bgcolor: successlight, width: 27, height: 27 }}>
               <IconArrowUpLeft width={20} color="#39B69A" />
             </Avatar>
             <Typography variant="subtitle2" fontWeight="600">
-              +9%
+              +{percent}%
             </Typography>
             <Typography variant="subtitle2" color="textSecondary">
               last year
