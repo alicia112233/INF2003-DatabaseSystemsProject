@@ -20,6 +20,7 @@ export async function GET(req: NextRequest) {
       JOIN gamegenre gg ON gg.game_id = g.id
       JOIN genre gen ON gen.id = gg.genre_id
       WHERE g.is_digital = 1
+      GROUP BY g.id 
       ORDER BY RAND()
     `);
 
