@@ -1,7 +1,7 @@
 -- This script sets up the initial database and tables for our application.
 
 -- Uncomment this command below if your tables are different
-DROP DATABASE IF EXISTS game_haven; 
+-- DROP DATABASE IF EXISTS game_haven;
 
 SET profiling = 1;
 
@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS users (
   password VARCHAR(200) NOT NULL,
   is_admin CHAR(1) NOT NULL DEFAULT 'F',
   avatarUrl VARCHAR(200) NOT NULL,
-  createdAt VARCHAR(45) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  createdAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   paymentMethod VARCHAR(45) NULL,
   loyaltyPoints INT NULL DEFAULT 0,
   resetToken VARCHAR(255) NULL,
@@ -50,8 +50,8 @@ INSERT IGNORE INTO game_haven.users (firstName, lastName, gender, contactNo, ema
 VALUES ('alicia', 'tang', 'F', '80354633', 'aliciatangweishan@gmail.com', '$2b$10$lk0vHQMPHYMtbX4BtCzJ.OCGgQ6qcSYQGOixa4Y4hEsrmNMC7P.v2', 'F', '/images/profile/user-2.jpg');
 
 -- 3. Genre Table
-CREATE TABLE Genre (
-    id INT AUTO_INCREMENT PRIMARY KEY,
+CREATE TABLE IF NOT EXISTS Genre (
+    id INT PRIMARY KEY,
     name VARCHAR(50) UNIQUE NOT NULL
 );
 
@@ -86,7 +86,7 @@ INSERT IGNORE INTO game_haven.Genre (id, name) VALUES
 (27, 'web publishing');
 
 -- 4. Promotion Table
-CREATE TABLE Promotion (
+CREATE TABLE IF NOT EXISTS Promotion (
     id INT AUTO_INCREMENT PRIMARY KEY,
     code VARCHAR(100) NOT NULL UNIQUE,
     description VARCHAR(255) NOT NULL,
@@ -108,11 +108,13 @@ INSERT IGNORE INTO game_haven.Promotion (id, code, description, discountValue, d
 (2, 'SUMMER2023', 'Summer Sale 2023', 15.00, 'fixed', 50, '2023-06-01', '2023-06-30', TRUE, TRUE);
 
 -- 5. Game Table (references Promotion table)
-CREATE TABLE Game (
-    id INT AUTO_INCREMENT PRIMARY KEY,
+CREATE TABLE IF NOT EXISTS Game (
+    id INT PRIMARY KEY,
     title VARCHAR(150) NOT NULL,
+    description TEXT,
     platform VARCHAR(50),
     price DECIMAL(10,2),
+    image_url VARCHAR(512),
     release_date DATE,
     is_digital BOOLEAN DEFAULT FALSE,
     stock_count INT DEFAULT 0,
@@ -128,7 +130,7 @@ INSERT IGNORE INTO game_haven.Game (id, title, platform, price, release_date, is
 (2, 'Game Title 2', 'Console', 49.99, '2023-02-01', FALSE, 50, 2, '/images/products/OH.jpg', '/images/products/game2_screenshot.jpg');
 
 -- 6. GameGenre Table (references Game and Genre tables)
-CREATE TABLE GameGenre (
+CREATE TABLE IF NOT EXISTS GameGenre (
     game_id INT NOT NULL,
     genre_id INT NOT NULL,
     PRIMARY KEY (game_id, genre_id),
@@ -137,7 +139,7 @@ CREATE TABLE GameGenre (
 );
 
 -- 7. Order Table
-CREATE TABLE Orders (
+CREATE TABLE IF NOT EXISTS Orders (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
     purchase_date DATE NOT NULL,
@@ -145,7 +147,7 @@ CREATE TABLE Orders (
 );
 
 -- 8. Rental Table
-CREATE TABLE RentalRecord (
+CREATE TABLE IF NOT EXISTS RentalRecord (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
     game_id INT NOT NULL,
@@ -155,4 +157,15 @@ CREATE TABLE RentalRecord (
     returned BOOLEAN DEFAULT FALSE,
     FOREIGN KEY (user_id) REFERENCES users(id),
     FOREIGN KEY (game_id) REFERENCES Game(id)
+);
+
+-- 9. Wishlist Table
+CREATE TABLE IF NOT EXISTS Wishlist (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    game_id INT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id),
+    FOREIGN KEY (game_id) REFERENCES Game(id),
+    UNIQUE KEY unique_wishlist (user_id, game_id)
 );
