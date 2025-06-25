@@ -85,7 +85,7 @@ export const getMenuItems = (isLoggedIn: boolean, userRole: string = 'customer')
       id: uniqueId(),
       title: "All",
       icon: IconDeviceGamepad,
-      href: "/view-games",
+      href: "/products",
     },
     {
       id: uniqueId(),
@@ -129,7 +129,7 @@ export const getMenuItems = (isLoggedIn: boolean, userRole: string = 'customer')
       id: uniqueId(),
       title: "View All Games",
       icon: IconDeviceGamepad,
-      href: "/view-games",
+      href: "/products",
     },
     {
       id: uniqueId(),
@@ -243,7 +243,7 @@ export const getMenuItems = (isLoggedIn: boolean, userRole: string = 'customer')
       id: uniqueId(),
       title: "All",
       icon: IconDeviceGamepad,
-      href: "/view-games",
+      href: "/products",
     },
     {
       id: uniqueId(),

@@ -80,13 +80,13 @@ const Profile = () => {
     fetchProfile();
   }, []);
 
-  // Rest of your component remains the same...
   return (
     <Box>
       <Button
         variant="outlined"
         color="primary"
         startIcon={<IconShoppingCart size={20} />}
+        onClick={() => router.push("/cart")}
       >
         View Cart
       </Button>
