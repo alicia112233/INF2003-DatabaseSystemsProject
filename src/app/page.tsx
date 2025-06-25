@@ -1,296 +1,154 @@
 'use client';
-import { Box, Typography, Button, Grid } from '@mui/material';
+import { useState, useEffect } from 'react';
+import { Box, Typography, Button, Card, CardContent, CardMedia, Stack, IconButton, Grid } from '@mui/material';
+import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
+import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import PageContainer from '@/app/(DashboardLayout)/components/container/PageContainer';
 import DashboardCard from '@/app/(DashboardLayout)/components/shared/DashboardCard';
-import Blog from '@/app/(DashboardLayout)/components/dashboard/Blog';
-import { useState, useEffect, useCallback } from 'react';
-import Image from 'next/image';
-import BlankCard from '@/app/(DashboardLayout)/components/shared/BlankCard';
-import { IconChevronLeft, IconChevronRight, IconShoppingCart, IconStar } from '@tabler/icons-react';
 import Layout from '@/components/layout';
-import ProductCard from '@/components/products/ProductCard';
-import ProductFilters from '@/components/products/ProductFilters';
-import AddToCartButton from '@/components/cart/AddToCartButton';
 
-interface Product {
-  id: string;
-  name: string;
-  price: number;
-  image?: string;
+type Game = {
+  id: number;
+  title: string;
   description?: string;
-  category?: string;
-  inStock?: boolean;
-}
-
-const HomePage = () => {
-    const [currentIndex, setCurrentIndex] = useState(0);
-    const [products, setProducts] = useState<Product[]>([]);
-    const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
-    
-    // Filter states
-    const [searchTerm, setSearchTerm] = useState('');
-    const [categoryFilter, setCategoryFilter] = useState('');
-    const [stockFilter, setStockFilter] = useState('');
-
-    const nextSlide = useCallback(() => {
-        setCurrentIndex((prevIndex) =>
-            prevIndex === products.length - 1 ? 0 : prevIndex + 1
-        );
-    }, [products.length]);
-
-    const prevSlide = () => {
-        setCurrentIndex((prevIndex) =>
-            prevIndex === 0 ? products.length - 1 : prevIndex - 1
-        );
-    };
-
-    const currentProduct = products[currentIndex];
-    const isOutOfStock = currentProduct?.inStock === false;
-
-    // auto slide every 3 seconds
-    useEffect(() => {
-        if (products.length === 0) return; // Don't start interval if no products
-        
-        const interval = setInterval(() => {
-            nextSlide();
-        }, 3000);
-
-        return () => clearInterval(interval); // Cleanup on unmount
-    }, [nextSlide, products.length]);
-
-    useEffect(() => {
-        // Replace this with your actual API call
-        const fetchProducts = async () => {
-          // Example products - replace with your API call
-          const sampleProducts: Product[] = [
-            {
-              id: '1',
-              name: 'Sample Product 1',
-              price: 29.99,
-              description: 'This is a sample product description',
-              category: 'Electronics',
-              inStock: true,
-              image: '/images/products/OH.jpg'
-            },
-            {
-              id: '2',
-              name: 'Sample Product 2',
-              price: 49.99,
-              description: 'Another sample product',
-              category: 'Clothing',
-              inStock: false,
-              image: '/images/products/WW.jpg'
-            },
-            {
-              id: '3',
-              name: 'Gaming Guide Book',
-              price: 24.99,
-              description: 'Complete gaming strategy guide',
-              category: 'Books',
-              inStock: true,
-              image: '/images/products/SMB.jpg'
-            }
-          ];
-          setProducts(sampleProducts);
-          setFilteredProducts(sampleProducts);
-        };
-    
-        fetchProducts();
-      }, []);
-
-    // Filter products based on search term, category, and stock status
-    useEffect(() => {
-        let filtered = products;
-
-        // Search filter
-        if (searchTerm) {
-            filtered = filtered.filter(product =>
-                product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                (product.description && product.description.toLowerCase().includes(searchTerm.toLowerCase()))
-            );
-        }
-
-        // Category filter
-        if (categoryFilter) {
-            filtered = filtered.filter(product => product.category === categoryFilter);
-        }
-
-        // Stock filter
-        if (stockFilter) {
-            if (stockFilter === 'inStock') {
-                filtered = filtered.filter(product => product.inStock === true);
-            } else if (stockFilter === 'outOfStock') {
-                filtered = filtered.filter(product => product.inStock === false);
-            }
-        }
-
-        setFilteredProducts(filtered);
-    }, [products, searchTerm, categoryFilter, stockFilter]);
-
-    return (
-        <Layout>
-            <PageContainer title="Game Haven" description="Your ultimate gaming destination">
-                <DashboardCard title="Featured & Recommended 👍">
-                    <Box sx={{ position: 'relative', width: '100%', height: '400px' }}>
-                        {/* Left navigation button */}
-                        <Button
-                            variant="contained"
-                            color="primary"
-                            onClick={prevSlide}
-                            sx={{
-                                minWidth: '40px',
-                                width: '40px',
-                                height: '40px',
-                                borderRadius: '50%',
-                                position: 'absolute',
-                                left: '10px',
-                                top: '50%',
-                                transform: 'translateY(-50%)',
-                                zIndex: 10
-                            }}
-                        >
-                            <IconChevronLeft size={20} />
-                        </Button>
-
-                        <BlankCard>
-                            <Box sx={{
-                                display: 'flex',
-                                flexDirection: { xs: 'column', md: 'row' },
-                                alignItems: 'center',
-                                p: 3
-                            }}>
-                                <Box sx={{
-                                    position: 'relative',
-                                    width: { xs: '100%', md: '50%' },
-                                    height: '300px'
-                                }}>
-                                    <Image
-                                        src={currentProduct?.image || '/images/products/noprodimg.png'}
-                                        alt={currentProduct?.name || 'Product'}
-                                        fill
-                                        style={{ objectFit: 'contain' }}
-                                    />
-                                </Box>
-                                <Box sx={{
-                                    width: { xs: '100%', md: '50%' },
-                                    p: 3,
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    justifyContent: 'center'
-                                }}>
-                                    <Typography variant="h3" sx={{ mb: 2 }}>
-                                        {currentProduct?.name || 'Loading...'}
-                                    </Typography>
-                                    <Typography variant="body1" sx={{ mb: 3 }}>
-                                        {currentProduct?.description || 'Loading description...'}
-                                    </Typography>
-                                    <Typography variant="h4" color="primary" sx={{ mb: 3 }}>
-                                        ${currentProduct?.price || 0}
-                                    </Typography>
-                                    <Box sx={{ display: 'flex', gap: 2 }}>
-                                        {currentProduct && (
-                                            <AddToCartButton
-                                                product={currentProduct}
-                                                fullWidth
-                                                variant={!isOutOfStock ? 'contained' : 'outlined'}
-                                                disabled={isOutOfStock}
-                                                buttonText={isOutOfStock ? 'No Stock' : 'Add to Cart'}
-                                                sx={{ 
-                                                    maxWidth: '50%',
-                                                    minWidth: '100px',
-                                                    height: '48px',
-                                                    fontSize: '0.875rem'
-                                                }}
-                                            />
-                                        )}
-                                        <Button
-                                            variant="contained"
-                                            startIcon={<IconStar size={20} />}
-                                            sx={{
-                                                maxWidth: '50%',
-                                                bgcolor: '#B8860B', // Dark yellow/goldenrod color
-                                                '&:hover': {
-                                                    bgcolor: '#9A7209', // Slightly darker on hover
-                                                }
-                                            }}
-                                        >
-                                            Add to WishList
-                                        </Button>
-                                    </Box>
-                                </Box>
-                            </Box>
-                        </BlankCard>
-
-                        {/* Right navigation button */}
-                        <Button
-                            variant="contained"
-                            color="primary"
-                            onClick={nextSlide}
-                            sx={{
-                                minWidth: '40px',
-                                width: '40px',
-                                height: '40px',
-                                borderRadius: '50%',
-                                position: 'absolute',
-                                right: '10px',
-                                top: '50%',
-                                transform: 'translateY(-50%)',
-                                zIndex: 10
-                            }}
-                        >
-                            <IconChevronRight size={20} />
-                        </Button>
-                    </Box>
-                </DashboardCard>
-
-                <Box sx={{ mt: 4 }}>
-                    <DashboardCard title="More Games">
-                        <ProductFilters
-                            searchTerm={searchTerm}
-                            categoryFilter={categoryFilter}
-                            stockFilter={stockFilter}
-                            onSearchChange={setSearchTerm}
-                            onCategoryFilterChange={setCategoryFilter}
-                            onStockFilterChange={setStockFilter}
-                        />
-
-                        <Box sx={{ mb: 2 }}>
-                            <Typography variant="body2" color="text.secondary">
-                                Showing {filteredProducts.length} of {products.length} games
-                            </Typography>
-                        </Box>
-
-                        <Grid container spacing={3}>
-                            {filteredProducts.map((product) => (
-                                <Grid 
-                                    size = {{
-                                        xs: 12,
-                                        md: 6,
-                                        lg: 4,
-                                        xl: 3
-                                    }}
-                                    key={product.id}
-                                >
-                                    <ProductCard product={product} />
-                                </Grid>
-                            ))}
-                        </Grid>
-
-                        {filteredProducts.length === 0 && products.length > 0 && (
-                            <Box sx={{ textAlign: 'center', py: 4 }}>
-                                <Typography variant="h6" color="text.secondary">
-                                    No games found matching your criteria
-                                </Typography>
-                                <Typography variant="body2" color="text.secondary">
-                                    Try adjusting your filters
-                                </Typography>
-                            </Box>
-                        )}
-                    </DashboardCard>
-                </Box>
-            </PageContainer>
-        </Layout>
-    );
+  image_url?: string;
+  price: number;
 };
 
-export default HomePage;
+function capitalizeTitle(title: string) {
+  return title.replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+const RecommendationsCarousel = () => {
+  const [games, setGames] = useState<Game[]>([]);
+  const [current, setCurrent] = useState(0);
+
+  useEffect(() => {
+    fetch('/api/recommendations')
+      .then(res => res.json())
+      .then(data => setGames(data.recommendations || []));
+  }, []);
+
+  if (games.length === 0) return <Typography>No recommendations available.</Typography>;
+
+  const game = games[current];
+
+  const handlePrev = () => setCurrent((prev) => (prev === 0 ? games.length - 1 : prev - 1));
+  const handleNext = () => setCurrent((prev) => (prev === games.length - 1 ? 0 : prev + 1));
+
+  return (
+    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 350 }}>
+      <IconButton onClick={handlePrev}><ArrowBackIosIcon /></IconButton>
+      <Card sx={{ width: 500, minHeight: 350, mx: 2, display: 'flex', flexDirection: 'row', boxShadow: 3 }}>
+        {game.image_url && (
+          <CardMedia
+            component="img"
+            image={game.image_url}
+            alt={game.title}
+            sx={{ width: 220, objectFit: 'cover' }}
+          />
+        )}
+        <CardContent sx={{ flex: 1 }}>
+          <Typography variant="h5" gutterBottom>
+            {capitalizeTitle(game.title)}
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2, minHeight: 60 }}>
+            {game.description ? game.description.slice(0, 100) + (game.description.length > 100 ? '...' : '') : ''}
+          </Typography>
+          <Typography variant="h6" color="primary" sx={{ mb: 2 }}>
+            ${game.price}
+          </Typography>
+          <Stack direction="row" spacing={2}>
+            <Button variant="contained" color="primary">Add to Cart</Button>
+            <Button
+  variant="contained"
+  sx={{ bgcolor: '#B8860B', '&:hover': { bgcolor: '#9A7209' } }}
+  onClick={async () => {
+    await fetch('/api/wishlist', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ gameId: game.id }),
+    });
+    // Optional: show a toast/snackbar and/or update UI state
+  }}
+>
+  Add to Wishlist
+</Button>
+
+          </Stack>
+        </CardContent>
+      </Card>
+      <IconButton onClick={handleNext}><ArrowForwardIosIcon /></IconButton>
+    </Box>
+  );
+};
+
+const MoreGames = () => {
+  const [games, setGames] = useState<Game[]>([]);
+  useEffect(() => {
+    fetch('/api/games') // Replace with your actual endpoint for all games
+      .then(res => res.json())
+      .then(data => setGames(data.games || []));
+  }, []);
+  if (games.length === 0) return null;
+  return (
+    <Box sx={{ mt: 6 }}>
+      <Typography variant="h5" sx={{ mb: 2 }}>More Games</Typography>
+      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
+        {games.slice(0, 8).map(game => (
+          <Card key={game.id} sx={{ width: 260, minHeight: 340, display: 'flex', flexDirection: 'column' }}>
+            {game.image_url && (
+              <CardMedia
+                component="img"
+                height="140"
+                image={game.image_url}
+                alt={game.title}
+                sx={{ objectFit: 'cover' }}
+              />
+            )}
+            <CardContent>
+              <Typography variant="subtitle1">{capitalizeTitle(game.title)}</Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                {game.description ? game.description.slice(0, 60) + (game.description.length > 60 ? '...' : '') : ''}
+              </Typography>
+              <Typography variant="body2" color="primary" sx={{ mb: 1 }}>
+                ${game.price}
+              </Typography>
+              <Stack direction="row" spacing={1}>
+                <Button variant="contained" color="primary" size="small">Add to Cart</Button>
+                <Button
+  variant="contained"
+  sx={{ bgcolor: '#B8860B', '&:hover': { bgcolor: '#9A7209' } }}
+  onClick={async () => {
+    await fetch('/api/wishlist', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ gameId: game.id }),
+    });
+    // Optional: show a toast/snackbar and/or update UI state
+  }}
+>
+  Add to Wishlist
+</Button>
+
+              </Stack>
+            </CardContent>
+          </Card>
+        ))}
+      </Box>
+    </Box>
+  );
+};
+
+export default function HomePage() {
+  return (
+    <Layout>
+      <PageContainer title="Game Haven" description="Your ultimate gaming destination">
+        <DashboardCard title="Featured & Recommended 👍">
+          <RecommendationsCarousel />
+        </DashboardCard>
+        <MoreGames />
+      </PageContainer>
+    </Layout>
+  );
+}
