@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS users (
   password VARCHAR(200) NOT NULL,
   is_admin CHAR(1) NOT NULL DEFAULT 'F',
   avatarUrl VARCHAR(200) NOT NULL,
-  createdAt VARCHAR(45) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  createdAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   paymentMethod VARCHAR(45) NULL,
   loyaltyPoints INT NULL DEFAULT 0,
   resetToken VARCHAR(255) NULL,
@@ -51,7 +51,7 @@ VALUES ('alicia', 'tang', 'F', '80354633', 'aliciatangweishan@gmail.com', '$2b$1
 
 -- 3. Genre Table
 CREATE TABLE IF NOT EXISTS Genre (
-    id INT AUTO_INCREMENT PRIMARY KEY,
+    id INT PRIMARY KEY,
     name VARCHAR(50) UNIQUE NOT NULL
 );
 
@@ -71,10 +71,12 @@ CREATE TABLE IF NOT EXISTS Promotion (
 
 -- 5. Game Table (references Promotion table)
 CREATE TABLE IF NOT EXISTS Game (
-    id INT AUTO_INCREMENT PRIMARY KEY,
+    id INT PRIMARY KEY,
     title VARCHAR(150) NOT NULL,
+    description TEXT,
     platform VARCHAR(50),
     price DECIMAL(10,2),
+    image_url VARCHAR(512),
     release_date DATE,
     is_digital BOOLEAN DEFAULT FALSE,
     stock_count INT DEFAULT 0,
@@ -110,4 +112,15 @@ CREATE TABLE IF NOT EXISTS RentalRecord (
     returned BOOLEAN DEFAULT FALSE,
     FOREIGN KEY (user_id) REFERENCES users(id),
     FOREIGN KEY (game_id) REFERENCES Game(id)
+);
+
+-- 9. Wishlist Table
+CREATE TABLE IF NOT EXISTS Wishlist (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    game_id INT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id),
+    FOREIGN KEY (game_id) REFERENCES Game(id),
+    UNIQUE KEY unique_wishlist (user_id, game_id)
 );
