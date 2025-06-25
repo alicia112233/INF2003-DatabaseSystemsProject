@@ -25,16 +25,16 @@ const ViewGames = () => {
     const [visibleCount, setVisibleCount] = useState(8);
 
     useEffect(() => {
-        fetch('/api/game-listings/view-digitals')
+        fetch('/api/game-listings/view-action-games')
         .then((res) => res.json())
         .then(data => setGames(data.games || []))
-        .catch((err) => console.error('Error fetching digital games:', err));
+        .catch((err) => console.error('Error fetching action games:', err));
     }, []);
 
     if (games.length === 0) {
         return (
             <Box sx={{ mt: 4 }}>
-                <Typography variant="h6" color="text.secondary">No digital games found.</Typography>
+                <Typography variant="h6" color="text.secondary">No action games found.</Typography>
             </Box>
         );
     }
@@ -42,7 +42,7 @@ const ViewGames = () => {
   
     return (
     <Box sx={{ mt: 3 }}>
-        <Typography variant="h6" sx={{ mb: 6 }} color="text.secondary">Instant fun at your fingertips! Download or stream and start playing anywhere, anytime.</Typography>
+        <Typography variant="h6" sx={{ mb: 6 }} color="text.secondary">Jump into heart-pounding battles and lightning-fast reflex challenges. Perfect for thrill-seekers!</Typography>
         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
         {games.slice(0, visibleCount).map(game => (
             <Card key={game.id} sx={{ width: 260, minHeight: 340, display: 'flex', flexDirection: 'column' }}>
@@ -60,14 +60,14 @@ const ViewGames = () => {
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
                 {game.description ? game.description.slice(0, 60) + (game.description.length > 60 ? '...' : '') : ''}
                 </Typography>
-                <Typography variant="body2" color="primary" sx={{ mb: 1 }}>
+                <Typography variant="body2" color="primary" sx={{ mb: 2 }}>
                 ${game.price}
                 </Typography>
-                <Stack direction="row" spacing={1}>
-                <Button variant="contained" color="primary" size="small" sx={{height: 50}}>Add to Cart</Button>
+                <Stack direction="row" spacing={2}>
+                <Button variant="contained" color="primary" size="small" sx={{height: 50 }}>Add to Cart</Button>
                 <Button
                     variant="contained"
-                    sx={{ bgcolor: '#B8860B', '&:hover': { bgcolor: '#9A7209' }, height: 50}}
+                    sx={{ bgcolor: '#B8860B', '&:hover': { bgcolor: '#9A7209' }, height: 50 }}
                     onClick={async () => {
                     await fetch('/api/wishlist', {
                         method: 'POST',
@@ -104,7 +104,7 @@ export default function DigitalsPage(){
     return (
         <Layout>
             <PageContainer title="Game Haven" description="Your ultimate gaming destination">
-                <Typography variant="h4" fontWeight={600} mb={1}>Digital Games</Typography>
+                <Typography variant="h4" fontWeight={600} mb={1}>Action Games</Typography>
                     <ViewGames />
             </PageContainer>
         </Layout>
