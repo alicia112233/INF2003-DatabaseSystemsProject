@@ -1,15 +1,22 @@
-import React from 'react';
+'use client';
+
+import React, { useEffect, useState } from 'react';
 import { Select, MenuItem } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import DashboardCard from '@/app/(DashboardLayout)/components/shared/DashboardCard';
 import dynamic from "next/dynamic";
+
 const Chart = dynamic(() => import("react-apexcharts"), { ssr: false });
 
-
 const SalesOverview = () => {
+    // select - changed to string to match the value type
+    const [month, setMonth] = useState('');
+    const [monthOptions, setMonthOptions] = useState<{ value: string; label: string }[]>([]);
 
-    // select
-    const [month, setMonth] = React.useState('1');
+    // NEW: state for dynamic chart data
+    const [categories, setCategories] = useState<string[]>([]);
+    const [earnings, setEarnings] = useState<number[]>([]);
+    const [expense, setExpense] = useState<number[]>([]);
 
     const handleChange = (event: any) => {
         setMonth(event.target.value);
@@ -19,6 +26,62 @@ const SalesOverview = () => {
     const theme = useTheme();
     const primary = theme.palette.primary.main;
     const secondary = theme.palette.secondary.main;
+
+    // NEW: fetch available months from database
+    useEffect(() => {
+        async function fetchAvailableMonths() {
+            try {
+                const res = await fetch('/api/admin/available-months'); // You'll need to create this endpoint
+                if (!res.ok) throw new Error('Failed to fetch available months');
+                const data = await res.json();
+
+                // Assuming API returns something like:
+                // { months: [{ value: '2025-01', label: 'January 2025' }, { value: '2025-02', label: 'February 2025' }, ...] }
+                
+                setMonthOptions(data.months);
+                
+                // Set default month to the first available month
+                if (data.months.length > 0) {
+                    setMonth(data.months[0].value);
+                }
+            } catch (err) {
+                console.error('Failed to fetch available months:', err);
+                // Fallback to hardcoded months if API fails
+                setMonthOptions([
+                    { value: '2025-03', label: 'March 2025' },
+                    { value: '2025-04', label: 'April 2025' },
+                    { value: '2025-05', label: 'May 2025' }
+                ]);
+                setMonth('2025-03');
+            }
+        }
+
+        fetchAvailableMonths();
+    }, []);
+
+    // NEW: fetch data when month changes
+    useEffect(() => {
+        if (!month) return; // Don't fetch if no month is selected
+
+        async function fetchSalesData() {
+            try {
+                const res = await fetch(`/api/admin/earnings?month=${month}&year=2025`);
+                if (!res.ok) throw new Error('Failed to fetch sales data');
+                const data = await res.json();
+
+                // Assuming API returns something like:
+                // { categories: ['16/08', '17/08', ...], earnings: [355, 390, ...], expense: [280, 250, ...] }
+
+                setCategories(data.categories);
+                setEarnings(data.earnings);
+                setExpense(data.expense);
+            } catch (err) {
+                console.error('Failed to fetch sales data:', err);
+            }
+        }
+
+        fetchSalesData();
+    }, [month]);
 
     // chart
     const optionscolumnchart: any = {
@@ -68,7 +131,7 @@ const SalesOverview = () => {
             tickAmount: 4,
         },
         xaxis: {
-            categories: ['16/08', '17/08', '18/08', '19/08', '20/08', '21/08', '22/08', '23/08'],
+            categories: categories.length > 0 ? categories: ['16/08', '17/08', '18/08', '19/08', '20/08', '21/08', '22/08', '23/08'], // fallback
             axisBorder: {
                 show: false,
             },
@@ -80,17 +143,16 @@ const SalesOverview = () => {
     };
     const seriescolumnchart: any = [
         {
-            name: 'Eanings this month',
-            data: [355, 390, 300, 350, 390, 180, 355, 390],
+            name: 'Earnings this month',
+            data: earnings.length > 0 ? earnings : [355, 390, 300, 350, 390, 180, 355, 390], // fallback
         },
         {
             name: 'Expense this month',
-            data: [280, 250, 325, 215, 250, 310, 280, 250],
+            data: expense.length > 0 ? expense : [280, 250, 325, 215, 250, 310, 280, 250], // fallback
         },
     ];
 
     return (
-
         <DashboardCard title="Sales Overview" action={
             <Select
                 labelId="month-dd"
@@ -99,9 +161,11 @@ const SalesOverview = () => {
                 size="small"
                 onChange={handleChange}
             >
-                <MenuItem value={1}>March 2025</MenuItem>
-                <MenuItem value={2}>April 2025</MenuItem>
-                <MenuItem value={3}>May 2025</MenuItem>
+                {monthOptions.map((option) => (
+                    <MenuItem key={option.value} value={option.value}>
+                        {option.label}
+                    </MenuItem>
+                ))}
             </Select>
         }>
             <Chart
