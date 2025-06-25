@@ -1,4 +1,6 @@
-import React from 'react';
+'use client';
+
+import React, { useEffect, useState } from 'react';
 import {
   Timeline,
   TimelineItem,
@@ -8,9 +10,35 @@ import {
   TimelineConnector,
   TimelineContent,
 } from '@mui/lab';
-import { Typography, Box, Link } from '@mui/material';
+import { Typography, Box, Link, CircularProgress } from '@mui/material';
+
+type Transaction = {
+  time: string;
+  type: string;
+  description: string;
+  color: 'primary' | 'secondary' | 'success' | 'warning' | 'error' | 'info';
+  link?: string;
+};
 
 const RecentTransactions = () => {
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch('/api/admin/recent-transactions')
+      .then((res) => res.json())
+      .then((data: Transaction[]) => {
+        setTransactions(data);
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error('Failed to fetch transactions', err);
+        setLoading(false);
+      });
+  }, []);
+
+  if (loading) return <CircularProgress />;
+
   return (
     <Box>
       <Typography variant="h6" mb={2}>
@@ -32,64 +60,27 @@ const RecentTransactions = () => {
           },
         }}
       >
-        <TimelineItem>
-          <TimelineOppositeContent>09:30 am</TimelineOppositeContent>
-          <TimelineSeparator>
-            <TimelineDot color="primary" />
-            <TimelineConnector />
-          </TimelineSeparator>
-          <TimelineContent>Payment received from John Doe of $385.90</TimelineContent>
-        </TimelineItem>
-        <TimelineItem>
-          <TimelineOppositeContent>10:00 am</TimelineOppositeContent>
-          <TimelineSeparator>
-            <TimelineDot color="secondary" />
-            <TimelineConnector />
-          </TimelineSeparator>
-          <TimelineContent>
-            <Typography fontWeight="600">New sale recorded</Typography>{' '}
-            <Link href="/" underline="none">
-              #ML-3467
-            </Link>
-          </TimelineContent>
-        </TimelineItem>
-        <TimelineItem>
-          <TimelineOppositeContent>12:00 am</TimelineOppositeContent>
-          <TimelineSeparator>
-            <TimelineDot color="success" />
-            <TimelineConnector />
-          </TimelineSeparator>
-          <TimelineContent>Payment was made of $64.95 to Michael</TimelineContent>
-        </TimelineItem>
-        <TimelineItem>
-          <TimelineOppositeContent>09:30 am</TimelineOppositeContent>
-          <TimelineSeparator>
-            <TimelineDot color="warning" />
-            <TimelineConnector />
-          </TimelineSeparator>
-          <TimelineContent>
-            <Typography fontWeight="600">New sale recorded</Typography>{' '}
-            <Link href="/" underline="none">
-              #ML-3467
-            </Link>
-          </TimelineContent>
-        </TimelineItem>
-        <TimelineItem>
-          <TimelineOppositeContent>09:30 am</TimelineOppositeContent>
-          <TimelineSeparator>
-            <TimelineDot color="error" />
-          </TimelineSeparator>
-          <TimelineContent>
-            <Typography fontWeight="600">New arrival recorded</Typography>
-          </TimelineContent>
-        </TimelineItem>
-        <TimelineItem>
-          <TimelineOppositeContent>12:00 am</TimelineOppositeContent>
-          <TimelineSeparator>
-            <TimelineDot color="success" />
-          </TimelineSeparator>
-          <TimelineContent>Payment Received</TimelineContent>
-        </TimelineItem>
+        {transactions.map((txn, idx) => (
+          <TimelineItem key={idx}>
+            <TimelineOppositeContent>{txn.time}</TimelineOppositeContent>
+            <TimelineSeparator>
+              <TimelineDot color={txn.color} />
+              {idx < transactions.length - 1 && <TimelineConnector />}
+            </TimelineSeparator>
+            <TimelineContent>
+              {txn.type === 'sale' && txn.link ? (
+                <>
+                  <Typography fontWeight="600">New sale recorded</Typography>{' '}
+                  <Link href={txn.link} underline="none">
+                    {txn.description}
+                  </Link>
+                </>
+              ) : (
+                <Typography>{txn.description}</Typography>
+              )}
+            </TimelineContent>
+          </TimelineItem>
+        ))}
       </Timeline>
     </Box>
   );
