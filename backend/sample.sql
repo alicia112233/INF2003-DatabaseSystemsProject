@@ -1,7 +1,7 @@
 -- This script sets up the initial database and tables for our application.
 
 -- Uncomment this command below if your tables are different
--- DROP DATABASE IF EXISTS game_haven;
+DROP DATABASE IF EXISTS game_haven;
 
 SET profiling = 1;
 
@@ -142,6 +142,9 @@ CREATE TABLE IF NOT EXISTS GameGenre (
 CREATE TABLE IF NOT EXISTS Orders (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
+    game_title VARCHAR(150) NOT NULL,
+    total DECIMAL(10,2) NOT NULL,
+    status VARCHAR(50) NOT NULL DEFAULT 'Pending',
     purchase_date DATE NOT NULL,
     FOREIGN KEY (user_id) REFERENCES users(id)
 );

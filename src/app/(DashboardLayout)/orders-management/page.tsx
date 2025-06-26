@@ -21,12 +21,12 @@ import {
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import AddIcon from "@mui/icons-material/Add";
+import { format } from "date-fns";
 
 const statusOptions = ["Pending", "Shipped", "Delivered", "Cancelled"];
 
 type Order = {
   id: number;
-  customer: string;
   email: string;
   gameTitle: string;
   total: number;
@@ -35,7 +35,6 @@ type Order = {
 };
 
 type OrderForm = {
-  customer: string;
   email: string;
   gameTitle: string;
   total: string;
@@ -47,7 +46,6 @@ const OrdersManagementPage = () => {
   const [open, setOpen] = useState(false);
   const [editOrder, setEditOrder] = useState<Order | null>(null);
   const [form, setForm] = useState<OrderForm>({
-    customer: "",
     email: "",
     gameTitle: "",
     total: "",
@@ -90,7 +88,7 @@ const OrdersManagementPage = () => {
     }
     setOpen(false);
     setEditOrder(null);
-    setForm({ customer: "", email: "", gameTitle: "", total: "", status: "Pending" });
+    setForm({ email: "", gameTitle: "", total: "", status: "Pending" });
     fetchOrders();
   };
 
@@ -98,7 +96,6 @@ const OrdersManagementPage = () => {
   const handleEdit = (order: Order) => {
     setEditOrder(order);
     setForm({
-      customer: order.customer,
       email: order.email,
       gameTitle: order.gameTitle,
       total: order.total.toString(),
@@ -128,7 +125,7 @@ const OrdersManagementPage = () => {
         <h1>Orders Management</h1>
         <Box display="flex" alignItems="center" gap={2}>
           <TextField
-            placeholder="Search by customer, email, or game title"
+            placeholder="Search by email or game title"
             size="small"
             value={search}
             onChange={e => setSearch(e.target.value)}
@@ -140,7 +137,7 @@ const OrdersManagementPage = () => {
             onClick={() => {
               setOpen(true);
               setEditOrder(null);
-              setForm({ customer: "", email: "", gameTitle: "", total: "", status: "Pending" });
+              setForm({ email: "", gameTitle: "", total: "", status: "Pending" });
             }}
           >
             Add Order
@@ -151,7 +148,6 @@ const OrdersManagementPage = () => {
         <Table>
           <TableHead>
             <TableRow>
-              <TableCell>Customer</TableCell>
               <TableCell>Email</TableCell>
               <TableCell>Game Title</TableCell>
               <TableCell>Total</TableCell>
@@ -163,18 +159,16 @@ const OrdersManagementPage = () => {
           <TableBody>
             {orders
               .filter(order =>
-                order.customer.toLowerCase().includes(search.toLowerCase()) ||
                 order.email.toLowerCase().includes(search.toLowerCase()) ||
                 order.gameTitle.toLowerCase().includes(search.toLowerCase())
               )
               .map((order) => (
                 <TableRow key={order.id}>
-                  <TableCell>{order.customer}</TableCell>
                   <TableCell>{order.email}</TableCell>
                   <TableCell>{order.gameTitle}</TableCell>
-                  <TableCell>${order.total.toFixed(2)}</TableCell>
+                  <TableCell>${Number(order.total).toFixed(2)}</TableCell>
                   <TableCell>{order.status}</TableCell>
-                  <TableCell>{order.createdAt}</TableCell>
+                  <TableCell>{order.createdAt ? format(new Date(order.createdAt), "yyyy-MM-dd") : ""}</TableCell>
                   <TableCell>
                     <IconButton
                       color="primary"
@@ -204,13 +198,6 @@ const OrdersManagementPage = () => {
             minWidth: 350,
           }}
         >
-          <TextField
-            label="Customer"
-            name="customer"
-            value={form.customer}
-            onChange={handleChange}
-            fullWidth
-          />
           <TextField
             label="Email"
             name="email"
