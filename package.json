@@ -29,7 +29,7 @@
     "jsonwebtoken": "^9.0.2",
     "lodash": "^4.17.21",
     "mysql2": "^3.14.1",
-    "next": "^15.3.2",
+    "next": "^15.3.4",
     "react": "^19.1.0",
     "react-apexcharts": "1.7.0",
     "react-dom": "^19.1.0",

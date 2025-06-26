@@ -55,19 +55,57 @@ CREATE TABLE IF NOT EXISTS Genre (
     name VARCHAR(50) UNIQUE NOT NULL
 );
 
+-- Insert Genre data
+INSERT IGNORE INTO game_haven.Genre (id, name) VALUES
+(1, 'action'),
+(2, 'adventure'),
+(3, 'animation modeling'),
+(4, 'audio production'),
+(5, 'casual'),
+(6, 'design illustration'),
+(7, 'early access'),
+(8, 'education'),
+(9, 'free to play'),
+(10, 'game development'),
+(11, 'gore'),
+(12, 'indie'),
+(13, 'massively multiplayer'),
+(14, 'nudity'),
+(15, 'photo editing'),
+(16, 'racing'),
+(17, 'rpg'),
+(18, 'sexual content'),
+(19, 'simulation'),
+(20, 'software training'),
+(21, 'sports'),
+(22, 'strategy'),
+(23, 'survival'),
+(24, 'utilities'),
+(25, 'video production'),
+(26, 'violent'),
+(27, 'web publishing');
+
 -- 4. Promotion Table
 CREATE TABLE IF NOT EXISTS Promotion (
     id INT AUTO_INCREMENT PRIMARY KEY,
     code VARCHAR(100) NOT NULL UNIQUE,
     description VARCHAR(255) NOT NULL,
     discountValue DECIMAL(10, 2) NOT NULL,
+    discountType ENUM('percentage', 'fixed') NOT NULL DEFAULT 'fixed',
     maxUsage INT DEFAULT NULL,
     usedCount INT DEFAULT 0,
     startDate DATE NOT NULL,
     endDate DATE NOT NULL,
     isActive BOOLEAN DEFAULT TRUE,
-    applicableToAll BOOLEAN DEFAULT TRUE
+    applicableToAll BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
+
+-- Insert Promotion data
+INSERT IGNORE INTO game_haven.Promotion (id, code, description, discountValue, discountType, maxUsage, startDate, endDate, isActive, applicableToAll) VALUES
+(1, 'BLACKFRIDAY', 'Black Friday Sale', 20.00, 'percentage', 100, '2023-11-24', '2023-11-30', TRUE, TRUE),
+(2, 'SUMMER2023', 'Summer Sale 2023', 15.00, 'fixed', 50, '2023-06-01', '2023-06-30', TRUE, TRUE);
 
 -- 5. Game Table (references Promotion table)
 CREATE TABLE IF NOT EXISTS Game (
@@ -81,8 +119,15 @@ CREATE TABLE IF NOT EXISTS Game (
     is_digital BOOLEAN DEFAULT FALSE,
     stock_count INT DEFAULT 0,
     promo_id INT,
+    head_image_url VARCHAR(255),
+    screenshot_url VARCHAR(255),
     FOREIGN KEY (promo_id) REFERENCES Promotion(id)
 );
+
+-- Insert Game data
+INSERT IGNORE INTO game_haven.Game (id, title, platform, price, release_date, is_digital, stock_count, promo_id, head_image_url, screenshot_url) VALUES
+(1, 'Game Title 1', 'PC', 59.99, '2023-01-01', TRUE, 100, 1, '/images/products/WW.jpg', '/images/products/game1_screenshot.jpg'),
+(2, 'Game Title 2', 'Console', 49.99, '2023-02-01', FALSE, 50, 2, '/images/products/OH.jpg', '/images/products/game2_screenshot.jpg');
 
 -- 6. GameGenre Table (references Game and Genre tables)
 CREATE TABLE IF NOT EXISTS GameGenre (
