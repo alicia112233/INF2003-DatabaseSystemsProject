@@ -15,23 +15,26 @@ export async function GET(req: NextRequest) {
   let connection;
   try {
     connection = await mysql.createConnection(dbConfig);
-    const [rows] = await connection.query(
-      `SELECT o.id, u.email, o.game_title AS gameTitle, o.total, o.status, o.purchase_date AS createdAt
+    // Get all orders with user info
+    const [orders] = await connection.query(
+      `SELECT o.id, u.email, o.total, o.status, o.purchase_date AS createdAt
        FROM Orders o
        JOIN users u ON o.user_id = u.id`
     );
-    // Ensure createdAt is always an ISO string
-    const safeRows = Array.isArray(rows)
-      ? rows.map((row: any) => ({
-          ...row,
-          total: Number(row.total),
-          createdAt: row.createdAt ? new Date(row.createdAt).toISOString() : null
-        }))
-      : rows;
-    return NextResponse.json(safeRows);
+    // For each order, get its games
+    for (const order of orders as any[]) {
+      const [games] = await connection.query(
+        `SELECT og.game_id, g.title, og.quantity, og.price
+         FROM OrderGame og
+         JOIN Game g ON og.game_id = g.id
+         WHERE og.order_id = ?`,
+        [order.id]
+      );
+      order.games = games;
+    }
+    return NextResponse.json(orders);
   } catch (error: any) {
     console.error('GET /api/orders error:', error);
-    // Always return an array on error to prevent frontend .filter errors
     return NextResponse.json([], { status: 500 });
   } finally {
     if (connection) await connection.end();
@@ -53,13 +56,23 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "User with this email not found" }, { status: 400 });
     }
     const user_id = users[0].id;
-    // Always use ISO string for purchase_date
-    const purchase_date = data.purchase_date ? new Date(data.purchase_date).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10);
+    const purchase_date = data.purchase_date
+      ? new Date(data.purchase_date).toISOString().slice(0, 10)
+      : new Date().toISOString().slice(0, 10);
+    // Insert order
     const [result] = await connection.query<ResultSetHeader>(
-      `INSERT INTO Orders (user_id, game_title, total, status, purchase_date) VALUES (?, ?, ?, ?, ?)` ,
-      [user_id, data.gameTitle, data.total, data.status || 'Pending', purchase_date]
+      `INSERT INTO Orders (user_id, total, status, purchase_date) VALUES (?, ?, ?, ?)`,
+      [user_id, data.total, data.status || 'Pending', purchase_date]
     );
-    return NextResponse.json({ id: result.insertId, ...data, user_id, purchase_date }, { status: 201 });
+    const orderId = (result as ResultSetHeader).insertId;
+    // Insert games
+    for (const game of data.games) {
+      await connection.query(
+        `INSERT INTO OrderGame (order_id, game_id, quantity, price) VALUES (?, ?, ?, ?)`,
+        [orderId, game.gameId, game.quantity, game.price]
+      );
+    }
+    return NextResponse.json({ id: orderId, ...data, user_id, purchase_date }, { status: 201 });
   } catch (error) {
     console.error(error);
     return NextResponse.json({ error: "Failed to create order" }, { status: 500 });
