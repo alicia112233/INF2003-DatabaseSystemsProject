@@ -29,6 +29,12 @@ export const getMenuItems = (isLoggedIn: boolean, userRole: string = 'customer')
       icon: IconLayoutDashboard,
       href: "/",
     },
+    {
+      id: uniqueId(),
+      title: "All Games",
+      icon: IconDeviceGamepad,
+      href: "/products",
+    },
   ];
 
   // Guest-specific menu items (without Upgrade)
@@ -121,15 +127,15 @@ export const getMenuItems = (isLoggedIn: boolean, userRole: string = 'customer')
     },
     {
       id: uniqueId(),
-      title: "Add New Games",
-      icon: IconDeviceGamepad,
-      href: "/create-games",
-    },
-    {
-      id: uniqueId(),
       title: "View All Games",
       icon: IconDeviceGamepad,
       href: "/products",
+    },
+    {
+      id: uniqueId(),
+      title: "Add New Games",
+      icon: IconDeviceGamepad,
+      href: "/create-games",
     },
     {
       id: uniqueId(),

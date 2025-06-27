@@ -16,9 +16,11 @@ import {
     Select,
     MenuItem,
     Chip,
-    OutlinedInput,
-    ListItemText,
     Checkbox,
+    Autocomplete,
+    CircularProgress,
+    Skeleton,
+    Typography,
 } from '@mui/material';
 import { Promotion, CreatePromotionRequest } from '@/types/promotion';
 
@@ -48,18 +50,18 @@ interface GameWithPromotion extends Game {
 // Helper function to format date for input[type="date"]
 const formatDateForInput = (dateString: string): string => {
     if (!dateString) return '';
-    
+
     // Handle different date formats
     const date = new Date(dateString);
-    
+
     // Check if date is valid
     if (isNaN(date.getTime())) return '';
-    
+
     // Use local timezone instead of UTC to avoid date shifting
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
-    
+
     return `${year}-${month}-${day}`;
 };
 
@@ -89,24 +91,35 @@ const PromotionFormDialog: React.FC<PromotionFormDialogProps> = ({
         selectedGameIds: [],
     });
 
+    const [isInitializing, setIsInitializing] = useState(false);
+
     // Game state
     const [games, setGames] = useState<GameWithPromotion[]>([]);
     const [loadingGames, setLoadingGames] = useState(false);
+    const [gamesCache, setGamesCache] = useState<GameWithPromotion[]>([]);
 
     // Fetch games when component mounts or when applicableToAll changes to false
     useEffect(() => {
         if (open && (!formData.applicableToAll || (promotion && !promotion.applicableToAll))) {
             fetchGames();
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [open, formData.applicableToAll, promotion]);
 
     const fetchGames = async (): Promise<void> => {
+        // Check cache first for faster loading
+        if (gamesCache.length > 0) {
+            setGames(gamesCache);
+            return;
+        }
+
         setLoadingGames(true);
         try {
             const response = await fetch('/api/games/with-promotions');
             if (response.ok) {
                 const gamesData = await response.json();
                 setGames(gamesData);
+                setGamesCache(gamesData); // Cache the data
             } else {
                 console.error('Failed to fetch games');
             }
@@ -119,6 +132,8 @@ const PromotionFormDialog: React.FC<PromotionFormDialogProps> = ({
 
     useEffect(() => {
         if (promotion) {
+            setIsInitializing(true);
+
             // If promotion is not applicable to all, fetch games first
             if (!promotion.applicableToAll) {
                 fetchGames().then(() => {
@@ -137,6 +152,7 @@ const PromotionFormDialog: React.FC<PromotionFormDialogProps> = ({
                             applicableToAll: promotion.applicableToAll,
                             selectedGameIds: assignedGameIds,
                         });
+                        setIsInitializing(false);
                     });
                 });
             } else {
@@ -153,6 +169,7 @@ const PromotionFormDialog: React.FC<PromotionFormDialogProps> = ({
                     applicableToAll: promotion.applicableToAll,
                     selectedGameIds: [],
                 });
+                setIsInitializing(false);
             }
         } else {
             setFormData({
@@ -167,6 +184,7 @@ const PromotionFormDialog: React.FC<PromotionFormDialogProps> = ({
                 applicableToAll: true,
                 selectedGameIds: [],
             });
+            setIsInitializing(false);
         }
         // Clear errors when dialog opens/closes or promotion changes
         setErrors({});
@@ -187,16 +205,16 @@ const PromotionFormDialog: React.FC<PromotionFormDialogProps> = ({
     const validateDates = (startDate: string, endDate: string) => {
         const newErrors = { ...errors };
         const today = getTodayDate();
-        
+
         // Check if both dates are provided
         const hasStartDate = startDate.trim() !== '';
         const hasEndDate = endDate.trim() !== '';
-        
+
         // Clear general error if both dates are now provided
         if (hasStartDate && hasEndDate) {
             delete newErrors.general;
         }
-        
+
         // Validate start date (must be today or after)
         if (hasStartDate) {
             if (startDate < today) {
@@ -209,7 +227,7 @@ const PromotionFormDialog: React.FC<PromotionFormDialogProps> = ({
             // If start date is missing, clear start date error
             delete newErrors.startDate;
         }
-        
+
         // Check date range validity
         if (hasStartDate && hasEndDate) {
             if (startDate <= endDate) {
@@ -223,7 +241,7 @@ const PromotionFormDialog: React.FC<PromotionFormDialogProps> = ({
             // If either date is missing, clear date range error
             delete newErrors.dateRange;
         }
-        
+
         setErrors(newErrors);
     };
 
@@ -273,11 +291,11 @@ const PromotionFormDialog: React.FC<PromotionFormDialogProps> = ({
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        
+
         if (!validateForm()) {
             return;
         }
-        
+
         const submitData: UpdatePromotionRequest = {
             ...formData,
             code: formData.code.replace(/\s/g, '').toUpperCase(),
@@ -332,12 +350,12 @@ const PromotionFormDialog: React.FC<PromotionFormDialogProps> = ({
                 // Clear discount value error
                 const newErrors = { ...errors };
                 delete newErrors.discountValue;
-                
+
                 // Validate percentage if discount type is percentage
                 if (formData.discountType === 'percentage' && parseFloat(value) > 100) {
                     newErrors.discountValue = 'Percentage discount cannot exceed 100%';
                 }
-                
+
                 setErrors(newErrors);
             }
         }
@@ -361,7 +379,7 @@ const PromotionFormDialog: React.FC<PromotionFormDialogProps> = ({
             if (games.length === 0) {
                 fetchGames();
             }
-            
+
             // If editing an existing promotion, fetch currently assigned games
             if (promotion && promotion.id) {
                 fetchAssignedGames(promotion.id).then((assignedGameIds) => {
@@ -387,7 +405,7 @@ const PromotionFormDialog: React.FC<PromotionFormDialogProps> = ({
         if (field === 'startDate' || field === 'endDate') {
             const startDate = field === 'startDate' ? value : formData.startDate;
             const endDate = field === 'endDate' ? value : formData.endDate;
-            
+
             // Validate dates with the new values
             validateDates(startDate, endDate);
         }
@@ -423,7 +441,7 @@ const PromotionFormDialog: React.FC<PromotionFormDialogProps> = ({
         const value = event.target.value;
         // Ensure we always have an array of numbers
         const selectedIds = Array.isArray(value) ? value : [value];
-        
+
         setFormData(prev => ({
             ...prev,
             selectedGameIds: selectedIds,
@@ -437,6 +455,25 @@ const PromotionFormDialog: React.FC<PromotionFormDialogProps> = ({
         }
     };
 
+    // Centered loading component
+    const CenteredLoading = () => (
+        <Box 
+            sx={{ 
+                display: 'flex', 
+                flexDirection: 'column',
+                alignItems: 'center', 
+                justifyContent: 'center', 
+                minHeight: 400,
+                gap: 2
+            }}
+        >
+            <CircularProgress size={40} />
+            <Typography variant="body1" color="text.secondary">
+                Loading promotion data...
+            </Typography>
+        </Box>
+    );
+
     return (
         <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
             <form onSubmit={handleSubmit}>
@@ -444,308 +481,313 @@ const PromotionFormDialog: React.FC<PromotionFormDialogProps> = ({
                     {promotion ? 'Edit Promotion' : 'Create New Promotion'}
                 </DialogTitle>
                 <DialogContent>
-                    <Box sx={{ pt: 2 }}>
-                        {/* General Error Alert */}
-                        {errors.general && (
-                            <Alert severity="error" sx={{ mb: 2 }}>
-                                {errors.general}
-                            </Alert>
-                        )}
-                        
-                        {/* Start Date Error Alert */}
-                        {errors.startDate && (
-                            <Alert severity="error" sx={{ mb: 2 }}>
-                                {errors.startDate}
-                            </Alert>
-                        )}
-                        
-                        {/* Date Range Error Alert */}
-                        {errors.dateRange && (
-                            <Alert severity="error" sx={{ mb: 2 }}>
-                                {errors.dateRange}
-                            </Alert>
-                        )}
+                    {isInitializing ? (
+                        <CenteredLoading />
+                    ) : (
+                        <Box sx={{ pt: 2 }}>
+                            {/* General Error Alert */}
+                            {errors.general && (
+                                <Alert severity="error" sx={{ mb: 2 }}>
+                                    {errors.general}
+                                </Alert>
+                            )}
 
-                        {/* Game Selection Error Alert */}
-                        {errors.selectedGames && (
-                            <Alert severity="error" sx={{ mb: 2 }}>
-                                {errors.selectedGames}
-                            </Alert>
-                        )}
+                            {/* Start Date Error Alert */}
+                            {errors.startDate && (
+                                <Alert severity="error" sx={{ mb: 2 }}>
+                                    {errors.startDate}
+                                </Alert>
+                            )}
 
-                        <Grid container spacing={2}>
-                            <Grid
-                                size={{
-                                    xs: 12,
-                                    md: 6,
-                                }}
-                            >
-                                <TextField
-                                    fullWidth
-                                    label="Promotion Code"
-                                    value={formData.code}
-                                    onChange={handleChange('code')}
-                                    error={!!errors.code}
-                                    helperText={errors.code}
-                                    required
-                                />
-                            </Grid>
-                            <Grid 
-                                size={{
-                                    xs: 12,
-                                    md: 6,
-                                }}
-                            >
-                                <TextField
-                                    fullWidth
-                                    label="Max Usage (Optional)"
-                                    type="number"
-                                    value={formData.maxUsage ?? ''}
-                                    onChange={(e) => {
-                                        const value = e.target.value;
-                                        setFormData(prev => ({
-                                            ...prev,
-                                            maxUsage: value === '' ? undefined : parseInt(value)
-                                        }));
+                            {/* Date Range Error Alert */}
+                            {errors.dateRange && (
+                                <Alert severity="error" sx={{ mb: 2 }}>
+                                    {errors.dateRange}
+                                </Alert>
+                            )}
+
+                            {/* Game Selection Error Alert */}
+                            {errors.selectedGames && (
+                                <Alert severity="error" sx={{ mb: 2 }}>
+                                    {errors.selectedGames}
+                                </Alert>
+                            )}
+
+                            <Grid container spacing={2}>
+                                <Grid
+                                    size={{
+                                        xs: 12,
+                                        md: 6,
                                     }}
-                                    slotProps={{ htmlInput: { min: 1 } }}
-                                />
-                            </Grid>
-                            <Grid
-                                size={{
-                                    xs: 12,
-                                    md: 6,
-                                }}
-                            >
-                                <FormControl fullWidth required>
-                                    <InputLabel>Discount Type</InputLabel>
-                                    <Select
-                                        value={formData.discountType}
-                                        label="Discount Type"
-                                        onChange={handleSelectChange('discountType')}
-                                    >
-                                        <MenuItem value="fixed">Fixed Amount ($)</MenuItem>
-                                        <MenuItem value="percentage">Percentage (%)</MenuItem>
-                                    </Select>
-                                </FormControl>
-                            </Grid>
-                            <Grid
-                                size={{
-                                    xs: 12,
-                                    md: 6,
-                                }}
-                            >
-                                <TextField
-                                    fullWidth
-                                    label={`Discount Value ${formData.discountType === 'percentage' ? '(%)' : '($)'}`}
-                                    type="number"
-                                    value={formData.discountValue}
-                                    onChange={handleChange('discountValue')}
-                                    slotProps={{ 
-                                        htmlInput: { 
-                                            min: 0, 
-                                            step: 0.01,
-                                            max: formData.discountType === 'percentage' ? 100 : undefined
-                                        } 
+                                >
+                                    <TextField
+                                        fullWidth
+                                        label="Promotion Code"
+                                        value={formData.code}
+                                        onChange={handleChange('code')}
+                                        error={!!errors.code}
+                                        helperText={errors.code}
+                                        required
+                                    />
+                                </Grid>
+                                <Grid
+                                    size={{
+                                        xs: 12,
+                                        md: 6,
                                     }}
-                                    error={!!errors.discountValue}
-                                    helperText={errors.discountValue}
-                                    required
-                                />
-                            </Grid>
-                            <Grid 
-                                size={{
-                                    xs: 12,
-                                }}
-                            >
-                                <TextField
-                                    fullWidth
-                                    label="Description"
-                                    value={formData.description}
-                                    onChange={handleChange('description')}
-                                    multiline
-                                    rows={3}
-                                    error={!!errors.description}
-                                    helperText={errors.description}
-                                    required
-                                />
-                            </Grid>
-                            <Grid 
-                                size={{
-                                    xs: 12,
-                                    md: 6,
-                                }}
-                            >
-                                <TextField
-                                    fullWidth
-                                    label="Start Date"
-                                    type="date"
-                                    value={formData.startDate}
-                                    onChange={handleChange('startDate')}
-                                    helperText={errors.startDate || "Start date must be today or later"}
-                                    slotProps={{ inputLabel: { shrink: true }, htmlInput: { min: getTodayDate() } }}
-                                    required
-                                />
-                            </Grid>
-                            <Grid 
-                                size={{
-                                    xs: 12,
-                                    md: 6,
-                                }}
-                            >
-                                <TextField
-                                    fullWidth
-                                    label="End Date"
-                                    type="date"
-                                    value={formData.endDate}
-                                    onChange={handleChange('endDate')}
-                                    slotProps={{ inputLabel: { shrink: true } }}
-                                    required
-                                />
-                            </Grid>
-                            <Grid 
-                                size={{
-                                    xs: 12,
-                                }}
-                            >
-                                <Box sx={{ display: 'flex', flexDirection: 'row', gap: 3, mt: 1 }}>
-                                    <FormControlLabel
-                                        control={
-                                            <Switch
-                                                checked={formData.isActive}
-                                                onChange={handleChange('isActive')}
-                                            />
-                                        }
-                                        label="Active"
+                                >
+                                    <TextField
+                                        fullWidth
+                                        label="Max Usage (Optional)"
+                                        type="number"
+                                        value={formData.maxUsage ?? ''}
+                                        onChange={(e) => {
+                                            const value = e.target.value;
+                                            setFormData(prev => ({
+                                                ...prev,
+                                                maxUsage: value === '' ? undefined : parseInt(value)
+                                            }));
+                                        }}
+                                        slotProps={{ htmlInput: { min: 1 } }}
                                     />
-                                    <FormControlLabel
-                                        control={
-                                            <Switch
-                                                checked={formData.applicableToAll}
-                                                onChange={handleChange('applicableToAll')}
-                                            />
-                                        }
-                                        label="Applicable to All"
+                                </Grid>
+                                <Grid
+                                    size={{
+                                        xs: 12,
+                                        md: 6,
+                                    }}
+                                >
+                                    <FormControl fullWidth required>
+                                        <InputLabel>Discount Type</InputLabel>
+                                        <Select
+                                            value={formData.discountType}
+                                            label="Discount Type"
+                                            onChange={handleSelectChange('discountType')}
+                                        >
+                                            <MenuItem value="fixed">Fixed Amount ($)</MenuItem>
+                                            <MenuItem value="percentage">Percentage (%)</MenuItem>
+                                        </Select>
+                                    </FormControl>
+                                </Grid>
+                                <Grid
+                                    size={{
+                                        xs: 12,
+                                        md: 6,
+                                    }}
+                                >
+                                    <TextField
+                                        fullWidth
+                                        label={`Discount Value ${formData.discountType === 'percentage' ? '(%)' : '($)'}`}
+                                        type="number"
+                                        value={formData.discountValue}
+                                        onChange={handleChange('discountValue')}
+                                        slotProps={{
+                                            htmlInput: {
+                                                min: 0,
+                                                step: 0.01,
+                                                max: formData.discountType === 'percentage' ? 100 : undefined
+                                            }
+                                        }}
+                                        error={!!errors.discountValue}
+                                        helperText={errors.discountValue}
+                                        required
                                     />
-                                </Box>
-                            </Grid>
-
-                            {/* Game Selection Field - Only show when not applicable to all */}
-                            {!formData.applicableToAll && (
-                                <Grid 
+                                </Grid>
+                                <Grid
                                     size={{
                                         xs: 12,
                                     }}
                                 >
-                                    <FormControl fullWidth error={!!errors.selectedGames}>
-                                        <InputLabel>Select Games</InputLabel>
-                                        <Select
+                                    <TextField
+                                        fullWidth
+                                        label="Description"
+                                        value={formData.description}
+                                        onChange={handleChange('description')}
+                                        multiline
+                                        rows={3}
+                                        error={!!errors.description}
+                                        helperText={errors.description}
+                                        required
+                                    />
+                                </Grid>
+                                <Grid
+                                    size={{
+                                        xs: 12,
+                                        md: 6,
+                                    }}
+                                >
+                                    <TextField
+                                        fullWidth
+                                        label="Start Date"
+                                        type="date"
+                                        value={formData.startDate}
+                                        onChange={handleChange('startDate')}
+                                        helperText={errors.startDate || "Start date must be today or later"}
+                                        slotProps={{ inputLabel: { shrink: true }, htmlInput: { min: getTodayDate() } }}
+                                        required
+                                    />
+                                </Grid>
+                                <Grid
+                                    size={{
+                                        xs: 12,
+                                        md: 6,
+                                    }}
+                                >
+                                    <TextField
+                                        fullWidth
+                                        label="End Date"
+                                        type="date"
+                                        value={formData.endDate}
+                                        onChange={handleChange('endDate')}
+                                        slotProps={{ inputLabel: { shrink: true } }}
+                                        required
+                                    />
+                                </Grid>
+                                <Grid
+                                    size={{
+                                        xs: 12,
+                                    }}
+                                >
+                                    <Box sx={{ display: 'flex', flexDirection: 'row', gap: 3, mt: 1 }}>
+                                        <FormControlLabel
+                                            control={
+                                                <Switch
+                                                    checked={formData.isActive}
+                                                    onChange={handleChange('isActive')}
+                                                />
+                                            }
+                                            label="Active"
+                                        />
+                                        <FormControlLabel
+                                            control={
+                                                <Switch
+                                                    checked={formData.applicableToAll}
+                                                    onChange={handleChange('applicableToAll')}
+                                                />
+                                            }
+                                            label="Applicable to All"
+                                        />
+                                    </Box>
+                                </Grid>
+
+                                {/* Game Selection Field - Only show when not applicable to all */}
+                                {!formData.applicableToAll && (
+                                    <Grid
+                                        size={{
+                                            xs: 12,
+                                        }}
+                                    >
+                                        <Autocomplete
                                             multiple
-                                            value={formData.selectedGameIds || []}
-                                            onChange={handleGameSelection}
-                                            input={<OutlinedInput label="Select Games" />}
-                                            renderValue={(selected) => (
-                                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                                                    {(selected as number[]).map((gameId) => {
-                                                        const game = games.find(g => g.id === gameId);
-                                                        return (
-                                                            <Chip 
-                                                                key={gameId} 
-                                                                label={game?.title || `Game ${gameId}`}
-                                                                size="small"
-                                                            />
-                                                        );
-                                                    })}
-                                                </Box>
-                                            )}
-                                            disabled={loadingGames}
-                                            MenuProps={{
-                                                PaperProps: {
-                                                    style: {
-                                                        maxHeight: 400,
-                                                    },
-                                                },
+                                            options={games}
+                                            getOptionLabel={(option) => option.title}
+                                            value={games.filter(game => (formData.selectedGameIds || []).includes(game.id))}
+                                            onChange={(event, newValue) => {
+                                                const selectedIds = newValue.map(game => game.id);
+                                                setFormData(prev => ({
+                                                    ...prev,
+                                                    selectedGameIds: selectedIds,
+                                                }));
+                                                // Clear game selection error when games are selected
+                                                if (selectedIds.length > 0) {
+                                                    const newErrors = { ...errors };
+                                                    delete newErrors.selectedGames;
+                                                    setErrors(newErrors);
+                                                }
                                             }}
-                                        >
-                                            {loadingGames ? (
-                                                <MenuItem disabled>
-                                                    <em>Loading games...</em>
-                                                </MenuItem>
-                                            ) : games.length === 0 ? (
-                                                <MenuItem disabled>
-                                                    <em>No games available</em>
-                                                </MenuItem>
-                                            ) : (
-                                                games.map((game) => {
-                                                    const isSelected = (formData.selectedGameIds || []).indexOf(game.id) > -1;
-                                                    const hasOtherPromotion = Boolean(game.promo_id && game.promo_id !== promotion?.id);
-                                                    const hasCurrentPromotion = game.promo_id === promotion?.id;
-                                                    
+                                            loading={loadingGames}
+                                            disabled={loadingGames}
+                                            renderTags={(value, getTagProps) =>
+                                                value.map((game, index) => {
+                                                    const { key, ...tagProps } = getTagProps({ index });
                                                     return (
-                                                        <MenuItem 
-                                                            key={game.id} 
-                                                            value={game.id}
-                                                            // disabled={hasOtherPromotion}
-                                                            // sx={{
-                                                            //     opacity: hasOtherPromotion ? 0.6 : 1,
-                                                            // }}
-                                                        >
-                                                            <Checkbox 
-                                                                checked={isSelected}
-                                                                // disabled={hasOtherPromotion}
-                                                            />
-                                                            <ListItemText 
-                                                                primary={
-                                                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                                                        <span>{game.title}</span>
-                                                                        {hasCurrentPromotion && (
-                                                                            <Chip 
-                                                                                label="Current Promo" 
-                                                                                size="small" 
-                                                                                color="primary"
-                                                                                variant="outlined"
-                                                                            />
-                                                                        )}
-                                                                        {hasOtherPromotion && (
-                                                                            <Chip 
-                                                                                label={`Assigned to: ${game.promo_code || 'Other Promo'}`}
-                                                                                size="small" 
-                                                                                color="warning"
-                                                                                variant="outlined"
-                                                                            />
-                                                                        )}
-                                                                        {!game.promo_id && (
-                                                                            <Chip 
-                                                                                label="No Promo" 
-                                                                                size="small" 
-                                                                                color="default"
-                                                                                variant="outlined"
-                                                                            />
-                                                                        )}
-                                                                    </Box>
-                                                                }
-                                                            />
-                                                        </MenuItem>
+                                                        <Chip
+                                                            key={key}
+                                                            label={game.title}
+                                                            size="small"
+                                                            clickable={false}
+                                                            {...tagProps}
+                                                        />
                                                     );
                                                 })
+                                            }
+                                            renderOption={(props, game) => {
+                                                const { key, ...optionProps } = props;
+                                                const isSelected = (formData.selectedGameIds || []).includes(game.id);
+                                                const hasOtherPromotion = Boolean(game.promo_id && game.promo_id !== promotion?.id);
+                                                const hasCurrentPromotion = game.promo_id === promotion?.id;
+
+                                                return (
+                                                    <li key={key} {...optionProps}>
+                                                        <Checkbox
+                                                            checked={isSelected}
+                                                            sx={{ mr: 1 }}
+                                                        />
+                                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flex: 1 }}>
+                                                            <span>{game.title}</span>
+                                                            {hasCurrentPromotion && (
+                                                                <Chip
+                                                                    label="Current Promo"
+                                                                    size="small"
+                                                                    color="primary"
+                                                                    variant="outlined"
+                                                                    clickable={false}
+                                                                />
+                                                            )}
+                                                            {hasOtherPromotion && (
+                                                                <Chip
+                                                                    label={`Assigned to: ${game.promo_code || 'Other Promo'}`}
+                                                                    size="small"
+                                                                    color="warning"
+                                                                    variant="outlined"
+                                                                    clickable={false}
+                                                                />
+                                                            )}
+                                                            {!game.promo_id && (
+                                                                <Chip
+                                                                    label="No Promo"
+                                                                    size="small"
+                                                                    color="default"
+                                                                    variant="outlined"
+                                                                    clickable={false}
+                                                                />
+                                                            )}
+                                                        </Box>
+                                                    </li>
+                                                );
+                                            }}
+                                            renderInput={(params) => (
+                                                <TextField
+                                                    {...params}
+                                                    label="Select Games"
+                                                    placeholder="Search and select games..."
+                                                    error={!!errors.selectedGames}
+                                                    helperText={errors.selectedGames}
+                                                />
                                             )}
-                                        </Select>
-                                        {errors.selectedGames && (
-                                            <Box sx={{ color: 'error.main', fontSize: '0.75rem', mt: 0.5, ml: 1.75 }}>
-                                                {errors.selectedGames}
-                                            </Box>
-                                        )}
-                                    </FormControl>
-                                </Grid>
-                            )}
-                        </Grid>
-                    </Box>
+                                            ListboxProps={{
+                                                style: {
+                                                    maxHeight: 400,
+                                                },
+                                            }}
+                                            filterOptions={(options, { inputValue }) => {
+                                                return options.filter(game =>
+                                                    game.title.toLowerCase().includes(inputValue.toLowerCase())
+                                                );
+                                            }}
+                                            noOptionsText={loadingGames ? "Loading games..." : "No games found"}
+                                        />
+                                    </Grid>
+                                )}
+                            </Grid>
+                        </Box>
+                    )}
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={onClose} disabled={loading}>
+                    <Button onClick={onClose} disabled={loading || isInitializing}>
                         Cancel
                     </Button>
-                    <Button type="submit" variant="contained" disabled={loading}>
+                    <Button type="submit" variant="contained" disabled={loading || isInitializing}>
                         {loading ? 'Saving...' : promotion ? 'Update' : 'Create'}
                     </Button>
                 </DialogActions>

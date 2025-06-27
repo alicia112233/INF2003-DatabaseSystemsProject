@@ -3,16 +3,7 @@
 import React from 'react';
 import { Button, ButtonProps } from '@mui/material';
 import { useCart } from '@/contexts/CartContext';
-
-interface Product {
-  id: string;
-  name: string;
-  price: number;
-  image?: string;
-  description?: string;
-  category?: string;
-  inStock?: boolean;
-}
+import { Product } from '@/types/cart';
 
 interface AddToCartButtonProps extends Omit<ButtonProps, 'onClick'> {
   product: Product;
@@ -31,10 +22,10 @@ const AddToCartButton: React.FC<AddToCartButtonProps> = ({
     if (product.inStock !== false && !disabled) {
       addToCart({
         productId: product.id,
-        name: product.name,
+        title: product.title,
         price: product.price,
         quantity: 1,
-        image: product.image,
+        image_url: product.image_url || '/images/products/noprodimg.png',
         description: product.description,
       });
     }

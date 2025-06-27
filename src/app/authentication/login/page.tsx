@@ -73,7 +73,7 @@ const Login = () => (
                 }
               }}
             >
-              Enter your credentials to continue
+              Sign In to View and Purchase Personalized Games For You!
             </Typography>
           }
           subtitle={

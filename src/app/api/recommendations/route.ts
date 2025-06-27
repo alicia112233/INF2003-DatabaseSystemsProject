@@ -19,8 +19,8 @@ export async function GET(req: NextRequest) {
       `SELECT id, title, description, price, image_url, platform FROM Game ORDER BY RAND() LIMIT 5`
     );
 
-    // Log to see what is returned
-    console.log('Recommended games:', games);
+    // for testing to see what is returned
+    // console.log('Recommended games:', games);
 
     return NextResponse.json({ recommendations: games });
   } catch (error) {

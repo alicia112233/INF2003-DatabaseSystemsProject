@@ -3,6 +3,7 @@ import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import theme from '@/utils/theme';
 import { CartProvider } from '@/contexts/CartContext';
+import { WishlistProvider } from '@/contexts/WishlistContext';
 
 export default function RootLayout({
     children,
@@ -15,7 +16,9 @@ export default function RootLayout({
                 <ThemeProvider theme={theme}>
                     <CssBaseline />
                     <CartProvider>
-                        {children}
+                        <WishlistProvider>
+                            {children}
+                        </WishlistProvider>
                     </CartProvider>
                 </ThemeProvider>
             </body>

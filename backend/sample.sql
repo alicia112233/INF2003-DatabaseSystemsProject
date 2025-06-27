@@ -124,11 +124,6 @@ CREATE TABLE IF NOT EXISTS Game (
     FOREIGN KEY (promo_id) REFERENCES Promotion(id)
 );
 
--- Insert Game data
-INSERT IGNORE INTO game_haven.Game (id, title, platform, price, release_date, is_digital, stock_count, promo_id, head_image_url, screenshot_url) VALUES
-(1, 'Game Title 1', 'PC', 59.99, '2023-01-01', TRUE, 100, 1, '/images/products/WW.jpg', '/images/products/game1_screenshot.jpg'),
-(2, 'Game Title 2', 'Console', 49.99, '2023-02-01', FALSE, 50, 2, '/images/products/OH.jpg', '/images/products/game2_screenshot.jpg');
-
 -- 6. GameGenre Table (references Game and Genre tables)
 CREATE TABLE IF NOT EXISTS GameGenre (
     game_id INT NOT NULL,
