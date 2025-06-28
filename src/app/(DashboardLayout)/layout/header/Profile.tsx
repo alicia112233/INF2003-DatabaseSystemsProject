@@ -147,7 +147,7 @@ const Profile = () => {
                     </ListItemIcon>
                     <ListItemText>My Wish List</ListItemText>
                 </MenuItem>
-                <MenuItem>
+                <MenuItem onClick={() => handleMenuItemClick('/my-orders')}>
                     <ListItemIcon>
                         <Inventory width={20} />
                     </ListItemIcon>

@@ -20,10 +20,54 @@ const CartPage: React.FC = () => {
     const router = useRouter();
     const { cart, getCartItemCount } = useCart();
 
-    const handleCheckout = () => {
-        // Implement checkout logic here
-        console.log('Proceeding to checkout...');
-        // router.push('/checkout');
+    const handleCheckout = async () => {
+        if (!cart || !cart.items.length) return;
+        // Fetch user email
+        let email = '';
+        try {
+            const res = await fetch('/api/profile');
+            if (res.ok) {
+                const data = await res.json();
+                email = data.email;
+            }
+        } catch (e) {
+            console.error('Failed to fetch user profile', e);
+        }
+        if (!email) {
+            alert('Could not get user email. Please log in again.');
+            return;
+        }
+        // Prepare order data
+        const orderData = {
+            email,
+            total: cart.totalAmount,
+            status: 'Pending',
+            games: cart.items.map(item => ({
+                gameId: item.productId,
+                title: item.title,
+                quantity: item.quantity,
+                price: item.price
+            }))
+        };
+        // Send order to API
+        try {
+            const res = await fetch('/api/orders', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(orderData)
+            });
+            if (res.ok) {
+                // Clear cart and redirect
+                if (typeof window !== 'undefined') {
+                    localStorage.removeItem('customer-cart');
+                }
+                router.push('/my-orders');
+            } else {
+                alert('Failed to place order.');
+            }
+        } catch (e) {
+            alert('Failed to place order.');
+        }
     };
 
     const handleContinueShopping = () => {
