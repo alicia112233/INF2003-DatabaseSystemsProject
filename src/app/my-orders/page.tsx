@@ -113,7 +113,7 @@ export default function MyOrdersPage() {
           <Table>
             <TableHead>
               <TableRow>
-                <TableCell>Your Email</TableCell>
+                <TableCell>My Email</TableCell>
                 <TableCell>Game Titles</TableCell>
                 <TableCell>Total Price</TableCell>
                 <TableCell>Date Ordered</TableCell>
