@@ -79,7 +79,6 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
     const addToWishlist = async (item: WishlistItem) => {
         try {
-            // Call API to add to wishlist
             const response = await fetch('/api/wishlist', {
                 method: 'POST',
                 headers: {
@@ -90,32 +89,28 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
             if (response.ok) {
                 dispatch({ type: 'ADD_ITEM', payload: item });
+                return { success: true, message: 'Added to wishlist' };
             } else {
-                console.error('Failed to add to wishlist');
+                const data = await response.json();
+                return { success: false, message: data.message || 'Failed to add to wishlist' };
             }
         } catch (error) {
             console.error('Error adding to wishlist:', error);
-            // Still add to local state for better UX
             dispatch({ type: 'ADD_ITEM', payload: item });
+            return { success: false, message: 'Error adding to wishlist' };
         }
     };
 
     const removeFromWishlist = async (itemId: string) => {
         try {
-            // Call API to remove from wishlist
-            const response = await fetch('/api/wishlist', {
+            // Call API to remove from wishlist using the URL
+            await fetch('/api/wishlist', {
                 method: 'DELETE',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ gameId: itemId }),
             });
 
-            if (response.ok) {
-                dispatch({ type: 'REMOVE_ITEM', payload: itemId });
-            } else {
-                console.error('Failed to remove from wishlist');
-            }
+            dispatch({ type: 'REMOVE_ITEM', payload: itemId });
         } catch (error) {
             console.error('Error removing from wishlist:', error);
             // Still remove from local state for better UX
@@ -145,3 +140,4 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         </WishlistContext.Provider>
     );
 };
+

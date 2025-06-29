@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect, useCallback } from 'react';
-import { Box, Typography, Button, Card, CardContent, CardMedia, Stack, IconButton, Grid, CircularProgress, Skeleton } from '@mui/material';
+import { Box, Typography, Button, Card, CardContent, CardMedia, Stack, IconButton, Grid, CircularProgress, Skeleton, Snackbar, Alert } from '@mui/material';
 import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import PageContainer from '@/app/(DashboardLayout)/components/container/PageContainer';
@@ -113,6 +113,7 @@ const RecommendationsCarousel = () => {
     const [current, setCurrent] = useState(0);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [snack, setSnack] = useState({ open: false, msg: '', severity: 'success' });
 
     const handlePrev = () => setCurrent((prev) => (prev === 0 ? games.length - 1 : prev - 1));
     const handleNext = useCallback(() => {
@@ -264,10 +265,24 @@ const RecommendationsCarousel = () => {
                             variant="contained"
                             sx={{ bgcolor: '#B8860B', '&:hover': { bgcolor: '#9A7209' } }}
                             onClick={async () => {
-                                await fetch('/api/wishlist', {
+                                if (!isUserLoggedInAndCustomer()) {
+                                    setSnack({
+                                        open: true,
+                                        msg: 'Please log in as a customer to add to wishlist.',
+                                        severity: 'warning',
+                                    });
+                                    return;
+                                }
+                                const res = await fetch('/api/wishlist', {
                                     method: 'POST',
                                     headers: { 'Content-Type': 'application/json' },
                                     body: JSON.stringify({ gameId: game.id }),
+                                });
+                                const data = await res.json();
+                                setSnack({
+                                    open: true,
+                                    msg: data.message === 'Already in wishlist' ? 'Already in wishlist' : 'Added to wishlist',
+                                    severity: data.message === 'Already in wishlist' ? 'warning' : 'success',
                                 });
                             }}
                         >
@@ -277,6 +292,16 @@ const RecommendationsCarousel = () => {
                 </CardContent>
             </Card>
             <IconButton onClick={handleNext}><ArrowForwardIosIcon /></IconButton>
+            <Snackbar
+                open={snack.open}
+                autoHideDuration={3000}
+                onClose={() => setSnack(s => ({ ...s, open: false }))}
+                anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+            >
+                <Alert onClose={() => setSnack(s => ({ ...s, open: false }))} severity={snack.severity as any}>
+                    {snack.msg}
+                </Alert>
+            </Snackbar>
         </Box>
     );
 };
@@ -403,6 +428,17 @@ const MoreGames = () => {
         </Box>
     );
 };
+
+function isUserLoggedInAndCustomer() {
+    // Check both localStorage and cookies for robustness
+    if (typeof window === 'undefined') return false;
+    const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true' || document.cookie.includes('isLoggedIn=true');
+    const userRole = localStorage.getItem('userRole') || (
+        document.cookie.match(/userRole=([^;]+)/)?.[1] || ''
+    );
+    // Your app uses 'customer' for normal users (see login logic)
+    return isLoggedIn && userRole === 'customer';
+}
 
 export default function HomePage() {
     return (
