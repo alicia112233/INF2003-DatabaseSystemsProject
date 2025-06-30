@@ -90,12 +90,6 @@ export const getMenuItems = (isLoggedIn: boolean, userRole: string = 'customer')
     },
     {
       id: uniqueId(),
-      title: "All",
-      icon: IconDeviceGamepad,
-      href: "/products",
-    },
-    {
-      id: uniqueId(),
       title: "Action",
       icon: IconDeviceGamepad,
       href: "/view-action-games",
@@ -255,12 +249,6 @@ export const getMenuItems = (isLoggedIn: boolean, userRole: string = 'customer')
     {
       navlabel: true,
       subheader: "Genres",
-    },
-    {
-      id: uniqueId(),
-      title: "All",
-      icon: IconDeviceGamepad,
-      href: "/products",
     },
     {
       id: uniqueId(),

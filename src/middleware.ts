@@ -80,8 +80,12 @@ export function middleware(request: NextRequest) {
             return response;
         }
 
-        // Protected routes logic
-        if (!isLoggedIn) {
+        // Public routes that don't require authentication
+        const publicRoutes = ['/', '/products', '/authentication'];
+        const isPublicRoute = publicRoutes.some(route => path === route || path.startsWith(route));
+
+        // Protected routes logic - only redirect if not on a public route
+        if (!isPublicRoute && !isLoggedIn) {
             return NextResponse.redirect(new URL('/', request.url));
         }
     }

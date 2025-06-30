@@ -27,6 +27,14 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
         return text.slice(0, maxLength) + '...';
     };
 
+    // Function to get genres as an array
+    const getGenres = () => {
+        if (!product.genreNames || !Array.isArray(product.genreNames)) return [];
+        return product.genreNames;
+    };
+
+    const genres = getGenres();
+
     return (
         <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column', position: 'relative' }}>
             <Box sx={{ 
@@ -59,12 +67,21 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
                     {product.title}
                 </Typography>
 
-                {product.genreNames && (
-                    <Chip
-                        label={product.genreNames}
-                        size="small"
-                        sx={{ mb: 1 }}
-                    />
+                {genres.length > 0 && (
+                    <Box sx={{ mb: 1, display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                        {genres.map((genre, index) => (
+                            <Chip
+                                key={index}
+                                label={genre}
+                                size="small"
+                                variant="outlined"
+                                sx={{ 
+                                    fontSize: '0.75rem',
+                                    height: '24px',
+                                }}
+                            />
+                        ))}
+                    </Box>
                 )}
 
                 <Typography variant="body2" color="text.secondary" paragraph>
