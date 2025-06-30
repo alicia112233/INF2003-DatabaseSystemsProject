@@ -71,7 +71,7 @@ const CartPage: React.FC = () => {
     };
 
     const handleContinueShopping = () => {
-        router.push('/products'); // Adjust path as needed
+        router.push('/products');
     };
 
     const itemCount = getCartItemCount();

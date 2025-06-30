@@ -37,3 +37,8 @@ export interface Product {
     genreNames: string[];
     inStock?: boolean;
 }
+
+export type PriceRange = {
+    min: number;
+    max: number;
+};
