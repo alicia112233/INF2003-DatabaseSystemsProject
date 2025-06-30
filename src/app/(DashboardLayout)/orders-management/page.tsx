@@ -181,7 +181,7 @@ const OrdersManagementPage = () => {
         <h1>Orders Management</h1>
         <Box display="flex" alignItems="center" gap={2}>
           <TextField
-            placeholder="Search by email or game title"
+            placeholder="Search by customer email or game title"
             size="small"
             value={search}
             onChange={e => setSearch(e.target.value)}
@@ -193,7 +193,7 @@ const OrdersManagementPage = () => {
             onClick={() => {
               setOpen(true);
               setEditOrder(null);
-            setForm({ email: "", games: [], total: "", status: "Pending" });
+              setForm({ email: "", games: [], total: "", status: "Pending" });
             }}
           >
             Add Order
@@ -204,8 +204,9 @@ const OrdersManagementPage = () => {
         <Table>
           <TableHead>
             <TableRow>
-              <TableCell>Email</TableCell>
-              <TableCell>Game Title</TableCell>
+              <TableCell>ID</TableCell>
+              <TableCell>Customer Email</TableCell>
+              <TableCell>Games</TableCell>
               <TableCell>Total</TableCell>
               <TableCell>Status</TableCell>
               <TableCell>Created At</TableCell>
@@ -220,6 +221,7 @@ const OrdersManagementPage = () => {
               )
               .map((order) => (
                 <TableRow key={order.id}>
+                  <TableCell>{order.id}</TableCell>
                   <TableCell>{order.email}</TableCell>
                   <TableCell>
                     {order.games && order.games.length > 0
@@ -259,7 +261,7 @@ const OrdersManagementPage = () => {
           }}
         >
           <TextField
-            label="Email"
+            label="Customer Email"
             name="email"
             value={form.email}
             onChange={handleChange}
