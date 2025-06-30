@@ -12,6 +12,7 @@ import {
 import AddToCartButton from '@/components/cart/AddToCartButton';
 import { Product } from '@/types/cart';
 import WishlistButton from '../wishlist/WishlistButton';
+import RentButton from './RentButton';
 
 interface ProductCardProps {
     product: Product;
@@ -108,6 +109,15 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
                     disabled={isOutOfStock}
                     buttonText={isOutOfStock ? 'No Stock' : 'Add to Cart'}
                 />
+                
+                {/* Rent Button - only show if game is in stock */}
+                {!isOutOfStock && (
+                    <RentButton
+                        product={product}
+                        fullWidth
+                        variant="outlined"
+                    />
+                )}
             </Box>
         </Card>
     );

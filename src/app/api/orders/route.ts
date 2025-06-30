@@ -15,9 +15,9 @@ export async function GET(req: NextRequest) {
   let connection;
   try {
     connection = await mysql.createConnection(dbConfig);
-    // Get all orders with user info
+    // Get all orders with user info (removed status as it's not needed for digital purchases)
     const [orders] = await connection.query(
-      `SELECT o.id, u.email, o.total, o.status, o.purchase_date AS createdAt
+      `SELECT o.id, u.email, o.total, o.purchase_date AS createdAt
        FROM Orders o
        JOIN users u ON o.user_id = u.id`
     );
@@ -59,10 +59,10 @@ export async function POST(req: NextRequest) {
     const purchase_date = data.purchase_date
       ? new Date(data.purchase_date).toISOString().slice(0, 10)
       : new Date().toISOString().slice(0, 10);
-    // Insert order
+    // Insert order (digital purchases don't need status tracking)
     const [result] = await connection.query<ResultSetHeader>(
-      `INSERT INTO Orders (user_id, total, status, purchase_date) VALUES (?, ?, ?, ?)`,
-      [user_id, data.total, data.status || 'Pending', purchase_date]
+      `INSERT INTO Orders (user_id, total, purchase_date) VALUES (?, ?, ?)`,
+      [user_id, data.total, purchase_date]
     );
     const orderId = (result as ResultSetHeader).insertId;
     // Insert games

@@ -6,6 +6,8 @@ import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import PageContainer from '@/app/(DashboardLayout)/components/container/PageContainer';
 import DashboardCard from '@/app/(DashboardLayout)/components/shared/DashboardCard';
 import Layout from '@/components/layout';
+import RentButton from '@/components/products/RentButton';
+import { useCart } from '@/contexts/CartContext';
 import AddToCartButton from '@/components/cart/AddToCartButton';
 import { Product } from '@/types/cart';
 
@@ -147,6 +149,7 @@ const RecommendationsCarousel: React.FC<ProductCardProps> = ({ product }) => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [snack, setSnack] = useState({ open: false, msg: '', severity: 'success' });
+    const { addToCart } = useCart();
 
     const handlePrev = () => setCurrent((prev) => (prev === 0 ? games.length - 1 : prev - 1));
     const handleNext = useCallback(() => {

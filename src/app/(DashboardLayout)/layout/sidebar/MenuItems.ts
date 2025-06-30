@@ -4,6 +4,7 @@ import {
   IconUsers,
   IconReportAnalytics,
   IconDiscount,
+  IconCalendarStats,
 } from "@tabler/icons-react";
 import { Upgrade } from "./Upgrade";
 import { uniqueId } from "lodash";
@@ -154,6 +155,12 @@ export const getMenuItems = (isLoggedIn: boolean, userRole: string = 'customer')
       href: "/orders-management",
     },
     {
+      id: uniqueId(),
+      title: "Rental Management",
+      icon: IconCalendarStats,
+      href: "/rental-management",
+    },
+    {
       navlabel: true,
       subheader: "ADMIN MANAGEMENT",
     },
@@ -179,6 +186,22 @@ export const getMenuItems = (isLoggedIn: boolean, userRole: string = 'customer')
 
   // Customer-specific menu items
   const customerItems: MenuItem[] = [
+    {
+      navlabel: true,
+      subheader: "MY ACCOUNT",
+    },
+    {
+      id: uniqueId(),
+      title: "My Orders",
+      icon: IconDeviceGamepad,
+      href: "/my-orders",
+    },
+    {
+      id: uniqueId(),
+      title: "My Rentals",
+      icon: IconCalendarStats,
+      href: "/my-rentals",
+    },
     {
       navlabel: true,
       subheader: "GAMES",

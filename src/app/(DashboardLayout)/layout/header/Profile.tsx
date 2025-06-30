@@ -179,7 +179,7 @@ const Profile = () => {
                             </ListItemIcon>
                             <ListItemText>My Orders</ListItemText>
                         </MenuItem>
-                        <MenuItem>
+                        <MenuItem onClick={() => handleMenuItemClick('/my-rentals')}>
                             <ListItemIcon>
                                 <CalendarMonth width={20} />
                             </ListItemIcon>

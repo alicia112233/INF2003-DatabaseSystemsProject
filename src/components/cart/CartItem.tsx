@@ -50,40 +50,54 @@ const CartItem: React.FC<CartItemProps> = ({ item }) => {
                         <Typography variant="h6" component="div">
                             {item.title}
                         </Typography>
-                        {/* {item.description && (
+                        {item.type === 'rental' && (
+                            <Typography variant="body2" color="success.main" fontWeight="bold">
+                                Rental: {item.rentalDays} day{item.rentalDays && item.rentalDays > 1 ? 's' : ''} @ ${item.dailyRate?.toFixed(2)}/day
+                            </Typography>
+                        )}
+                        {item.description && (
                             <Typography variant="body2" color="text.secondary">
                                 {item.description}
                             </Typography>
-                        )} */}
+                        )}
                         <Typography variant="h6" color="primary" sx={{ mt: 1 }}>
                             ${typeof item.price === 'string' ? parseFloat(item.price).toFixed(2) : item.price.toFixed(2)}
                         </Typography>
                     </Box>
 
-                    <Box display="flex" alignItems="center" gap={1}>
-                        <IconButton
-                            onClick={() => handleQuantityChange(item.quantity - 1)}
-                            size="small"
-                        >
-                            <Remove />
-                        </IconButton>
+                    {/* Quantity controls - only for purchase items */}
+                    {item.type !== 'rental' ? (
+                        <Box display="flex" alignItems="center" gap={1}>
+                            <IconButton
+                                onClick={() => handleQuantityChange(item.quantity - 1)}
+                                size="small"
+                            >
+                                <Remove />
+                            </IconButton>
 
-                        <TextField
-                            type="number"
-                            value={item.quantity}
-                            onChange={(e) => handleQuantityChange(parseInt(e.target.value) || 1)}
-                            inputProps={{ min: 1, style: { textAlign: 'center' } }}
-                            sx={{ width: 60 }}
-                            size="small"
-                        />
+                            <TextField
+                                type="number"
+                                value={item.quantity}
+                                onChange={(e) => handleQuantityChange(parseInt(e.target.value) || 1)}
+                                inputProps={{ min: 1, style: { textAlign: 'center' } }}
+                                sx={{ width: 60 }}
+                                size="small"
+                            />
 
-                        <IconButton
-                            onClick={() => handleQuantityChange(item.quantity + 1)}
-                            size="small"
-                        >
-                            <Add />
-                        </IconButton>
-                    </Box>
+                            <IconButton
+                                onClick={() => handleQuantityChange(item.quantity + 1)}
+                                size="small"
+                            >
+                                <Add />
+                            </IconButton>
+                        </Box>
+                    ) : (
+                        <Box display="flex" alignItems="center" minWidth={120} justifyContent="center">
+                            <Typography variant="body2" color="text.secondary">
+                                Rental Item
+                            </Typography>
+                        </Box>
+                    )}
 
                     <Box textAlign="right" minWidth={80}>
                         <Typography variant="h6">

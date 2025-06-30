@@ -43,9 +43,12 @@ SET NEW.avatarUrl =
   END;
 
 -- Default password: Password1234
+
+-- Admin account
 INSERT IGNORE INTO game_haven.users (firstName, lastName, gender, contactNo, email, password, is_admin, avatarUrl)
 VALUES ('Qwerty', 'Tan', 'M', '84738837', 'qwerty@admin.com', '$2b$10$lk0vHQMPHYMtbX4BtCzJ.OCGgQ6qcSYQGOixa4Y4hEsrmNMC7P.v2', 'T', '/images/profile/user-1.jpg');
 
+-- user account
 INSERT IGNORE INTO game_haven.users (firstName, lastName, gender, contactNo, email, password, is_admin, avatarUrl) 
 VALUES ('alicia', 'tang', 'F', '80354633', 'aliciatangweishan@gmail.com', '$2b$10$lk0vHQMPHYMtbX4BtCzJ.OCGgQ6qcSYQGOixa4Y4hEsrmNMC7P.v2', 'F', '/images/profile/user-2.jpg');
 
@@ -117,12 +120,15 @@ CREATE TABLE IF NOT EXISTS Game (
     image_url VARCHAR(512),
     release_date DATE,
     is_digital BOOLEAN DEFAULT FALSE,
-    stock_count INT DEFAULT 0,
+    stock_count INT DEFAULT 10, -- Set default stock to 10 instead of 0
     promo_id INT,
     head_image_url VARCHAR(255),
     screenshot_url VARCHAR(255),
     FOREIGN KEY (promo_id) REFERENCES Promotion(id)
 );
+
+-- Update existing games to have stock if they currently have 0
+UPDATE Game SET stock_count = 10 WHERE stock_count = 0 OR stock_count IS NULL;
 
 -- 6. GameGenre Table (references Game and Genre tables)
 CREATE TABLE IF NOT EXISTS GameGenre (
@@ -139,7 +145,6 @@ CREATE TABLE IF NOT EXISTS Orders (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
     total DECIMAL(10,2) NOT NULL,
-    status VARCHAR(50) NOT NULL DEFAULT 'Pending',
     purchase_date DATE NOT NULL,
     FOREIGN KEY (user_id) REFERENCES users(id)
 );

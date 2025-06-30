@@ -20,6 +20,14 @@ const CartSummary: React.FC<CartSummaryProps> = ({ onCheckout }) => {
 
   const itemCount = getCartItemCount();
   const total = getCartTotal();
+  
+  // Separate purchase and rental totals
+  const purchaseItems = cart?.items.filter(item => item.type !== 'rental') || [];
+  const rentalItems = cart?.items.filter(item => item.type === 'rental') || [];
+  
+  const purchaseTotal = purchaseItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  const rentalTotal = rentalItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  
   const tax = total * 0.1; // 10% tax
   const finalTotal = total + tax;
 
@@ -45,8 +53,22 @@ const CartSummary: React.FC<CartSummaryProps> = ({ onCheckout }) => {
           Cart Summary
         </Typography>
         
+        {purchaseItems.length > 0 && (
+          <Box display="flex" justifyContent="space-between" mb={1}>
+            <Typography>Purchases ({purchaseItems.length})</Typography>
+            <Typography>${purchaseTotal.toFixed(2)}</Typography>
+          </Box>
+        )}
+        
+        {rentalItems.length > 0 && (
+          <Box display="flex" justifyContent="space-between" mb={1}>
+            <Typography color="success.main">Rentals ({rentalItems.length})</Typography>
+            <Typography color="success.main">${rentalTotal.toFixed(2)}</Typography>
+          </Box>
+        )}
+        
         <Box display="flex" justifyContent="space-between" mb={1}>
-          <Typography>Items ({itemCount})</Typography>
+          <Typography>Total Items ({itemCount})</Typography>
           <Typography>${total.toFixed(2)}</Typography>
         </Box>
         

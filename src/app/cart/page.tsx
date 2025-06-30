@@ -19,56 +19,120 @@ import type { CartItem as CartItemType } from '@/types/cart';
 
 const CartPage: React.FC = () => {
     const router = useRouter();
-    const { cart, getCartItemCount } = useCart();
+    const { cart, getCartItemCount, clearCart } = useCart();
 
     const handleCheckout = async () => {
-        if (!cart || !cart.items.length) return;
+        if (!cart || !cart.items.length) {
+            alert('Your cart is empty');
+            return;
+        }
+        
         // Fetch user email
         let email = '';
         try {
-            const res = await fetch('/api/profile');
+            const res = await fetch('/api/profile', {
+                method: 'GET',
+                credentials: 'include',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            });
+            
             if (res.ok) {
                 const data = await res.json();
                 email = data.email;
+            } else {
+                alert('Authentication failed. Please log in again.');
+                return;
             }
         } catch (e) {
-            console.error('Failed to fetch user profile', e);
+            alert('Network error. Please check your connection and try again.');
+            return;
         }
+        
         if (!email) {
             alert('Could not get user email. Please log in again.');
             return;
         }
-        // Prepare order data
-        const orderData = {
-            email,
-            total: cart.totalAmount,
-            status: 'Pending',
-            games: cart.items.map((item: CartItemType) => ({
-                gameId: item.productId,
-                title: item.title,
-                quantity: item.quantity,
-                price: item.price
-            }))
-        };
-        
-        // Send order to API
+
+        // Separate purchase and rental items
+        const purchaseItems = cart.items.filter(item => item.type !== 'rental');
+        const rentalItems = cart.items.filter(item => item.type === 'rental');
+
         try {
-            const res = await fetch('/api/orders', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(orderData)
-            });
-            if (res.ok) {
-                // Clear cart and redirect
-                if (typeof window !== 'undefined') {
-                    localStorage.removeItem('customer-cart');
+            // Process purchases if any
+            if (purchaseItems.length > 0) {
+                const orderData = {
+                    email,
+                    total: purchaseItems.reduce((sum, item) => sum + (item.price * item.quantity), 0),
+                    games: purchaseItems.map(item => ({
+                        gameId: item.productId,
+                        title: item.title,
+                        quantity: item.quantity,
+                        price: item.price
+                    }))
+                };
+
+                const orderRes = await fetch('/api/orders', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify(orderData)
+                });
+                
+                if (!orderRes.ok) {
+                    const errorText = await orderRes.text();
+                    throw new Error(`Failed to place order: ${orderRes.status} ${errorText}`);
                 }
-                router.push('/my-orders');
-            } else {
-                alert('Failed to place order.');
             }
-        } catch (e) {
-            alert('Failed to place order.');
+
+            // Process rentals if any
+            if (rentalItems.length > 0) {
+                for (const rentalItem of rentalItems) {
+                    const rentalData = {
+                        gameId: rentalItem.productId,
+                        days: rentalItem.rentalDays || 1,
+                    };
+
+                    const rentalRes = await fetch('/api/rentals/user', {
+                        method: 'POST',
+                        headers: { 
+                            'Content-Type': 'application/json',
+                        },
+                        credentials: 'include',
+                        body: JSON.stringify(rentalData)
+                    });
+                    
+                    if (!rentalRes.ok) {
+                        const errorText = await rentalRes.text();
+                        throw new Error(`Failed to create rental for ${rentalItem.title}: ${rentalRes.status} ${errorText}`);
+                    }
+                }
+            }
+
+            // Clear cart and redirect
+            clearCart();
+            if (typeof window !== 'undefined') {
+                localStorage.removeItem('customer-cart');
+            }
+
+            // Redirect based on what was processed
+            if (rentalItems.length > 0 && purchaseItems.length > 0) {
+                alert('Order placed and rentals created successfully!');
+                router.push('/my-orders');
+            } else if (rentalItems.length > 0) {
+                alert('Rentals created successfully!');
+                router.push('/my-rentals');
+            } else {
+                alert('Order placed successfully!');
+                router.push('/my-orders');
+            }
+
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+            alert(`Failed to complete checkout: ${errorMessage}`);
         }
     };
 
@@ -113,10 +177,7 @@ const CartPage: React.FC = () => {
                     </Paper>
                 ) : (
                     <Grid container spacing={3}>
-                        <Grid size={{
-                            xs: 12,
-                            md: 8,
-                        }}>
+                        <Grid size={{ xs: 12, md: 8 }}>
                             <Box>
                                 {cart.items.map((item: CartItemType, index: number) => (
                                     <CartItem key={`${item.productId}-${index}`} item={item} />
@@ -124,10 +185,7 @@ const CartPage: React.FC = () => {
                             </Box>
                         </Grid>
 
-                        <Grid size={{
-                            xs: 12,
-                            md: 4,
-                        }}>
+                        <Grid size={{ xs: 12, md: 4 }}>
                             <CartSummary onCheckout={handleCheckout} />
                         </Grid>
                     </Grid>

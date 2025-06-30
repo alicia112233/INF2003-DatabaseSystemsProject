@@ -15,69 +15,86 @@ import {
   DialogActions,
   TextField,
   Paper,
+  Container,
+  TableContainer,
+  CircularProgress,
+  Alert,
+  Chip,
 } from "@mui/material";
+import Layout from '@/components/layout';
+import { format } from 'date-fns';
 
-// Types
 interface Game {
-  gameId: number;
+  game_id: number; // Changed from gameId to match API response
   title: string;
   quantity: number;
   price: number;
+  image?: string;
 }
 
 interface Order {
   id: number;
   email: string;
   total: number;
-  status: string;
   createdAt: string;
   games: Game[];
 }
 
 export default function MyOrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [editMode, setEditMode] = useState(false);
-  const [form, setForm] = useState({ status: "", games: [] as Game[] });
+  const [form, setForm] = useState({ games: [] as Game[] });
 
   // Fetch user's orders
   useEffect(() => {
-    fetch("/api/orders")
-      .then((res) => res.json())
-      .then((data) => setOrders(data));
+    const fetchOrders = async () => {
+      try {
+        const response = await fetch("/api/orders");
+        if (response.ok) {
+          const data = await response.json();
+          console.log('Orders data received:', data); // Debug log
+          setOrders(data);
+        } else {
+          throw new Error(`Failed to fetch orders: ${response.status}`);
+        }
+      } catch (err) {
+        console.error('Error fetching orders:', err);
+        setError('Failed to load your orders');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchOrders();
   }, []);
 
   // View order details
   const handleView = (order: Order) => {
+    console.log('Viewing order:', order); // Debug log
     setSelectedOrder(order);
     setOpen(true);
     setEditMode(false);
   };
 
-  // Edit order status (for demo, only status is editable)
+  // Edit order (removed status editing since digital purchases don't need status)
   const handleEdit = (order: Order) => {
     setSelectedOrder(order);
-    setForm({ status: order.status, games: order.games });
+    setForm({ games: order.games });
     setOpen(true);
     setEditMode(true);
   };
 
-  // Save order status
+  // Save order (simplified since no status to update)
   const handleSave = async () => {
     if (!selectedOrder) return;
-    await fetch("/api/orders", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id: selectedOrder.id, status: form.status, purchase_date: selectedOrder.createdAt }),
-    });
+    // For digital purchases, there's nothing to update
     setOpen(false);
     setEditMode(false);
     setSelectedOrder(null);
-    // Refresh orders
-    fetch("/api/orders")
-      .then((res) => res.json())
-      .then((data) => setOrders(data));
   };
 
   // Delete order
@@ -86,9 +103,11 @@ export default function MyOrdersPage() {
       method: "DELETE",
     });
     // Refresh orders
-    fetch("/api/orders")
-      .then((res) => res.json())
-      .then((data) => setOrders(data));
+    const response = await fetch("/api/orders");
+    if (response.ok) {
+      const data = await response.json();
+      setOrders(data);
+    }
   };
 
   // Cancel dialog
@@ -98,93 +117,148 @@ export default function MyOrdersPage() {
     setSelectedOrder(null);
   };
 
+  if (loading) {
+    return (
+      <Layout>
+        <Container maxWidth="lg" sx={{ py: 4 }}>
+          <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
+            <CircularProgress />
+          </Box>
+        </Container>
+      </Layout>
+    );
+  }
+
   return (
-    <Box minHeight="100vh" bgcolor="#f7f7f7" py={4}>
-      <Box display="flex" flexDirection="column" alignItems="center" mb={4}>
-        <Box component="button" onClick={() => window.location.href = '/'} sx={{ background: 'none', border: 'none', p: 0, cursor: 'pointer' }}>
-          <img src="/images/logos/game_haven_logo.png" alt="Game Haven Logo" style={{ height: 60, marginBottom: 8 }} />
-        </Box>
-        <Typography variant="h4" fontWeight={600} color="text.primary" mb={2}>
+    <Layout>
+      <Container maxWidth="lg" sx={{ py: 4 }}>
+        <Typography variant="h4" gutterBottom>
           My Orders
         </Typography>
-      </Box>
-      <Box display="flex" justifyContent="center">
-        <Paper elevation={3} sx={{ maxWidth: 900, width: '100%', p: 4, borderRadius: 3 }}>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>Your Email</TableCell>
-                <TableCell>Game Titles</TableCell>
-                <TableCell>Total Price</TableCell>
-                <TableCell>Date Ordered</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {orders.map((order) => (
-                <TableRow key={order.id}>
-                  <TableCell>{order.email || "-"}</TableCell>
-                  <TableCell>{order.games && order.games.length > 0 ? order.games.map(g => g.title).join(", ") : "-"}</TableCell>
-                  <TableCell>${Number(order.total).toFixed(2)}</TableCell>
-                  <TableCell>{order.createdAt ? new Date(order.createdAt).toLocaleDateString() : ""}</TableCell>
-                  {/* No actions column */}
+
+        {error && (
+          <Alert severity="error" sx={{ mb: 3 }}>
+            {error}
+          </Alert>
+        )}
+
+        {orders.length === 0 ? (
+          <Paper sx={{ p: 4, textAlign: 'center' }}>
+            <Typography variant="h6" color="text.secondary">
+              You haven't placed any orders yet.
+            </Typography>
+            <Button variant="contained" href="/products" sx={{ mt: 2 }}>
+              Browse Games
+            </Button>
+          </Paper>
+        ) : (
+          <TableContainer component={Paper}>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell>Order ID</TableCell>
+                  <TableCell>Games</TableCell>
+                  <TableCell>Total</TableCell>
+                  <TableCell>Order Date</TableCell>
+                  <TableCell>Actions</TableCell>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </Paper>
-      </Box>
-      <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
-        <DialogTitle>{editMode ? "Edit Order" : "Order Details"}</DialogTitle>
-        <DialogContent>
-          {selectedOrder && (
-            <>
-              <Typography variant="subtitle1">Order ID: {selectedOrder.id}</Typography>
-              <Typography variant="subtitle2" mb={1}>Status: {editMode ? (
-                <TextField
-                  select
-                  value={form.status}
-                  onChange={e => setForm(f => ({ ...f, status: e.target.value }))}
-                  SelectProps={{ native: true }}
-                  size="small"
-                  sx={{ width: 120 }}
-                >
-                  <option value="Pending">Pending</option>
-                  <option value="Shipped">Shipped</option>
-                  <option value="Delivered">Delivered</option>
-                  <option value="Cancelled">Cancelled</option>
-                </TextField>
-              ) : selectedOrder.status}</Typography>
-              <Typography variant="subtitle2" mb={1}>Total: ${selectedOrder.total.toFixed(2)}</Typography>
-              <Typography variant="subtitle2" mb={1}>Created At: {selectedOrder.createdAt ? new Date(selectedOrder.createdAt).toLocaleString() : ""}</Typography>
-              <Typography variant="subtitle2" mb={1}>Games:</Typography>
-              <Table size="small">
-                <TableHead>
-                  <TableRow>
-                    <TableCell>ID</TableCell>
-                    <TableCell>Title</TableCell>
-                    <TableCell>Qty</TableCell>
-                    <TableCell>Price</TableCell>
+              </TableHead>
+              <TableBody>
+                {orders.map((order) => (
+                  <TableRow key={order.id}>
+                    <TableCell>#{order.id}</TableCell>
+                    <TableCell>
+                      <Box>
+                        {order.games && order.games.length > 0 ? (
+                          order.games.map((game, index) => (
+                            <Box key={index} display="flex" alignItems="center" gap={1} mb={index < order.games.length - 1 ? 1 : 0}>
+                              <Typography variant="body2">
+                                {game.title} (x{game.quantity})
+                              </Typography>
+                            </Box>
+                          ))
+                        ) : (
+                          <Typography variant="body2" color="text.secondary">No games</Typography>
+                        )}
+                      </Box>
+                    </TableCell>
+                    <TableCell>${Number(order.total).toFixed(2)}</TableCell>
+                    <TableCell>
+                      {order.createdAt ? format(new Date(order.createdAt), 'MMM dd, yyyy') : '-'}
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        onClick={() => handleView(order)}
+                        sx={{ mr: 1 }}
+                      >
+                        View Details
+                      </Button>
+                    </TableCell>
                   </TableRow>
-                </TableHead>
-                <TableBody>
-                  {selectedOrder.games.map((g, i) => (
-                    <TableRow key={i}>
-                      <TableCell>{g.gameId}</TableCell>
-                      <TableCell>{g.title}</TableCell>
-                      <TableCell>{g.quantity}</TableCell>
-                      <TableCell>${g.price.toFixed(2)}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleClose}>Close</Button>
-          {editMode && <Button onClick={handleSave} variant="contained">Save</Button>}
-        </DialogActions>
-      </Dialog>
-    </Box>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        )}
+
+        {/* Order Details Dialog */}
+        <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
+          <DialogTitle>Order Details</DialogTitle>
+          <DialogContent>
+            {selectedOrder ? (
+              <>
+                <Typography variant="subtitle1" gutterBottom>Order ID: #{selectedOrder.id}</Typography>
+                <Typography variant="body2" gutterBottom>Total: ${Number(selectedOrder.total || 0).toFixed(2)}</Typography>
+                <Typography variant="body2" gutterBottom>
+                  Order Date: {selectedOrder.createdAt ? format(new Date(selectedOrder.createdAt), 'MMM dd, yyyy HH:mm') : '-'}
+                </Typography>
+                <Typography variant="subtitle2" sx={{ mt: 2, mb: 1 }}>Games Purchased:</Typography>
+                <TableContainer component={Paper} variant="outlined">
+                  <Table size="small">
+                    <TableHead>
+                      <TableRow>
+                        <TableCell>Game ID</TableCell>
+                        <TableCell>Title</TableCell>
+                        <TableCell>Quantity</TableCell>
+                        <TableCell>Price</TableCell>
+                        <TableCell>Subtotal</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {selectedOrder.games && Array.isArray(selectedOrder.games) && selectedOrder.games.length > 0 ? (
+                        selectedOrder.games.map((game, i) => (
+                          <TableRow key={i}>
+                            <TableCell>{game.game_id}</TableCell>
+                            <TableCell>{game.title || 'Unknown Game'}</TableCell>
+                            <TableCell>{game.quantity || 1}</TableCell>
+                            <TableCell>${Number(game.price || 0).toFixed(2)}</TableCell>
+                            <TableCell>${(Number(game.price || 0) * Number(game.quantity || 1)).toFixed(2)}</TableCell>
+                          </TableRow>
+                        ))
+                      ) : (
+                        <TableRow>
+                          <TableCell colSpan={5} align="center">
+                            <Typography color="text.secondary">No games in this order</Typography>
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              </>
+            ) : (
+              <Box display="flex" justifyContent="center" alignItems="center" py={4}>
+                <Typography color="text.secondary">No order details available</Typography>
+              </Box>
+            )}
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleClose}>Close</Button>
+          </DialogActions>
+        </Dialog>
+      </Container>
+    </Layout>
   );
 }
