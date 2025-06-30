@@ -18,7 +18,7 @@ type WishGame = {
 export default function MyWishlist() {
   const [wishlist, setWishlist] = useState<WishGame[]>([]);
   const [loading, setLoading] = useState(true);
-  const [snack, setSnack] = useState<{open: boolean, msg: string, severity: "success" | "error"}>({open: false, msg: '', severity: "success"});
+  const [snack, setSnack] = useState<{open: boolean, msg: string, severity: "success" | "error" | "warning"}>({open: false, msg: '', severity: "success"});
 
   // Fetch user's wishlist
   useEffect(() => {
@@ -39,12 +39,35 @@ export default function MyWishlist() {
 
   const handleRemove = async (gameId: number) => {
     try {
-      const res = await fetch(`/api/wishlist/${gameId}`, { method: 'DELETE' });
+      const res = await fetch('/api/wishlist', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ gameId }),
+      });
       if (!res.ok) throw new Error('Failed to remove from wishlist');
       setWishlist(wishlist.filter(game => game.id !== gameId));
       setSnack({ open: true, msg: 'Removed from wishlist!', severity: "success" });
     } catch (err) {
       setSnack({ open: true, msg: 'Failed to remove from wishlist.', severity: "error" });
+    }
+  };
+
+  const handleAdd = async (gameId: number) => {
+    try {
+      const res = await fetch('/api/wishlist', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ gameId }),
+      });
+      const data = await res.json();
+      setSnack({
+        open: true,
+        msg: data.message === 'Already in wishlist' ? 'Already in wishlist' : 'Added to wishlist',
+        severity: data.message === 'Already in wishlist' ? 'warning' : 'success',
+      });
+      // Optionally, update wishlist state here if needed
+    } catch (err) {
+      setSnack({ open: true, msg: 'Failed to add to wishlist.', severity: "error" });
     }
   };
 

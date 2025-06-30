@@ -19,12 +19,14 @@ import { useCart } from "@/contexts/CartContext";
 // Global variable to track if profile has been fetched
 let profileFetched = false;
 let cachedAvatarUrl: string | null = null;
+let cachedIsAdmin: boolean | null = null;
 
 const Profile = () => {
     const [anchorEl2, setAnchorEl2] = useState(null);
     const [avatarSrc, setAvatarSrc] = useState(
         cachedAvatarUrl || "/images/profile/user-1.jpg"
     );
+    const [isAdmin, setIsAdmin] = useState(cachedIsAdmin || false);
     const router = useRouter();
     const { getCartItemCount } = useCart();
 
@@ -47,6 +49,7 @@ const Profile = () => {
         // Reset the global cache on logout
         profileFetched = false;
         cachedAvatarUrl = null;
+        cachedIsAdmin = null;
         window.location.href = "/";
     };
 
@@ -55,6 +58,9 @@ const Profile = () => {
             console.log("Profile already fetched globally, using cached data");
             if (cachedAvatarUrl) {
                 setAvatarSrc(cachedAvatarUrl);
+            }
+            if (cachedIsAdmin !== null) {
+                setIsAdmin(cachedIsAdmin);
             }
             return;
         }
@@ -68,10 +74,13 @@ const Profile = () => {
                 if (!res.ok) throw new Error("Failed to fetch profile");
                 const data = await res.json();
                 const avatarUrl = data.avatarUrl || "/images/profile/user-1.jpg";
+                const userIsAdmin = data.is_admin === 'T' || data.is_admin === true;
 
                 // Cache the result globally
                 cachedAvatarUrl = avatarUrl;
+                cachedIsAdmin = userIsAdmin;
                 setAvatarSrc(avatarUrl);
+                setIsAdmin(userIsAdmin);
                 console.log("Profile fetched and cached successfully");
             } catch (err) {
                 console.error("Error fetching profile:", err);
@@ -87,16 +96,19 @@ const Profile = () => {
 
     return (
         <Box>
-            <Badge badgeContent={cartItemCount} color="error">
-                <Button
-                    variant="outlined"
-                    color="primary"
-                    startIcon={<IconShoppingCart size={20} />}
-                    onClick={() => router.push("/cart")}
-                >
-                    View Cart
-                </Button>
-            </Badge>
+            {/* Only show cart button if user is not an admin */}
+            {!isAdmin && (
+                <Badge badgeContent={cartItemCount} color="error">
+                    <Button
+                        variant="outlined"
+                        color="primary"
+                        startIcon={<IconShoppingCart size={20} />}
+                        onClick={() => router.push("/cart")}
+                    >
+                        View Cart
+                    </Button>
+                </Badge>
+            )}
 
             <IconButton
                 size="large"
@@ -141,24 +153,29 @@ const Profile = () => {
                     </ListItemIcon>
                     <ListItemText>My Profile</ListItemText>
                 </MenuItem>
-                <MenuItem onClick={() => handleMenuItemClick('/wishlist')}>
-                    <ListItemIcon>
-                        <IconStar width={20} />
-                    </ListItemIcon>
-                    <ListItemText>My Wish List</ListItemText>
-                </MenuItem>
-                <MenuItem onClick={() => handleMenuItemClick('/my-orders')}>
-                    <ListItemIcon>
-                        <Inventory width={20} />
-                    </ListItemIcon>
-                    <ListItemText>My Orders</ListItemText>
-                </MenuItem>
-                <MenuItem>
-                    <ListItemIcon>
-                        <CalendarMonth width={20} />
-                    </ListItemIcon>
-                    <ListItemText>My Rentals</ListItemText>
-                </MenuItem>
+                {/* Only show customer-specific menu items if user is not an admin */}
+                {!isAdmin && (
+                    <>
+                        <MenuItem onClick={() => handleMenuItemClick('/wishlist')}>
+                            <ListItemIcon>
+                                <IconStar width={20} />
+                            </ListItemIcon>
+                            <ListItemText>My Wish List</ListItemText>
+                        </MenuItem>
+                        <MenuItem onClick={() => handleMenuItemClick('/my-orders')}>
+                            <ListItemIcon>
+                                <Inventory width={20} />
+                            </ListItemIcon>
+                            <ListItemText>My Orders</ListItemText>
+                        </MenuItem>
+                        <MenuItem>
+                            <ListItemIcon>
+                                <CalendarMonth width={20} />
+                            </ListItemIcon>
+                            <ListItemText>My Rentals</ListItemText>
+                        </MenuItem>
+                    </>
+                )}
                 <MenuItem>
                     <ListItemIcon>
                         <Settings width={20} />

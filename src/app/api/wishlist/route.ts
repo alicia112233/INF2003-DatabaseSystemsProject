@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
     const userId = getUserIdFromRequest(req);
     if (!userId) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
     const { gameId } = await req.json();
-
+    
     // Prevent duplicates
     const [exists] = await connection.query(
       'SELECT 1 FROM Wishlist WHERE user_id = ? AND game_id = ?',
@@ -61,6 +61,7 @@ export async function POST(req: NextRequest) {
     await connection.query(
       'INSERT INTO Wishlist (user_id, game_id) VALUES (?, ?)',
       [userId, gameId]
+      
     );
     return NextResponse.json({ message: 'Added to wishlist' });
   } catch (error) {
@@ -71,26 +72,32 @@ export async function POST(req: NextRequest) {
   }
 }
 
-// DELETE: Remove a game from wishlist
+// DELETE: Remove a game from wishlist (gameId in request body)
 export async function DELETE(req: NextRequest) {
   let connection;
   try {
+    console.log('DELETE /api/wishlist called');
     connection = await mysql.createConnection(dbConfig);
     const userId = getUserIdFromRequest(req);
+    console.log('User ID:', userId);
     if (!userId) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
 
-    // Expects: /api/wishlist/[gameId]
-    const urlParts = req.nextUrl.pathname.split('/');
-    const gameId = Number(urlParts[urlParts.length - 1]);
+    const body = await req.json();
+    console.log('Request body:', body);
+    const { gameId } = body;
     if (!gameId) return NextResponse.json({ error: 'No gameId provided' }, { status: 400 });
 
-    await connection.query(
+    const [result] = await connection.query(
       'DELETE FROM Wishlist WHERE user_id = ? AND game_id = ?',
       [userId, gameId]
     );
+    console.log('Delete result:', result);
+    if ((result as any).affectedRows === 0) {
+      return NextResponse.json({ error: 'Wishlist item not found' }, { status: 404 });
+    }
     return NextResponse.json({ message: 'Removed from wishlist' });
   } catch (error) {
-    console.error(error);
+    console.error('Error in DELETE /api/wishlist:', error);
     return NextResponse.json({ error: 'Failed to remove from wishlist' }, { status: 500 });
   } finally {
     if (connection) await connection.end();

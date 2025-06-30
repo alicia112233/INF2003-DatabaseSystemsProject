@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
     Box,
     Grid,
@@ -11,6 +11,8 @@ import {
     MenuItem,
     InputAdornment,
     CircularProgress,
+    Slider,
+    Typography,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 
@@ -19,62 +21,154 @@ interface Genre {
     name: string;
 }
 
+interface PriceRange {
+    min: number;
+    max: number;
+}
+
 interface ProductFiltersProps {
     searchTerm: string;
     categoryFilter: string;
     stockFilter: string;
+    priceRange: PriceRange;
     onSearchChange: (value: string) => void;
     onCategoryFilterChange: (value: string) => void;
     onStockFilterChange: (value: string) => void;
+    onPriceRangeChange: (value: PriceRange) => void;
+    maxPrice?: number;
+    minPrice?: number;
 }
+
+// Custom hook for debouncing
+const useDebounce = (value: string, delay: number) => {
+    const [debouncedValue, setDebouncedValue] = useState(value);
+
+    useEffect(() => {
+        const handler = setTimeout(() => {
+            setDebouncedValue(value);
+        }, delay);
+
+        return () => {
+            clearTimeout(handler);
+        };
+    }, [value, delay]);
+
+    return debouncedValue;
+};
 
 const ProductFilters: React.FC<ProductFiltersProps> = ({
     searchTerm,
     categoryFilter,
     stockFilter,
+    priceRange,
     onSearchChange,
     onCategoryFilterChange,
     onStockFilterChange,
+    onPriceRangeChange,
+    maxPrice = 1000,
+    minPrice = 0,
 }) => {
     const [genres, setGenres] = useState<Genre[]>([]);
     const [loadingGenres, setLoadingGenres] = useState(false);
+    const [localSearchTerm, setLocalSearchTerm] = useState(searchTerm);
+    const [localPriceRange, setLocalPriceRange] = useState<number[]>([
+        priceRange.min,
+        priceRange.max,
+    ]);
+
+    // Debounce search term to reduce API calls
+    const debouncedSearchTerm = useDebounce(localSearchTerm, 300);
+
+    // Debounce price range changes
+    const debouncedPriceRange = useDebounce(
+        JSON.stringify(localPriceRange),
+        500
+    );
+
+    // Memoize genres to prevent unnecessary re-renders
+    const memoizedGenres = useMemo(() => genres, [genres]);
+
+    // Effect for debounced search
+    useEffect(() => {
+        if (debouncedSearchTerm !== searchTerm) {
+            onSearchChange(debouncedSearchTerm);
+        }
+    }, [debouncedSearchTerm, onSearchChange, searchTerm]);
+
+    // Effect for debounced price range
+    useEffect(() => {
+        const parsedPriceRange = JSON.parse(debouncedPriceRange);
+        const newPriceRange = {
+            min: parsedPriceRange[0],
+            max: parsedPriceRange[1],
+        };
+        
+        if (
+            newPriceRange.min !== priceRange.min ||
+            newPriceRange.max !== priceRange.max
+        ) {
+            onPriceRangeChange(newPriceRange);
+        }
+    }, [debouncedPriceRange, onPriceRangeChange, priceRange]);
+
+    // Memoized fetch function to prevent unnecessary re-fetches
+    const fetchGenres = useCallback(async () => {
+        if (genres.length > 0) return;
+        
+        setLoadingGenres(true);
+        try {
+            const response = await fetch('/api/genres');
+            if (response.ok) {
+                const genresData = await response.json();
+                setGenres(genresData);
+            } else {
+                console.error('Failed to fetch genres');
+            }
+        } catch (error) {
+            console.error('Error fetching genres:', error);
+        } finally {
+            setLoadingGenres(false);
+        }
+    }, [genres.length]);
 
     useEffect(() => {
-        const fetchGenres = async () => {
-            setLoadingGenres(true);
-            try {
-                const response = await fetch('/api/genres');
-                if (response.ok) {
-                    const genresData = await response.json();
-                    setGenres(genresData);
-                } else {
-                    console.error('Failed to fetch genres');
-                }
-            } catch (error) {
-                console.error('Error fetching genres:', error);
-            } finally {
-                setLoadingGenres(false);
-            }
-        };
-
         fetchGenres();
+    }, [fetchGenres]);
+
+    // Handle local search input change
+    const handleSearchInputChange = useCallback((value: string) => {
+        setLocalSearchTerm(value);
     }, []);
+
+    // Handle price range change
+    const handlePriceRangeChange = useCallback(
+        (event: Event, newValue: number | number[]) => {
+            if (Array.isArray(newValue)) {
+                setLocalPriceRange(newValue);
+            }
+        },
+        []
+    );
+
+    // Price range formatter
+    const formatPrice = (value: number) => `$${value}`;
 
     return (
         <Box sx={{ mb: 3 }}>
             <Grid container spacing={2}>
+                {/* Search Field */}
                 <Grid
                     size={{
                         xs: 12,
                         md: 6,
-                        lg: 6,
+                        lg: 4,
                     }}
                 >
                     <TextField
                         fullWidth
                         placeholder="Search products by name or description..."
-                        value={searchTerm}
-                        onChange={(e) => onSearchChange(e.target.value)}
+                        value={localSearchTerm}
+                        onChange={(e) => handleSearchInputChange(e.target.value)}
                         InputProps={{
                             startAdornment: (
                                 <InputAdornment position="start">
@@ -84,6 +178,8 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({
                         }}
                     />
                 </Grid>
+
+                {/* Genre Filter */}
                 <Grid
                     size={{
                         xs: 12,
@@ -106,7 +202,7 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({
                                     Loading genres...
                                 </MenuItem>
                             ) : (
-                                genres.map((genre) => (
+                                memoizedGenres.map((genre) => (
                                     <MenuItem key={genre.id} value={genre.id.toString()}>
                                         {genre.name}
                                     </MenuItem>
@@ -115,11 +211,13 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({
                         </Select>
                     </FormControl>
                 </Grid>
+
+                {/* Stock Filter */}
                 <Grid
                     size={{
                         xs: 12,
                         md: 6,
-                        lg: 3,
+                        lg: 2,
                     }}
                 >
                     <FormControl fullWidth>
@@ -134,6 +232,38 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({
                             <MenuItem value="outOfStock">Out of Stock</MenuItem>
                         </Select>
                     </FormControl>
+                </Grid>
+
+                {/* Price Range Filter */}
+                <Grid
+                    size={{
+                        xs: 12,
+                        md: 6,
+                        lg: 3,
+                    }}
+                >
+                    <Box sx={{ px: 2, py: 1 }}>
+                        <Typography gutterBottom variant="body2" color="text.secondary">
+                            Price Range
+                        </Typography>
+                        <Slider
+                            value={localPriceRange}
+                            onChange={handlePriceRangeChange}
+                            valueLabelDisplay="auto"
+                            valueLabelFormat={formatPrice}
+                            min={minPrice}
+                            max={maxPrice}
+                            sx={{ mt: 1 }}
+                        />
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 1 }}>
+                            <Typography variant="caption" color="text.secondary">
+                                {formatPrice(localPriceRange[0])}
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">
+                                {formatPrice(localPriceRange[1])}
+                            </Typography>
+                        </Box>
+                    </Box>
                 </Grid>
             </Grid>
         </Box>

@@ -5,16 +5,21 @@ import { Container, Grid, Typography, Box, CircularProgress, Button, Pagination 
 import ProductCard from '@/components/products/ProductCard';
 import ProductFilters from '@/components/products/ProductFilters';
 import Layout from '@/components/layout';
-import { Product } from '@/types/cart';
+import { PriceRange, Product } from '@/types/cart';
 
 const ProductsPage = () => {
     const [games, setGames] = useState<Product[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
-    
+    const [priceRange, setPriceRange] = useState<PriceRange>({ min: 0, max: 1000 });
+
+    const handlePriceRangeChange = (newRange: PriceRange) => {
+        setPriceRange(newRange);
+    };
+
     const [currentPage, setCurrentPage] = useState(1);
-    const productsPerPage = 8;
+    const productsPerPage = 16;
 
     // Filter states
     const [searchTerm, setSearchTerm] = useState('');
@@ -27,7 +32,7 @@ const ProductsPage = () => {
     const currentProducts = filteredProducts.slice(indexOfFirstProduct, indexOfLastProduct);
     const totalPages = Math.ceil(filteredProducts.length / productsPerPage);
 
-    // Filter games based on search term, category, and stock status
+    // Single useEffect for fetching and filtering games
     useEffect(() => {
         const fetchGames = async () => {
             setLoading(true);
@@ -42,7 +47,13 @@ const ProductsPage = () => {
                 if (!res.ok) throw new Error(`Failed to fetch games: ${res.status}`);
                 const data = await res.json();
                 setGames(data.games || []);
-                setFilteredProducts(data.games || []); // filtering is done server-side
+                
+                // Apply price filtering on client side
+                const filteredByPrice = (data.games as Product[]).filter((game: Product) => {
+                    const price = game.price || 0;
+                    return price >= priceRange.min && price <= priceRange.max;
+                });
+                setFilteredProducts(filteredByPrice);
             } catch (err: unknown) {
                 if (err instanceof Error) setError(err.message);
                 else setError('Failed to fetch games');
@@ -52,44 +63,39 @@ const ProductsPage = () => {
         };
 
         fetchGames();
-    }, [searchTerm, categoryFilter, stockFilter]);
-
-    const fetchGames = React.useCallback(async () => {
-        setLoading(true);
-        setError(null);
-        try {
-            const res = await fetch('/api/games');
-            if (!res.ok) throw new Error(`Failed to fetch games: ${res.status}`);
-            const data = await res.json();
-            setGames(data.games || []);
-        } catch (err: unknown) {
-            if (err instanceof Error) setError(err.message);
-            else setError('Failed to fetch games');
-        } finally {
-            setLoading(false);
-        }
-        }, []);
-
-    useEffect(() => {
-        fetchGames();
-    }, [fetchGames]);
+    }, [searchTerm, categoryFilter, stockFilter, priceRange.min, priceRange.max]);
 
     useEffect(() => {
         setCurrentPage(1); // reset pagination when filters change
-    }, [searchTerm, categoryFilter, stockFilter]);
+    }, [searchTerm, categoryFilter, stockFilter, priceRange.min, priceRange.max]);
+
+    const handleRetry = () => {
+        window.location.reload();
+    };
 
     // Show loading spinner
     if (loading) {
         return (
-            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 6 }}>
-                <CircularProgress />
-            </Box>
+            <Layout>
+                <Box sx={{ display: 'flex', justifyContent: 'center', mt: 6 }}>
+                    <CircularProgress />
+                </Box>
+            </Layout>
         );
     }
-    else if (error) {
-        <Button variant="contained" onClick={fetchGames}>
-            Retry
-        </Button>
+
+    // Show error state
+    if (error) {
+        return (
+            <Layout>
+                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mt: 6 }}>
+                    <Typography color="error" sx={{ mb: 2 }}>{error}</Typography>
+                    <Button variant="contained" onClick={handleRetry}>
+                        Retry
+                    </Button>
+                </Box>
+            </Layout>
+        );
     }
 
     return (
@@ -103,9 +109,13 @@ const ProductsPage = () => {
                     searchTerm={searchTerm}
                     categoryFilter={categoryFilter}
                     stockFilter={stockFilter}
+                    priceRange={priceRange}
                     onSearchChange={setSearchTerm}
                     onCategoryFilterChange={setCategoryFilter}
                     onStockFilterChange={setStockFilter}
+                    onPriceRangeChange={handlePriceRangeChange}
+                    minPrice={0}
+                    maxPrice={1000}
                 />
 
                 <Box sx={{ mb: 2 }}>
@@ -116,13 +126,13 @@ const ProductsPage = () => {
 
                 <Grid container spacing={3}>
                     {currentProducts.map((product) => (
-                        <Grid 
+                        <Grid
                             size={{
                                 xs: 12,
                                 md: 6,
                                 lg: 4,
                                 xl: 3,
-                            }} 
+                            }}
                             key={product.id}
                         >
                             <ProductCard product={product} />
