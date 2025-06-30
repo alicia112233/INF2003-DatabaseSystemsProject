@@ -21,6 +21,12 @@ interface CartItemProps {
 const CartItem: React.FC<CartItemProps> = ({ item }) => {
     const { updateQuantity, removeFromCart } = useCart();
 
+    const truncateText = (text: string, maxLength: number) => {
+        if (text.length <= maxLength) 
+            return text;
+        return text.slice(0, maxLength) + '...';
+    };
+    
     const handleQuantityChange = (newQuantity: number) => {
         if (newQuantity >= 1) {
             updateQuantity(item.id, newQuantity);
@@ -57,7 +63,7 @@ const CartItem: React.FC<CartItemProps> = ({ item }) => {
                         )}
                         {item.description && (
                             <Typography variant="body2" color="text.secondary">
-                                {item.description}
+                                {truncateText(item.description, 80)}
                             </Typography>
                         )}
                         <Typography variant="h6" color="primary" sx={{ mt: 1 }}>

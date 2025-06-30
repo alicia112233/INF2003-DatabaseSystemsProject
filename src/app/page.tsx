@@ -319,7 +319,7 @@ const RecommendationsCarousel: React.FC<ProductCardProps> = ({ product }) => {
                                 if (!isUserLoggedInAndCustomer()) {
                                     setSnack({
                                         open: true,
-                                        msg: 'Please log in as a customer to add to wishlist.',
+                                        msg: 'Please log in to add to wishlist.',
                                         severity: 'warning',
                                     });
                                     return;
@@ -479,7 +479,7 @@ const MoreGames: React.FC<ProductCardProps> = ({ product }) => {
                                             if (!isUserLoggedInAndCustomer()) {
                                                 setSnack({
                                                     open: true,
-                                                    msg: 'Please log in as a customer to add to wishlist.',
+                                                    msg: 'Please log in to add to wishlist.',
                                                     severity: 'warning',
                                                 });
                                                 return;
