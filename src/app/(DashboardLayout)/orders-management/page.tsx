@@ -23,7 +23,7 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import AddIcon from "@mui/icons-material/Add";
 import { format } from "date-fns";
 
-const statusOptions = ["Pending", "Shipped", "Delivered", "Cancelled"];
+
 
 type GameSelection = {
   gameId: number;
@@ -37,7 +37,6 @@ type Order = {
   email: string;
   games: GameSelection[];
   total: number;
-  status: string;
   createdAt: string;
 };
 
@@ -45,7 +44,6 @@ type OrderForm = {
   email: string;
   games: GameSelection[];
   total: string;
-  status: string;
 };
 
 const OrdersManagementPage = () => {
@@ -56,7 +54,6 @@ const OrdersManagementPage = () => {
     email: "",
     games: [],
     total: "",
-    status: "Pending",
   });
   const [search, setSearch] = useState("");
 
@@ -85,7 +82,7 @@ const OrdersManagementPage = () => {
     }));
   };
 
-  const handleGameChange = async <K extends keyof GameSelection>(idx: number, field: K, value: GameSelection[K]) => {
+  const handleGameChange = <K extends keyof GameSelection>(idx: number, field: K, value: GameSelection[K]) => {
     setForm((prev) => {
       const games = [...prev.games];
       games[idx] = { ...games[idx], [field]: value };
@@ -93,27 +90,6 @@ const OrdersManagementPage = () => {
       const total = games.reduce((sum, g) => sum + (Number(g.price) * Number(g.quantity)), 0);
       return { ...prev, games, total: total.toFixed(2) };
     });
-    // If gameId is changed, fetch game info and update title/price
-    if (field === "gameId" && value) {
-      try {
-        const res = await fetch(`/api/games`);
-        if (res.ok) {
-          const gamesList = await res.json();
-          const found = gamesList.find((g: any) => g.id === Number(value));
-          if (found) {
-            setForm((prev) => {
-              const games = [...prev.games];
-              games[idx] = { ...games[idx], title: found.title, price: found.price };
-              // recalculate total
-              const total = games.reduce((sum, g) => sum + (Number(g.price) * Number(g.quantity)), 0);
-              return { ...prev, games, total: total.toFixed(2) };
-            });
-          }
-        }
-      } catch (e) {
-        // ignore
-      }
-    }
   };
 
   const handleRemoveGame = (idx: number) => {
@@ -144,7 +120,7 @@ const OrdersManagementPage = () => {
     }
     setOpen(false);
     setEditOrder(null);
-    setForm({ email: "", games: [], total: "", status: "Pending" });
+    setForm({ email: "", games: [], total: "" });
     fetchOrders();
   };
 
@@ -155,7 +131,6 @@ const OrdersManagementPage = () => {
       email: order.email,
       games: order.games || [],
       total: order.total.toString(),
-      status: order.status,
     });
     setOpen(true);
   };
@@ -208,7 +183,7 @@ const OrdersManagementPage = () => {
               <TableCell>Customer Email</TableCell>
               <TableCell>Games</TableCell>
               <TableCell>Total</TableCell>
-              <TableCell>Status</TableCell>
+              {/* Status column removed */}
               <TableCell>Created At</TableCell>
               <TableCell>Actions</TableCell>
             </TableRow>
@@ -229,7 +204,7 @@ const OrdersManagementPage = () => {
                       : "-"}
                   </TableCell>
                   <TableCell>${Number(order.total).toFixed(2)}</TableCell>
-                  <TableCell>{order.status}</TableCell>
+                  {/* Status cell removed */}
                   <TableCell>{order.createdAt ? format(new Date(order.createdAt), "yyyy-MM-dd") : ""}</TableCell>
                   <TableCell>
                     <IconButton
@@ -322,20 +297,7 @@ const OrdersManagementPage = () => {
             onChange={handleChange}
             fullWidth
           />
-          <TextField
-            select
-            label="Status"
-            name="status"
-            value={form.status}
-            onChange={handleChange}
-            fullWidth
-          >
-            {statusOptions.map((status) => (
-              <MenuItem key={status} value={status}>
-                {status}
-              </MenuItem>
-            ))}
-          </TextField>
+          {/* Status field removed */}
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpen(false)}>Cancel</Button>
