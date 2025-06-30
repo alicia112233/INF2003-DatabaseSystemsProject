@@ -37,17 +37,33 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
                 return { cart: newCart };
             }
 
-            const existingItemIndex = state.cart.items.findIndex(
-                item => item.productId === action.payload.productId
-            );
+            // For rental items, check uniqueness by game + rental days
+            // For purchase items, check by productId only
+            const existingItemIndex = state.cart.items.findIndex(item => {
+                if (action.payload.type === 'rental') {
+                    return item.productId === action.payload.productId && 
+                           item.type === 'rental' && 
+                           item.rentalDays === action.payload.rentalDays;
+                } else {
+                    return item.productId === action.payload.productId && item.type !== 'rental';
+                }
+            });
 
             let updatedItems: CartItem[];
             if (existingItemIndex >= 0) {
-                updatedItems = state.cart.items.map((item, index) =>
-                    index === existingItemIndex
-                        ? { ...item, quantity: item.quantity + action.payload.quantity }
-                        : item
-                );
+                // For rental items, don't increase quantity, just replace
+                if (action.payload.type === 'rental') {
+                    updatedItems = state.cart.items.map((item, index) =>
+                        index === existingItemIndex ? { ...item, ...action.payload, id: item.id } : item
+                    );
+                } else {
+                    // For purchase items, increase quantity
+                    updatedItems = state.cart.items.map((item, index) =>
+                        index === existingItemIndex
+                            ? { ...item, quantity: item.quantity + action.payload.quantity }
+                            : item
+                    );
+                }
             } else {
                 updatedItems = [
                     ...state.cart.items,

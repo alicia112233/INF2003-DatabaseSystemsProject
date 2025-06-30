@@ -6,6 +6,8 @@ import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import PageContainer from '@/app/(DashboardLayout)/components/container/PageContainer';
 import DashboardCard from '@/app/(DashboardLayout)/components/shared/DashboardCard';
 import Layout from '@/components/layout';
+import RentButton from '@/components/products/RentButton';
+import { useCart } from '@/contexts/CartContext';
 
 type Game = {
     id: number;
@@ -114,6 +116,7 @@ const RecommendationsCarousel = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [snack, setSnack] = useState({ open: false, msg: '', severity: 'success' });
+    const { addToCart } = useCart();
 
     const handlePrev = () => setCurrent((prev) => (prev === 0 ? games.length - 1 : prev - 1));
     const handleNext = useCallback(() => {
@@ -259,8 +262,71 @@ const RecommendationsCarousel = () => {
                         {game.description ? game.description.slice(0, 100) + (game.description.length > 100 ? '...' : '') : ''}
                     </Typography>
                     <PriceDisplay game={game} />
-                    <Stack direction="row" spacing={2}>
-                        <Button variant="contained" color="primary">Add to Cart</Button>
+                    <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                        <Button 
+                            variant="contained" 
+                            color="primary"
+                            onClick={async () => {
+                                if (!isUserLoggedInAndCustomer()) {
+                                    setSnack({
+                                        open: true,
+                                        msg: 'Please log in as a customer to add to cart.',
+                                        severity: 'warning',
+                                    });
+                                    return;
+                                }
+                                
+                                try {
+                                    // Add purchase item to cart
+                                    const gamePrice = typeof game.price === 'string' ? parseFloat(game.price) : game.price;
+                                    const finalPrice = game.promotion && game.promotion.isActive 
+                                        ? calculatePromotionalPrice(gamePrice, game.promotion)
+                                        : gamePrice;
+                                        
+                                    addToCart({
+                                        productId: game.id.toString(),
+                                        title: game.title,
+                                        price: finalPrice,
+                                        quantity: 1,
+                                        image_url: game.image_url,
+                                        description: game.description,
+                                        type: 'purchase'
+                                    });
+                                    
+                                    setSnack({
+                                        open: true,
+                                        msg: 'Added to cart!',
+                                        severity: 'success',
+                                    });
+                                } catch (error) {
+                                    setSnack({
+                                        open: true,
+                                        msg: 'Failed to add to cart',
+                                        severity: 'error',
+                                    });
+                                }
+                            }}
+                        >
+                            Add to Cart
+                        </Button>
+                        
+                        <RentButton 
+                            product={{
+                                id: game.id.toString(),
+                                title: game.title,
+                                price: game.promotion && game.promotion.isActive 
+                                    ? calculatePromotionalPrice(
+                                        typeof game.price === 'string' ? parseFloat(game.price) : game.price, 
+                                        game.promotion
+                                    )
+                                    : (typeof game.price === 'string' ? parseFloat(game.price) : game.price),
+                                image_url: game.image_url,
+                                description: game.description,
+                                genreNames: []
+                            }}
+                            variant="outlined"
+                        />
+                        
                         <Button
                             variant="contained"
                             sx={{ bgcolor: '#B8860B', '&:hover': { bgcolor: '#9A7209' } }}

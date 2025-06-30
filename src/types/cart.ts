@@ -6,6 +6,9 @@ export interface CartItem {
     quantity: number;
     image_url?: string;
     description?: string;
+    type?: 'purchase' | 'rental'; // Add type to distinguish between purchase and rental
+    rentalDays?: number; // For rental items
+    dailyRate?: number; // For rental items
 }
 
 export interface Cart {

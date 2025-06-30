@@ -117,12 +117,15 @@ CREATE TABLE IF NOT EXISTS Game (
     image_url VARCHAR(512),
     release_date DATE,
     is_digital BOOLEAN DEFAULT FALSE,
-    stock_count INT DEFAULT 0,
+    stock_count INT DEFAULT 10, -- Set default stock to 10 instead of 0
     promo_id INT,
     head_image_url VARCHAR(255),
     screenshot_url VARCHAR(255),
     FOREIGN KEY (promo_id) REFERENCES Promotion(id)
 );
+
+-- Update existing games to have stock if they currently have 0
+UPDATE Game SET stock_count = 10 WHERE stock_count = 0 OR stock_count IS NULL;
 
 -- 6. GameGenre Table (references Game and Genre tables)
 CREATE TABLE IF NOT EXISTS GameGenre (
