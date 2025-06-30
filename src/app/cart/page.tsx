@@ -15,6 +15,7 @@ import { useCart } from '@/contexts/CartContext';
 import CartItem from '@/components/cart/CartItem';
 import CartSummary from '@/components/cart/CartSummary';
 import Layout from '@/components/layout';
+import type { CartItem as CartItemType } from '@/types/cart';
 
 const CartPage: React.FC = () => {
     const router = useRouter();
@@ -42,13 +43,14 @@ const CartPage: React.FC = () => {
             email,
             total: cart.totalAmount,
             status: 'Pending',
-            games: cart.items.map(item => ({
+            games: cart.items.map((item: CartItemType) => ({
                 gameId: item.productId,
                 title: item.title,
                 quantity: item.quantity,
                 price: item.price
             }))
         };
+        
         // Send order to API
         try {
             const res = await fetch('/api/orders', {
@@ -116,8 +118,8 @@ const CartPage: React.FC = () => {
                             md: 8,
                         }}>
                             <Box>
-                                {cart.items.map((item) => (
-                                    <CartItem key={item.id} item={item} />
+                                {cart.items.map((item: CartItemType, index: number) => (
+                                    <CartItem key={`${item.productId}-${index}`} item={item} />
                                 ))}
                             </Box>
                         </Grid>

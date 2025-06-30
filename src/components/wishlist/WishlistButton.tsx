@@ -15,14 +15,14 @@ interface WishlistButtonProps {
 
 const WishlistButton: React.FC<WishlistButtonProps> = ({ product, size = 'medium' }) => {
     const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
-    const inWishlist = isInWishlist(product.id);
+    const inWishlist = isInWishlist(product.id.toString());
     const [snack, setSnack] = useState({ open: false, msg: '', severity: 'success' });
 
     const handleToggleWishlist = async (e: React.MouseEvent) => {
         e.stopPropagation();
 
         if (inWishlist) {
-            await removeFromWishlist(product.id);
+            await removeFromWishlist(product.id.toString());
             setSnack({ open: true, msg: 'Removed from wishlist', severity: 'success' });
         } else {
             // Directly call the API and check the response

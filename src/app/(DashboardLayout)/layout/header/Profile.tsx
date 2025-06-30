@@ -44,13 +44,24 @@ const Profile = () => {
     };
 
     const handleLogout = () => {
+        // Get user ID before clearing other data
+        const userId = document.cookie.match(/userId=([^;]+)/)?.[1];
+        
+        // Clear localStorage first
         localStorage.removeItem("isLoggedIn");
         localStorage.removeItem("userEmail");
+        localStorage.removeItem("userRole");
+        
+        // Don't clear the cart here - let it persist for the user
+        // The cart should be user-specific and managed elsewhere
+        
         // Reset the global cache on logout
         profileFetched = false;
         cachedAvatarUrl = null;
         cachedIsAdmin = null;
-        window.location.href = "/";
+        
+        // Use the middleware logout route instead of direct redirect
+        window.location.href = "/logout";
     };
 
     useEffect(() => {

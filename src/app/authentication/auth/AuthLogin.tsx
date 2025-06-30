@@ -57,17 +57,20 @@ const AuthLogin = ({ title, subtitle, subtext }: loginType) => {
 
       // Check if the user is an admin
       const isAdmin = data.user.isAdmin;
-      
+      const userId = data.user.id;
+
       // Store user info and role in cookies (more secure than localStorage)
       document.cookie = `isLoggedIn=true; path=/; max-age=86400`;
       document.cookie = `userEmail=${email}; path=/; max-age=86400`;
       document.cookie = `userRole=${isAdmin ? 'admin' : 'customer'}; path=/; max-age=86400`;
+      document.cookie = `userId=${userId}; path=/; max-age=86400`; 
       
       // Also keep localStorage for backward compatibility
       localStorage.setItem("isLoggedIn", "true");
       localStorage.setItem("userEmail", email);
       localStorage.setItem('userRole', isAdmin ? 'admin' : 'customer');
-      
+      localStorage.setItem('userId', userId.toString());
+
       // Show success toast
       setToastSeverity("success");
       setToastMessage("Login successful! Redirecting...");

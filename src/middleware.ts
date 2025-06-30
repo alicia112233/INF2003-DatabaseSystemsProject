@@ -8,6 +8,28 @@ export function middleware(request: NextRequest) {
     const path = request.nextUrl.pathname;
     const response = NextResponse.next();
 
+    // Handle logout route specifically - always process this first
+    if (path === '/logout') {
+        // console.log('Processing logout request');
+        const redirectResponse = NextResponse.redirect(new URL('/', request.url));
+        
+        // Clear authentication cookies
+        redirectResponse.cookies.set('isLoggedIn', '', {
+            expires: new Date(0),
+            path: '/',
+        });
+        redirectResponse.cookies.set('userRole', '', {
+            expires: new Date(0),
+            path: '/',
+        });
+        
+        // Add header to trigger localStorage clearing on client side
+        redirectResponse.headers.set('x-clear-storage', 'true');
+        redirectResponse.headers.set('x-logout-success', 'true');
+        
+        return redirectResponse;
+    }
+
     // Check if this is the first request after restart
     if (!hasHandledRestart) {
         hasHandledRestart = true;
@@ -88,11 +110,28 @@ export function middleware(request: NextRequest) {
         if (!isPublicRoute && !isLoggedIn) {
             return NextResponse.redirect(new URL('/', request.url));
         }
+
+        // Admin-only routes
+        if (path.startsWith('/admin') || path.includes('DashboardLayout')) {
+            if (!isLoggedIn || userRole !== 'admin') {
+                return NextResponse.redirect(new URL('/', request.url));
+            }
+        }
+
+        // Customer-only routes (cart, wishlist, orders, etc.)
+        const customerOnlyRoutes = ['/cart', '/wishlist', '/my-orders', '/profile'];
+        const isCustomerOnlyRoute = customerOnlyRoutes.some(route => path === route || path.startsWith(route));
+        
+        if (isCustomerOnlyRoute) {
+            if (!isLoggedIn || userRole !== 'customer') {
+                return NextResponse.redirect(new URL('/', request.url));
+            }
+        }
     }
 
     return response;
 }
 
 export const config = {
-    matcher: ['/((?!api|_next/static|_next/image|favicon.ico|images|authentication|products|logout).*)'],
+    matcher: ['/((?!api|_next/static|_next/image|favicon.ico|images|authentication|products).*)'],
 };

@@ -6,6 +6,8 @@ import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import PageContainer from '@/app/(DashboardLayout)/components/container/PageContainer';
 import DashboardCard from '@/app/(DashboardLayout)/components/shared/DashboardCard';
 import Layout from '@/components/layout';
+import AddToCartButton from '@/components/cart/AddToCartButton';
+import { Product } from '@/types/cart';
 
 type Game = {
     id: number;
@@ -14,6 +16,7 @@ type Game = {
     image_url?: string;
     price: number | string;
     promo_id?: number;
+    inStock?: boolean;
     promotion?: {
         id: number;
         code: string;
@@ -25,6 +28,18 @@ type Game = {
         endDate: string;
     };
 };
+
+// Helper function to check if user is logged in and is a customer
+function isUserLoggedInAndCustomer(): boolean {
+    // Check both localStorage and cookies for robustness
+    if (typeof window === 'undefined') return false;
+    const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true' || document.cookie.includes('isLoggedIn=true');
+    const userRole = localStorage.getItem('userRole') || (
+        document.cookie.match(/userRole=([^;]+)/)?.[1] || ''
+    );
+    // Your app uses 'customer' for normal users (see login logic)
+    return isLoggedIn && userRole === 'customer';
+}
 
 function calculatePromotionalPrice(originalPrice: number | string, promotion: Game['promotion']) {
     if (!promotion || !promotion.isActive) return typeof originalPrice === 'string' ? parseFloat(originalPrice) : originalPrice;
@@ -122,65 +137,11 @@ function capitalizeDescription(description: string) {
         .join('');
 }
 
-const handleAddToCart = async (
-    game: Game, 
-    setSnack: (snack: { open: boolean; msg: string; severity: string }) => void
-) => {
-    if (!isUserLoggedInAndCustomer()) {
-        setSnack({
-            open: true,
-            msg: 'Please log in to add to cart.',
-            severity: 'warning',
-        });
-        return;
-    }
-    
-    try {
-        // Handle promotional pricing
-        const hasActivePromo = game.promotion && game.promotion.isActive;
-        const originalPrice = typeof game.price === 'string' ? parseFloat(game.price) : game.price;
-        const finalPrice = hasActivePromo ? calculatePromotionalPrice(originalPrice, game.promotion) : originalPrice;
-        
-        const cartItem = {
-            productId: game.id,
-            title: game.title,
-            price: finalPrice,
-            quantity: 1,
-            image_url: game.image_url
-        };
-        
-        const existingCart = JSON.parse(localStorage.getItem('customer-cart') || '{"items": [], "totalAmount": 0}');
-        const existingItemIndex = existingCart.items.findIndex((item: any) => item.productId === game.id);
-        
-        if (existingItemIndex >= 0) {
-            existingCart.items[existingItemIndex].quantity += 1;
-        } else {
-            existingCart.items.push(cartItem);
-        }
-        
-        existingCart.totalAmount = existingCart.items.reduce((total: number, item: any) => 
-            total + (item.price * item.quantity), 0
-        );
-        
-        localStorage.setItem('customer-cart', JSON.stringify(existingCart));
-        
-        setSnack({
-            open: true,
-            msg: 'Added to cart successfully!',
-            severity: 'success',
-        });
-        
-    } catch (error) {
-        console.error('Error adding to cart:', error);
-        setSnack({
-            open: true,
-            msg: 'Failed to add to cart. Please try again.',
-            severity: 'error',
-        });
-    }
-};
+interface ProductCardProps {
+    product?: Product;
+}
 
-const RecommendationsCarousel = () => {
+const RecommendationsCarousel: React.FC<ProductCardProps> = ({ product }) => {
     const [games, setGames] = useState<Game[]>([]);
     const [current, setCurrent] = useState(0);
     const [loading, setLoading] = useState(true);
@@ -294,6 +255,7 @@ const RecommendationsCarousel = () => {
     }
 
     const game = games[current];
+    const isOutOfStock = game.inStock === false;
 
     return (
         <Box sx={{ minWidth: '80%', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 350 }}>
@@ -332,9 +294,20 @@ const RecommendationsCarousel = () => {
                     </Typography>
                     <PriceDisplay game={game} />
                     <Stack direction="row" spacing={2}>
-                        <Button variant="contained" color="primary" size="small" onClick={() => handleAddToCart(game, setSnack)}>
-                            Add to Cart
-                        </Button>
+                        <AddToCartButton
+                            product={{
+                                id: String(game.id),
+                                title: game.title,
+                                price: typeof game.price === 'string' ? parseFloat(game.price) : game.price,
+                                image_url: game.image_url,
+                                description: game.description,
+                                genreNames: [],
+                                inStock: game.inStock,
+                            }}
+                            onSuccess={(message) => setSnack({ open: true, msg: message, severity: 'success' })}
+                            onWarning={(message) => setSnack({ open: true, msg: message, severity: 'warning' })}
+                            onError={(message) => setSnack({ open: true, msg: message, severity: 'error' })}
+                        />
                         
                         <Button
                             variant="contained"
@@ -381,7 +354,7 @@ const RecommendationsCarousel = () => {
     );
 };
 
-const MoreGames = () => {
+const MoreGames: React.FC<ProductCardProps> = ({ product }) => {
     const [games, setGames] = useState<Game[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -460,45 +433,74 @@ const MoreGames = () => {
         <Box sx={{ mt: 6 }}>
             <Typography variant="h5" sx={{ mb: 2 }}>More Games</Typography>
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
-                {games.slice(0, 8).map(game => (
-                    <Card key={game.id} sx={{ width: 260, minHeight: 340, display: 'flex', flexDirection: 'column' }}>
-                        {game.image_url && (
-                            <CardMedia
-                                component="img"
-                                height="140"
-                                image={game.image_url}
-                                alt={game.title}
-                                sx={{ objectFit: 'cover' }}
-                            />
-                        )}
-                        <CardContent>
-                            <Typography variant="subtitle1">{capitalizeTitle(game.title)}</Typography>
-                            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                                {game.description ? game.description.slice(0, 60) + (game.description.length > 60 ? '...' : '') : ''}
-                            </Typography>
-                            <Typography variant="body2" color="primary" sx={{ mb: 1 }}>
-                                ${typeof game.price === 'string' ? parseFloat(game.price).toFixed(2) : game.price.toFixed(2)}
-                            </Typography>
-                            <Stack direction="row" spacing={1}>
-                                <Button variant="contained" color="primary" size="small" onClick={() => handleAddToCart(game, setSnack)}>Add to Cart</Button>
-                                <Button
-                                    variant="contained"
-                                    size="small"
-                                    sx={{ bgcolor: '#B8860B', '&:hover': { bgcolor: '#9A7209' } }}
-                                    onClick={async () => {
-                                        await fetch('/api/wishlist', {
-                                            method: 'POST',
-                                            headers: { 'Content-Type': 'application/json' },
-                                            body: JSON.stringify({ gameId: game.id }),
-                                        });
-                                    }}
-                                >
-                                    Add to Wishlist
-                                </Button>
-                            </Stack>
-                        </CardContent>
-                    </Card>
-                ))}
+                {games.slice(0, 8).map(game => {                    
+                    return (
+                        <Card key={game.id} sx={{ width: 260, minHeight: 340, display: 'flex', flexDirection: 'column' }}>
+                            {game.image_url && (
+                                <CardMedia
+                                    component="img"
+                                    height="140"
+                                    image={game.image_url}
+                                    alt={game.title}
+                                    sx={{ objectFit: 'cover' }}
+                                />
+                            )}
+                            <CardContent>
+                                <Typography variant="subtitle1">{capitalizeTitle(game.title)}</Typography>
+                                <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                                    {game.description ? game.description.slice(0, 60) + (game.description.length > 60 ? '...' : '') : ''}
+                                </Typography>
+                                <Typography variant="body2" color="primary" sx={{ mb: 1 }}>
+                                    ${typeof game.price === 'string' ? parseFloat(game.price).toFixed(2) : game.price.toFixed(2)}
+                                </Typography>
+                                <Stack direction="row" spacing={1}>
+                                    <AddToCartButton
+                                        product={{
+                                            id: String(game.id),
+                                            title: game.title,
+                                            price: typeof game.price === 'string' ? parseFloat(game.price) : game.price,
+                                            image_url: game.image_url,
+                                            description: game.description,
+                                            genreNames: [],
+                                            inStock: game.inStock,
+                                        }}
+                                        onSuccess={(message) => setSnack({ open: true, msg: message, severity: 'success' })}
+                                        onWarning={(message) => setSnack({ open: true, msg: message, severity: 'warning' })}
+                                        onError={(message) => setSnack({ open: true, msg: message, severity: 'error' })}
+                                    />
+                                    
+                                    <Button
+                                        variant="contained"
+                                        sx={{ bgcolor: '#B8860B', '&:hover': { bgcolor: '#9A7209' } }}
+                                        onClick={async () => {
+                                            if (!isUserLoggedInAndCustomer()) {
+                                                setSnack({
+                                                    open: true,
+                                                    msg: 'Please log in as a customer to add to wishlist.',
+                                                    severity: 'warning',
+                                                });
+                                                return;
+                                            }
+                                            const res = await fetch('/api/wishlist', {
+                                                method: 'POST',
+                                                headers: { 'Content-Type': 'application/json' },
+                                                body: JSON.stringify({ gameId: game.id }),
+                                            });
+                                            const data = await res.json();
+                                            setSnack({
+                                                open: true,
+                                                msg: data.message === 'Already in wishlist' ? 'Already in wishlist' : 'Added to wishlist',
+                                                severity: data.message === 'Already in wishlist' ? 'warning' : 'success',
+                                            });
+                                        }}
+                                    >
+                                        Add to Wishlist
+                                    </Button>
+                                </Stack>
+                            </CardContent>
+                        </Card>
+                    );
+                })}
             </Box>
             <Snackbar
                 open={snack.open}
@@ -514,23 +516,12 @@ const MoreGames = () => {
     );
 };
 
-function isUserLoggedInAndCustomer() {
-    // Check both localStorage and cookies for robustness
-    if (typeof window === 'undefined') return false;
-    const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true' || document.cookie.includes('isLoggedIn=true');
-    const userRole = localStorage.getItem('userRole') || (
-        document.cookie.match(/userRole=([^;]+)/)?.[1] || ''
-    );
-    // Your app uses 'customer' for normal users (see login logic)
-    return isLoggedIn && userRole === 'customer';
-}
-
 export default function HomePage() {
     return (
         <Layout>
             <PageContainer title="Game Haven" description="Your ultimate gaming destination">
                 <DashboardCard title="Featured & Recommended 👍">
-                    <RecommendationsCarousel />
+                    <RecommendationsCarousel product={undefined} />
                 </DashboardCard>
                 <MoreGames />
             </PageContainer>

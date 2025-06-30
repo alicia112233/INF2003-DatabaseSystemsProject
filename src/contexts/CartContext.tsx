@@ -1,14 +1,16 @@
 'use client';
 
-import React, { createContext, useContext, useReducer, useEffect } from 'react';
+import React, { createContext, useContext, useReducer, useEffect, useCallback } from 'react';
 import { Cart, CartItem, CartContextType } from '@/types/cart';
 
 interface CartState {
     cart: Cart | null;
+    currentUserId: string | null;
 }
 
 type CartAction =
     | { type: 'SET_CART'; payload: Cart }
+    | { type: 'SET_USER_ID'; payload: string | null }
     | { type: 'ADD_ITEM'; payload: Omit<CartItem, 'id'> }
     | { type: 'REMOVE_ITEM'; payload: string }
     | { type: 'UPDATE_QUANTITY'; payload: { itemId: string; quantity: number } }
@@ -18,14 +20,17 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 
 const cartReducer = (state: CartState, action: CartAction): CartState => {
     switch (action.type) {
+        case 'SET_USER_ID':
+            return { ...state, currentUserId: action.payload };
+
         case 'SET_CART':
-            return { cart: action.payload };
+            return { ...state, cart: action.payload };
 
         case 'ADD_ITEM':
             if (!state.cart) {
                 const newCart: Cart = {
-                    id: 'temp-cart',
-                    userId: 'current-user',
+                    id: `cart-${state.currentUserId || 'temp'}`,
+                    userId: state.currentUserId || 'temp-user',
                     items: [{
                         id: Date.now().toString(),
                         ...action.payload
@@ -34,7 +39,7 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
                     createdAt: new Date(),
                     updatedAt: new Date()
                 };
-                return { cart: newCart };
+                return { ...state, cart: newCart };
             }
 
             const existingItemIndex = state.cart.items.findIndex(
@@ -60,6 +65,7 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
             );
 
             return {
+                ...state,
                 cart: {
                     ...state.cart,
                     items: updatedItems,
@@ -77,6 +83,7 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
             );
 
             return {
+                ...state,
                 cart: {
                     ...state.cart,
                     items: filteredItems,
@@ -99,6 +106,7 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
             );
 
             return {
+                ...state,
                 cart: {
                     ...state.cart,
                     items: updatedQuantityItems,
@@ -108,7 +116,7 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
             };
 
         case 'CLEAR_CART':
-            return { cart: null };
+            return { ...state, cart: null };
 
         default:
             return state;
@@ -116,29 +124,80 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
 };
 
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const [state, dispatch] = useReducer(cartReducer, { cart: null });
+    const [state, dispatch] = useReducer(cartReducer, { cart: null, currentUserId: null });
 
-    useEffect(() => {
-        // Load cart from localStorage on mount
-        const savedCart = localStorage.getItem('customer-cart');
-        if (savedCart) {
+    // Function to get current user ID
+    const getCurrentUserId = useCallback(async (): Promise<string | null> => {
+        let userId = document.cookie.match(/userId=([^;]+)/)?.[1] || localStorage.getItem('userId');
+        
+        if (!userId) {
             try {
-                const parsedCart = JSON.parse(savedCart);
-                dispatch({ type: 'SET_CART', payload: parsedCart });
+                const response = await fetch('/api/profile');
+                if (response.ok) {
+                    const userData = await response.json();
+                    userId = userData.id?.toString();
+                    if (userId) {
+                        localStorage.setItem('userId', userId);
+                        document.cookie = `userId=${userId}; path=/; max-age=86400`;
+                    }
+                }
+            } catch (error) {
+                console.error('Failed to fetch user profile:', error);
+            }
+        }
+        
+        return userId;
+    }, []);
+
+    // Function to load user-specific cart
+    const loadUserCart = useCallback(async (userId?: string) => {
+        const targetUserId = userId || state.currentUserId;
+        if (!targetUserId) return;
+
+        const cartKey = `customer-cart-${targetUserId}`;
+        const savedCartData = localStorage.getItem(cartKey);
+        
+        if (savedCartData) {
+            try {
+                const parsedData = JSON.parse(savedCartData);
+                
+                // Convert old format to new format if needed
+                const cart: Cart = parsedData.id ? parsedData : {
+                    id: `cart-${targetUserId}`,
+                    userId: targetUserId,
+                    items: parsedData.items || [],
+                    totalAmount: parsedData.totalAmount || 0,
+                    createdAt: new Date(),
+                    updatedAt: new Date()
+                };
+                
+                dispatch({ type: 'SET_CART', payload: cart });
             } catch (error) {
                 console.error('Error loading cart from localStorage:', error);
             }
         }
-    }, []);
+    }, [state.currentUserId]);
 
+    // Initialize user and cart on mount
     useEffect(() => {
-        // Save cart to localStorage whenever it changes
-        if (state.cart) {
-            localStorage.setItem('customer-cart', JSON.stringify(state.cart));
-        } else {
-            localStorage.removeItem('customer-cart');
+        const initializeCart = async () => {
+            const userId = await getCurrentUserId();
+            if (userId) {
+                dispatch({ type: 'SET_USER_ID', payload: userId });
+                await loadUserCart(userId);
+            }
+        };
+        
+        initializeCart();
+    }, [getCurrentUserId, loadUserCart]);
+
+    // Save cart to localStorage whenever it changes
+    useEffect(() => {
+        if (state.cart && state.currentUserId) {
+            const cartKey = `customer-cart-${state.currentUserId}`;
+            localStorage.setItem(cartKey, JSON.stringify(state.cart));
         }
-    }, [state.cart]);
+    }, [state.cart, state.currentUserId]);
 
     const addToCart = (item: Omit<CartItem, 'id'>) => {
         dispatch({ type: 'ADD_ITEM', payload: item });
@@ -176,6 +235,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         clearCart,
         getCartTotal,
         getCartItemCount,
+        loadUserCart, // Add this to the context
     };
 
     return (
