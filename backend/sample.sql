@@ -145,7 +145,6 @@ CREATE TABLE IF NOT EXISTS Orders (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
     total DECIMAL(10,2) NOT NULL,
-    status VARCHAR(50) NOT NULL DEFAULT 'Pending',
     purchase_date DATE NOT NULL,
     FOREIGN KEY (user_id) REFERENCES users(id)
 );

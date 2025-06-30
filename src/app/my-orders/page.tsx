@@ -36,7 +36,6 @@ interface Order {
   id: number;
   email: string;
   total: number;
-  status: string;
   createdAt: string;
   games: Game[];
 }
@@ -48,7 +47,7 @@ export default function MyOrdersPage() {
   const [open, setOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [editMode, setEditMode] = useState(false);
-  const [form, setForm] = useState({ status: "", games: [] as Game[] });
+  const [form, setForm] = useState({ games: [] as Game[] });
 
   // Fetch user's orders
   useEffect(() => {
@@ -73,21 +72,6 @@ export default function MyOrdersPage() {
     fetchOrders();
   }, []);
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'Pending':
-        return 'warning';
-      case 'Shipped':
-        return 'info';
-      case 'Delivered':
-        return 'success';
-      case 'Cancelled':
-        return 'error';
-      default:
-        return 'default';
-    }
-  };
-
   // View order details
   const handleView = (order: Order) => {
     console.log('Viewing order:', order); // Debug log
@@ -96,31 +80,21 @@ export default function MyOrdersPage() {
     setEditMode(false);
   };
 
-  // Edit order status (for demo, only status is editable)
+  // Edit order (removed status editing since digital purchases don't need status)
   const handleEdit = (order: Order) => {
     setSelectedOrder(order);
-    setForm({ status: order.status, games: order.games });
+    setForm({ games: order.games });
     setOpen(true);
     setEditMode(true);
   };
 
-  // Save order status
+  // Save order (simplified since no status to update)
   const handleSave = async () => {
     if (!selectedOrder) return;
-    await fetch("/api/orders", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id: selectedOrder.id, status: form.status, purchase_date: selectedOrder.createdAt }),
-    });
+    // For digital purchases, there's nothing to update
     setOpen(false);
     setEditMode(false);
     setSelectedOrder(null);
-    // Refresh orders
-    const response = await fetch("/api/orders");
-    if (response.ok) {
-      const data = await response.json();
-      setOrders(data);
-    }
   };
 
   // Delete order
@@ -185,7 +159,6 @@ export default function MyOrdersPage() {
                   <TableCell>Order ID</TableCell>
                   <TableCell>Games</TableCell>
                   <TableCell>Total</TableCell>
-                  <TableCell>Status</TableCell>
                   <TableCell>Order Date</TableCell>
                   <TableCell>Actions</TableCell>
                 </TableRow>
@@ -210,13 +183,6 @@ export default function MyOrdersPage() {
                       </Box>
                     </TableCell>
                     <TableCell>${Number(order.total).toFixed(2)}</TableCell>
-                    <TableCell>
-                      <Chip
-                        label={order.status || 'Unknown'}
-                        color={getStatusColor(order.status) as any}
-                        size="small"
-                      />
-                    </TableCell>
                     <TableCell>
                       {order.createdAt ? format(new Date(order.createdAt), 'MMM dd, yyyy') : '-'}
                     </TableCell>
@@ -244,19 +210,11 @@ export default function MyOrdersPage() {
             {selectedOrder ? (
               <>
                 <Typography variant="subtitle1" gutterBottom>Order ID: #{selectedOrder.id}</Typography>
-                <Typography variant="body2" gutterBottom>Status: 
-                  <Chip
-                    label={selectedOrder.status || 'Unknown'}
-                    color={getStatusColor(selectedOrder.status || '') as any}
-                    size="small"
-                    sx={{ ml: 1 }}
-                  />
-                </Typography>
                 <Typography variant="body2" gutterBottom>Total: ${Number(selectedOrder.total || 0).toFixed(2)}</Typography>
                 <Typography variant="body2" gutterBottom>
                   Order Date: {selectedOrder.createdAt ? format(new Date(selectedOrder.createdAt), 'MMM dd, yyyy HH:mm') : '-'}
                 </Typography>
-                <Typography variant="subtitle2" sx={{ mt: 2, mb: 1 }}>Games Ordered:</Typography>
+                <Typography variant="subtitle2" sx={{ mt: 2, mb: 1 }}>Games Purchased:</Typography>
                 <TableContainer component={Paper} variant="outlined">
                   <Table size="small">
                     <TableHead>

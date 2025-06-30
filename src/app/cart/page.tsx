@@ -64,7 +64,6 @@ const CartPage: React.FC = () => {
                 const orderData = {
                     email,
                     total: purchaseItems.reduce((sum, item) => sum + (item.price * item.quantity), 0),
-                    status: 'Pending',
                     games: purchaseItems.map(item => ({
                         gameId: item.productId,
                         title: item.title,

@@ -43,14 +43,39 @@ const Profile = () => {
         router.push(path);
     };
 
-    const handleLogout = () => {
-        localStorage.removeItem("isLoggedIn");
-        localStorage.removeItem("userEmail");
-        // Reset the global cache on logout
-        profileFetched = false;
-        cachedAvatarUrl = null;
-        cachedIsAdmin = null;
-        window.location.href = "/";
+    const handleLogout = async () => {
+        try {
+            // Clear localStorage first
+            localStorage.removeItem("isLoggedIn");
+            localStorage.removeItem("userEmail");
+            localStorage.removeItem("userRole");
+            
+            // Clear cart data
+            localStorage.removeItem("customer-cart");
+            
+            // Reset the global cache on logout
+            profileFetched = false;
+            cachedAvatarUrl = null;
+            cachedIsAdmin = null;
+            
+            // Make API call to clear server-side session/cookies
+            await fetch('/api/logout', {
+                method: 'POST',
+                credentials: 'include', // Important for sending cookies
+            });
+            
+            // Clear cookies manually as backup
+            document.cookie = 'isLoggedIn=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+            document.cookie = 'userEmail=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+            document.cookie = 'userRole=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+            
+            // Redirect to home page
+            window.location.href = "/";
+        } catch (error) {
+            console.error('Logout error:', error);
+            // Even if API call fails, still redirect
+            window.location.href = "/";
+        }
     };
 
     useEffect(() => {
@@ -168,7 +193,7 @@ const Profile = () => {
                             </ListItemIcon>
                             <ListItemText>My Orders</ListItemText>
                         </MenuItem>
-                        <MenuItem>
+                        <MenuItem onClick={() => handleMenuItemClick('/my-rentals')}>
                             <ListItemIcon>
                                 <CalendarMonth width={20} />
                             </ListItemIcon>
