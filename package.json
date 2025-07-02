@@ -4,7 +4,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test:review": "ts-node --project tsconfig.cli.json scripts/testReview.ts"
   },
   "dependencies": {
     "@coreui/icons": "^3.0.1",
@@ -16,7 +17,6 @@
     "@mui/lab": "^7.0.0-beta.10",
     "@mui/material": "^7.1.1",
     "@tabler/icons-react": "^3.33.0",
-    "@types/node": "^20.2.3",
     "@vercel/analytics": "^1.5.0",
     "@vercel/speed-insights": "^1.2.0",
     "apexcharts": "4.7.0",
@@ -41,8 +41,7 @@
     "react-dom": "^19.1.0",
     "react-hot-toast": "^2.5.2",
     "react-mui-sidebar": "^1.6.3",
-    "react-syntax-highlighter": "^5.8.0",
-    "typescript": "^5.8.3"
+    "react-syntax-highlighter": "^5.8.0"
   },
   "devDependencies": {
     "@types/bcrypt": "^5.0.2",
@@ -50,7 +49,9 @@
     "@types/formidable": "^3.4.5",
     "@types/jsonwebtoken": "^9.0.9",
     "@types/lodash": "4.14.196",
-    "@types/node": "^22.15.21",
-    "@types/react-syntax-highlighter": "^15.5.13"
+    "@types/node": "^22.16.0",
+    "@types/react-syntax-highlighter": "^15.5.13",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3"
   }
 }
