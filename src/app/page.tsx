@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect, useCallback } from 'react';
-import { Box, Typography, Button, Card, CardContent, CardMedia, Stack, IconButton, Grid, CircularProgress, Skeleton, Snackbar, Alert } from '@mui/material';
+import { Box, Typography, Button, Card, CardContent, CardMedia, Chip, Stack, IconButton, Grid, CircularProgress, Skeleton, Snackbar, Alert } from '@mui/material';
 import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import PageContainer from '@/app/(DashboardLayout)/components/container/PageContainer';
@@ -9,6 +9,7 @@ import Layout from '@/components/layout';
 import RentButton from '@/components/products/RentButton';
 import { useCart } from '@/contexts/CartContext';
 import AddToCartButton from '@/components/cart/AddToCartButton';
+import WishlistButton from '@/components/wishlist/WishlistButton';
 import { Product } from '@/types/cart';
 
 type Game = {
@@ -139,11 +140,20 @@ function capitalizeDescription(description: string) {
         .join('');
 }
 
+// Function to check if user is customer (not admin)
+const isCustomer = () => {
+    if (typeof window === 'undefined') return false;
+    const userRole = localStorage.getItem('userRole') || (
+        document.cookie.match(/userRole=([^;]+)/)?.[1] || ''
+    );
+    return userRole !== 'admin';
+};
+
 interface ProductCardProps {
-    product?: Product;
+    product: Product;
 }
 
-const RecommendationsCarousel: React.FC<ProductCardProps> = ({ product }) => {
+const RecommendationsCarousel: React.FC = () => {
     const [games, setGames] = useState<Game[]>([]);
     const [current, setCurrent] = useState(0);
     const [loading, setLoading] = useState(true);
@@ -258,7 +268,6 @@ const RecommendationsCarousel: React.FC<ProductCardProps> = ({ product }) => {
     }
 
     const game = games[current];
-    const isOutOfStock = game.inStock === false;
 
     return (
         <Box sx={{ minWidth: '80%', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 350 }}>
@@ -347,7 +356,7 @@ const RecommendationsCarousel: React.FC<ProductCardProps> = ({ product }) => {
                 open={snack.open}
                 autoHideDuration={3000}
                 onClose={() => setSnack(s => ({ ...s, open: false }))}
-                anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+                anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
             >
                 <Alert onClose={() => setSnack(s => ({ ...s, open: false }))} severity={snack.severity as any}>
                     {snack.msg}
@@ -357,12 +366,12 @@ const RecommendationsCarousel: React.FC<ProductCardProps> = ({ product }) => {
     );
 };
 
-const MoreGames: React.FC<ProductCardProps> = ({ product }) => {
+const MoreGames: React.FC<ProductCardProps> = () => {
     const [games, setGames] = useState<Game[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [snack, setSnack] = useState({ open: false, msg: '', severity: 'success' });
-
+    
     useEffect(() => {
         const fetchGames = async () => {
             try {
@@ -386,7 +395,7 @@ const MoreGames: React.FC<ProductCardProps> = ({ product }) => {
 
         fetchGames();
     }, []);
-    
+
     if (loading) {
         return (
             <Box sx={{ mt: 6 }}>
@@ -436,9 +445,57 @@ const MoreGames: React.FC<ProductCardProps> = ({ product }) => {
         <Box sx={{ mt: 6 }}>
             <Typography variant="h5" sx={{ mb: 2 }}>More Games</Typography>
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
-                {games.slice(0, 8).map(game => {                    
+                {games.slice(0, 8).map(game => {      
+                    const isOutOfStock = game.inStock === false;
+                    const originalPrice = typeof game.price === 'string' ? parseFloat(game.price) : game.price;
+                    const hasPromotion = game.promotion?.isActive;
+                    const discountedPrice = hasPromotion ? calculatePromotionalPrice(originalPrice, game.promotion) : originalPrice;
+                    
                     return (
-                        <Card key={game.id} sx={{ width: 260, minHeight: 340, display: 'flex', flexDirection: 'column' }}>
+                        <Card key={game.id} sx={{ width: 260, minHeight: 340, display: 'flex', flexDirection: 'column', position: 'relative' }}>
+                            {/* Sale Badge */}
+                            {game.promotion?.isActive && (
+                                <Chip
+                                    label="ON SALE"
+                                    color="warning"
+                                    size="small"
+                                    sx={{
+                                        position: 'absolute',
+                                        top: 8,
+                                        left: 8,
+                                        zIndex: 1000,
+                                        fontWeight: 'bold',
+                                    }}
+                                />
+                            )}
+
+                            {/* Wishlist Button */}
+                            <Box
+                                sx={{
+                                    position: 'absolute',
+                                    top: 8,
+                                    right: 8,
+                                    zIndex: 1000,
+                                    background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.7))',
+                                    borderRadius: '50%',
+                                    padding: '2px',
+                                    boxShadow: '0 2px 3px rgba(0, 0, 0, 0.15)',
+                                    border: '1px solid rgba(255, 255, 255, 0.3)',
+                                }}
+                            >
+                                <WishlistButton
+                                    product={{
+                                        id: String(game.id),
+                                        title: game.title,
+                                        price: typeof game.price === 'string' ? parseFloat(game.price) : game.price,
+                                        image_url: game.image_url,
+                                        description: game.description,
+                                        genreNames: [],
+                                        inStock: game.inStock,
+                                    }}
+                                />
+                            </Box>
+
                             {game.image_url && (
                                 <CardMedia
                                     component="img"
@@ -453,11 +510,37 @@ const MoreGames: React.FC<ProductCardProps> = ({ product }) => {
                                 <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
                                     {game.description ? game.description.slice(0, 60) + (game.description.length > 60 ? '...' : '') : ''}
                                 </Typography>
-                                <Typography variant="body2" color="primary" sx={{ mb: 1 }}>
-                                    ${typeof game.price === 'string' ? parseFloat(game.price).toFixed(2) : game.price.toFixed(2)}
-                                </Typography>
-                                <Stack direction="row" spacing={1}>
+                                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, mb: 1 }}>
+                                    {hasPromotion && originalPrice > discountedPrice ? (
+                                        <>
+                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                <Typography
+                                                    variant="body2"
+                                                    color="text.secondary"
+                                                    sx={{ textDecoration: 'line-through' }}
+                                                >
+                                                    ${originalPrice.toFixed(2)}
+                                                </Typography>
+                                                <Typography variant="h6" color="primary" sx={{ fontWeight: 'bold' }}>
+                                                    ${discountedPrice.toFixed(2)}
+                                                </Typography>
+                                            </Box>
+                                            <Typography variant="caption" color="success.main" sx={{ fontWeight: 'medium' }}>
+                                                Save ${(originalPrice - discountedPrice).toFixed(2)}
+                                            </Typography>
+                                        </>
+                                    ) : (
+                                        <Typography variant="h6" color="primary">
+                                            ${originalPrice.toFixed(2)}
+                                        </Typography>
+                                    )}
+                                </Box>
+                            </CardContent>
+
+                            {isCustomer() && (
+                                <Box sx={{ p: 2, pt: 0 }}>
                                     <AddToCartButton
+                                        fullWidth
                                         product={{
                                             id: String(game.id),
                                             title: game.title,
@@ -472,35 +555,25 @@ const MoreGames: React.FC<ProductCardProps> = ({ product }) => {
                                         onError={(message) => setSnack({ open: true, msg: message, severity: 'error' })}
                                     />
                                     
-                                    <Button
-                                        variant="contained"
-                                        sx={{ bgcolor: '#B8860B', '&:hover': { bgcolor: '#9A7209' } }}
-                                        onClick={async () => {
-                                            if (!isUserLoggedInAndCustomer()) {
-                                                setSnack({
-                                                    open: true,
-                                                    msg: 'Please log in to add to wishlist.',
-                                                    severity: 'warning',
-                                                });
-                                                return;
-                                            }
-                                            const res = await fetch('/api/wishlist', {
-                                                method: 'POST',
-                                                headers: { 'Content-Type': 'application/json' },
-                                                body: JSON.stringify({ gameId: game.id }),
-                                            });
-                                            const data = await res.json();
-                                            setSnack({
-                                                open: true,
-                                                msg: data.message === 'Already in wishlist' ? 'Already in wishlist' : 'Added to wishlist',
-                                                severity: data.message === 'Already in wishlist' ? 'warning' : 'success',
-                                            });
-                                        }}
-                                    >
-                                        Add to Wishlist
-                                    </Button>
-                                </Stack>
-                            </CardContent>
+                                    {!isOutOfStock && (
+                                        <RentButton 
+                                            product={{
+                                                id: String(game.id),
+                                                title: game.title,
+                                                price: originalPrice,
+                                                image_url: game.image_url,
+                                                description: game.description,
+                                                genreNames: [],
+                                                inStock: game.inStock,
+                                            }}
+                                            fullWidth
+                                            onSuccess={(message) => setSnack({ open: true, msg: message, severity: 'success' })}
+                                            onWarning={(message) => setSnack({ open: true, msg: message, severity: 'warning' })}
+                                            onError={(message) => setSnack({ open: true, msg: message, severity: 'error' })}
+                                        />
+                                    )}
+                                </Box>
+                            )}
                         </Card>
                     );
                 })}
@@ -509,7 +582,7 @@ const MoreGames: React.FC<ProductCardProps> = ({ product }) => {
                 open={snack.open}
                 autoHideDuration={3000}
                 onClose={() => setSnack(s => ({ ...s, open: false }))}
-                anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+                anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
             >
                 <Alert onClose={() => setSnack(s => ({ ...s, open: false }))} severity={snack.severity as any}>
                     {snack.msg}
@@ -524,9 +597,17 @@ export default function HomePage() {
         <Layout>
             <PageContainer title="Game Haven" description="Your ultimate gaming destination">
                 <DashboardCard title="Featured & Recommended 👍">
-                    <RecommendationsCarousel product={undefined} />
+                    <RecommendationsCarousel />
                 </DashboardCard>
-                <MoreGames />
+                <MoreGames product={{
+                    id: '',
+                    title: '',
+                    price: 0,
+                    image_url: '',
+                    description: '',
+                    genreNames: [],
+                    inStock: true
+                }} />
             </PageContainer>
         </Layout>
     );

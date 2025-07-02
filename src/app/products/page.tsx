@@ -19,7 +19,7 @@ const ProductsPage = () => {
     };
 
     const [currentPage, setCurrentPage] = useState(1);
-    const productsPerPage = 16;
+    const productsPerPage = 12;
 
     // Filter states
     const [searchTerm, setSearchTerm] = useState('');

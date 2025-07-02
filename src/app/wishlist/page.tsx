@@ -65,7 +65,6 @@ export default function MyWishlist() {
         msg: data.message === 'Already in wishlist' ? 'Already in wishlist' : 'Added to wishlist',
         severity: data.message === 'Already in wishlist' ? 'warning' : 'success',
       });
-      // Optionally, update wishlist state here if needed
     } catch (err) {
       setSnack({ open: true, msg: 'Failed to add to wishlist.', severity: "error" });
     }
@@ -109,7 +108,6 @@ export default function MyWishlist() {
                       ${game.price}
                     </Typography>
                     <Stack direction="row" spacing={1}>
-                      {/* Optionally, allow adding to cart here */}
                       <Button variant="contained" size="small" color="error" onClick={() => handleRemove(game.id)}>
                         Remove
                       </Button>
@@ -124,7 +122,7 @@ export default function MyWishlist() {
           open={snack.open}
           autoHideDuration={4000}
           onClose={() => setSnack(s => ({ ...s, open: false }))}
-          anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+          anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
         >
           <Alert onClose={() => setSnack(s => ({ ...s, open: false }))}
             severity={snack.severity}

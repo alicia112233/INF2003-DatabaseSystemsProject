@@ -4,6 +4,7 @@ import CssBaseline from '@mui/material/CssBaseline';
 import theme from '@/utils/theme';
 import { CartProvider } from '@/contexts/CartContext';
 import { WishlistProvider } from '@/contexts/WishlistContext';
+import { SnackbarProvider } from '@/contexts/SnackbarContext';
 
 export default function RootLayout({
     children,
@@ -15,11 +16,13 @@ export default function RootLayout({
             <body>
                 <ThemeProvider theme={theme}>
                     <CssBaseline />
-                    <CartProvider>
-                        <WishlistProvider>
-                            {children}
-                        </WishlistProvider>
-                    </CartProvider>
+                    <SnackbarProvider>
+                        <CartProvider>
+                            <WishlistProvider>
+                                {children}
+                            </WishlistProvider>
+                        </CartProvider>
+                    </SnackbarProvider>
                 </ThemeProvider>
             </body>
         </html>

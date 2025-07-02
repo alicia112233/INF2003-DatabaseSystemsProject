@@ -27,7 +27,6 @@ import { Promotion, CreatePromotionRequest } from '@/types/promotion';
 interface Game {
     id: number;
     title: string;
-    // Add other game properties as needed
 }
 
 interface PromotionFormDialogProps {
@@ -82,7 +81,7 @@ const PromotionFormDialog: React.FC<PromotionFormDialogProps> = ({
         code: '',
         description: '',
         discountValue: 0,
-        discountType: 'fixed',
+        discountType: 'percentage',
         maxUsage: undefined,
         startDate: '',
         endDate: '',
@@ -106,9 +105,10 @@ const PromotionFormDialog: React.FC<PromotionFormDialogProps> = ({
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [open, formData.applicableToAll, promotion]);
 
-    const fetchGames = async (): Promise<void> => {
-        // Check cache first for faster loading
-        if (gamesCache.length > 0) {
+    // Update the fetchGames function to always fetch fresh data when editing
+    const fetchGames = async (forceRefresh = false): Promise<void> => {
+        // Only use cache for new promotions, always refresh for edits
+        if (!forceRefresh && gamesCache.length > 0 && !promotion) {
             setGames(gamesCache);
             return;
         }
@@ -119,7 +119,7 @@ const PromotionFormDialog: React.FC<PromotionFormDialogProps> = ({
             if (response.ok) {
                 const gamesData = await response.json();
                 setGames(gamesData);
-                setGamesCache(gamesData); // Cache the data
+                setGamesCache(gamesData); // Update cache
             } else {
                 console.error('Failed to fetch games');
             }
@@ -129,6 +129,15 @@ const PromotionFormDialog: React.FC<PromotionFormDialogProps> = ({
             setLoadingGames(false);
         }
     };
+
+    // Update the useEffect to force refresh when editing
+    useEffect(() => {
+        if (open && (!formData.applicableToAll || (promotion && !promotion.applicableToAll))) {
+            // Force refresh when editing a promotion
+            fetchGames(!!promotion);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [open, formData.applicableToAll, promotion]);
 
     useEffect(() => {
         if (promotion) {
@@ -176,7 +185,7 @@ const PromotionFormDialog: React.FC<PromotionFormDialogProps> = ({
                 code: '',
                 description: '',
                 discountValue: 0,
-                discountType: 'fixed',
+                discountType: 'percentage',
                 maxUsage: undefined,
                 startDate: '',
                 endDate: '',
@@ -433,24 +442,6 @@ const PromotionFormDialog: React.FC<PromotionFormDialogProps> = ({
                     delete newErrors.discountValue;
                 }
             }
-            setErrors(newErrors);
-        }
-    };
-
-    const handleGameSelection = (event: any) => {
-        const value = event.target.value;
-        // Ensure we always have an array of numbers
-        const selectedIds = Array.isArray(value) ? value : [value];
-
-        setFormData(prev => ({
-            ...prev,
-            selectedGameIds: selectedIds,
-        }));
-
-        // Clear game selection error when games are selected
-        if (selectedIds.length > 0) {
-            const newErrors = { ...errors };
-            delete newErrors.selectedGames;
             setErrors(newErrors);
         }
     };
@@ -714,8 +705,15 @@ const PromotionFormDialog: React.FC<PromotionFormDialogProps> = ({
                                             renderOption={(props, game) => {
                                                 const { key, ...optionProps } = props;
                                                 const isSelected = (formData.selectedGameIds || []).includes(game.id);
-                                                const hasOtherPromotion = Boolean(game.promo_id && game.promo_id !== promotion?.id);
-                                                const hasCurrentPromotion = game.promo_id === promotion?.id;
+                                                
+                                                const currentPromoId = String(promotion?.id);
+                                                const gamePromoId = String(game.promo_id);
+
+                                                const hasCurrentPromotion = gamePromoId === currentPromoId;
+                                                const hasOtherPromotion = !!gamePromoId && !hasCurrentPromotion;
+                                                const hasNoPromotion = !gamePromoId;
+
+                                                // console.log('DEBUG - game:', game);
 
                                                 return (
                                                     <li key={key} {...optionProps}>
@@ -726,31 +724,13 @@ const PromotionFormDialog: React.FC<PromotionFormDialogProps> = ({
                                                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flex: 1 }}>
                                                             <span>{game.title}</span>
                                                             {hasCurrentPromotion && (
-                                                                <Chip
-                                                                    label="Current Promo"
-                                                                    size="small"
-                                                                    color="primary"
-                                                                    variant="outlined"
-                                                                    clickable={false}
-                                                                />
+                                                                <Chip label="No Promo" size="small" color="primary" variant="outlined" />
                                                             )}
                                                             {hasOtherPromotion && (
-                                                                <Chip
-                                                                    label={`Assigned to: ${game.promo_code || 'Other Promo'}`}
-                                                                    size="small"
-                                                                    color="warning"
-                                                                    variant="outlined"
-                                                                    clickable={false}
-                                                                />
+                                                                <Chip label={`Assigned to: ${game.promo_code || 'No Promo'}`} size="small" color="warning" variant="outlined" />
                                                             )}
-                                                            {!game.promo_id && (
-                                                                <Chip
-                                                                    label="No Promo"
-                                                                    size="small"
-                                                                    color="default"
-                                                                    variant="outlined"
-                                                                    clickable={false}
-                                                                />
+                                                            {hasNoPromotion && (
+                                                                <Chip label="No Promo" size="small" color="default" variant="outlined" />
                                                             )}
                                                         </Box>
                                                     </li>

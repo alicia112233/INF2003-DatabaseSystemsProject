@@ -1,3 +1,5 @@
+import { Game } from "./cart";
+
 export interface Promotion {
   id: number;
   code: string;
@@ -13,6 +15,7 @@ export interface Promotion {
   selectedGameIds?: number[];
   created_at: string;
   updated_at: string;
+  selectedGames?: Game[];
 }
 
 export interface CreatePromotionRequest {

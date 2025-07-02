@@ -95,6 +95,12 @@ export const getMenuItems = (isLoggedIn: boolean, userRole: string = 'customer')
             href: "/admin-dashboard",
         },
         {
+            id: uniqueId(),
+            title: "All Games",
+            icon: IconDeviceGamepad,
+            href: "/products",
+        },
+        {
             navlabel: true,
             subheader: "ORDERS",
         },

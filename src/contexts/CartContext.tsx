@@ -1,257 +1,344 @@
 'use client';
 
 import React, { createContext, useContext, useReducer, useEffect, useCallback } from 'react';
-import { Cart, CartItem, CartContextType } from '@/types/cart';
+import { Cart, CartItem, CartContextType, calculateCartTotals, getAppliedPromoCodes } from '@/types/cart';
 
-interface CartState {
-    cart: Cart | null;
-    currentUserId: string | null;
-}
-
+// Cart reducer actions
 type CartAction =
     | { type: 'SET_CART'; payload: Cart }
-    | { type: 'SET_USER_ID'; payload: string | null }
     | { type: 'ADD_ITEM'; payload: Omit<CartItem, 'id'> }
     | { type: 'REMOVE_ITEM'; payload: string }
     | { type: 'UPDATE_QUANTITY'; payload: { itemId: string; quantity: number } }
-    | { type: 'CLEAR_CART' };
+    | { type: 'CLEAR_CART' }
+    | { type: 'APPLY_PROMO_CODE'; payload: { promoCode: string; items: CartItem[] } }
+    | { type: 'REMOVE_PROMO_CODE'; payload: string };
 
-const CartContext = createContext<CartContextType | undefined>(undefined);
+// Helper function to create empty cart
+const createEmptyCart = (): Cart => ({
+    id: 'temp-cart-id',
+    userId: 'temp-user-id',
+    items: [],
+    totalAmount: 0,
+    totalSavings: 0,
+    appliedPromoCodes: [],
+    createdAt: new Date(),
+    updatedAt: new Date()
+});
 
-const cartReducer = (state: CartState, action: CartAction): CartState => {
+// Initial state
+const initialState: Cart = createEmptyCart();
+
+// Cart reducer
+const cartReducer = (state: Cart, action: CartAction): Cart => {
     switch (action.type) {
-        case 'SET_USER_ID':
-            return { ...state, currentUserId: action.payload };
-
         case 'SET_CART':
-            return { ...state, cart: action.payload };
-
+            const payload = action.payload || createEmptyCart();
+            return {
+                ...payload,
+                appliedPromoCodes: payload.appliedPromoCodes || []
+            };
+                   
         case 'ADD_ITEM':
-            if (!state.cart) {
-                const newCart: Cart = {
-                    id: `cart-${state.currentUserId || 'temp'}`,
-                    userId: state.currentUserId || 'temp-user',
-                    items: [{
-                        id: Date.now().toString(),
-                        ...action.payload
-                    }],
-                    totalAmount: action.payload.price * action.payload.quantity,
-                    createdAt: new Date(),
-                    updatedAt: new Date()
-                };
-                return { ...state, cart: newCart };
-            }
-
-            // For rental items, check uniqueness by game + rental days
-            // For purchase items, check by productId only
-            const existingItemIndex = state.cart.items.findIndex(item => {
-                if (action.payload.type === 'rental') {
-                    return item.productId === action.payload.productId && 
-                           item.type === 'rental' && 
-                           item.rentalDays === action.payload.rentalDays;
-                } else {
-                    return item.productId === action.payload.productId && item.type !== 'rental';
-                }
-            });
-
+            const existingItemIndex = state.items.findIndex(
+                item => item.productId === action.payload.productId && item.type === action.payload.type
+            );
+                       
             let updatedItems: CartItem[];
             if (existingItemIndex >= 0) {
-                // For rental items, don't increase quantity, just replace
-                if (action.payload.type === 'rental') {
-                    updatedItems = state.cart.items.map((item, index) =>
-                        index === existingItemIndex ? { ...item, ...action.payload, id: item.id } : item
-                    );
-                } else {
-                    // For purchase items, increase quantity
-                    updatedItems = state.cart.items.map((item, index) =>
-                        index === existingItemIndex
-                            ? { ...item, quantity: item.quantity + action.payload.quantity }
-                            : item
-                    );
-                }
+                updatedItems = state.items.map((item, index) =>
+                    index === existingItemIndex
+                        ? { ...item, quantity: item.quantity + action.payload.quantity }
+                        : item
+                );
             } else {
-                updatedItems = [
-                    ...state.cart.items,
-                    { id: Date.now().toString(), ...action.payload }
-                ];
+                const newItem: CartItem = {
+                    ...action.payload,
+                    id: `item-${Date.now()}-${Math.random()}`
+                };
+                updatedItems = [...state.items, newItem];
             }
-
-            const totalAmount = updatedItems.reduce(
-                (sum, item) => sum + (item.price * item.quantity), 0
-            );
-
+                       
+            const totals = calculateCartTotals(updatedItems);
+            const appliedPromoCodes = getAppliedPromoCodes(updatedItems);
+                       
             return {
                 ...state,
-                cart: {
-                    ...state.cart,
-                    items: updatedItems,
-                    totalAmount,
-                    updatedAt: new Date()
-                }
+                items: updatedItems,
+                totalAmount: totals.discountedTotal,
+                totalSavings: totals.totalSavings,
+                appliedPromoCodes: appliedPromoCodes || [],
+                updatedAt: new Date()
             };
-
+                   
         case 'REMOVE_ITEM':
-            if (!state.cart) return state;
-
-            const filteredItems = state.cart.items.filter(item => item.id !== action.payload);
-            const newTotal = filteredItems.reduce(
-                (sum, item) => sum + (item.price * item.quantity), 0
-            );
-
+            const filteredItems = state.items.filter(item => item.id !== action.payload);
+            const newTotals = calculateCartTotals(filteredItems);
+            const newAppliedPromoCodes = getAppliedPromoCodes(filteredItems);
+                       
             return {
                 ...state,
-                cart: {
-                    ...state.cart,
-                    items: filteredItems,
-                    totalAmount: newTotal,
-                    updatedAt: new Date()
-                }
+                items: filteredItems,
+                totalAmount: newTotals.discountedTotal,
+                totalSavings: newTotals.totalSavings,
+                appliedPromoCodes: newAppliedPromoCodes || [],
+                updatedAt: new Date()
             };
-
+                   
         case 'UPDATE_QUANTITY':
-            if (!state.cart) return state;
-
-            const updatedQuantityItems = state.cart.items.map(item =>
+            const quantityUpdatedItems = state.items.map(item =>
                 item.id === action.payload.itemId
                     ? { ...item, quantity: action.payload.quantity }
                     : item
-            );
-
-            const updatedTotal = updatedQuantityItems.reduce(
-                (sum, item) => sum + (item.price * item.quantity), 0
-            );
-
+            ).filter(item => item.quantity > 0);
+                       
+            const quantityTotals = calculateCartTotals(quantityUpdatedItems);
+            const quantityAppliedPromoCodes = getAppliedPromoCodes(quantityUpdatedItems);
+                       
             return {
                 ...state,
-                cart: {
-                    ...state.cart,
-                    items: updatedQuantityItems,
-                    totalAmount: updatedTotal,
-                    updatedAt: new Date()
-                }
+                items: quantityUpdatedItems,
+                totalAmount: quantityTotals.discountedTotal,
+                totalSavings: quantityTotals.totalSavings,
+                appliedPromoCodes: quantityAppliedPromoCodes || [],
+                updatedAt: new Date()
             };
-
+                   
         case 'CLEAR_CART':
-            return { ...state, cart: null };
-
+            return createEmptyCart();
+                   
+        case 'APPLY_PROMO_CODE':
+            const updatedItemsWithPromo = action.payload.items;
+            const promoTotals = calculateCartTotals(updatedItemsWithPromo);
+            const currentPromoCodes = state.appliedPromoCodes || [];
+            const promoAppliedCodes = [...currentPromoCodes, action.payload.promoCode];
+            
+            return {
+                ...state,
+                items: updatedItemsWithPromo,
+                totalAmount: promoTotals.discountedTotal,
+                totalSavings: promoTotals.totalSavings,
+                appliedPromoCodes: promoAppliedCodes,
+                updatedAt: new Date()
+            };
+            
+        case 'REMOVE_PROMO_CODE':
+            const currentCodes = state.appliedPromoCodes || [];
+            const filteredPromoCodes = currentCodes.filter(code => code !== action.payload);
+            
+            return {
+                ...state,
+                appliedPromoCodes: filteredPromoCodes,
+                updatedAt: new Date()
+            };
+                   
         default:
             return state;
     }
 };
 
-export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const [state, dispatch] = useReducer(cartReducer, { cart: null, currentUserId: null });
+// Create the context
+const CartContext = createContext<CartContextType | undefined>(undefined);
 
-    // Function to get current user ID
-    const getCurrentUserId = useCallback(async (): Promise<string | null> => {
-        let userId = document.cookie.match(/userId=([^;]+)/)?.[1] || localStorage.getItem('userId');
+// CartProvider component
+export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+    // Initialize useReducer FIRST
+    const [cart, dispatch] = useReducer(cartReducer, initialState);
+    
+    // Get current user ID - memoized with useCallback
+    const getCurrentUserId = useCallback((): string | null => {
+        if (typeof window === 'undefined') return null;
         
-        if (!userId) {
-            try {
-                const response = await fetch('/api/profile');
-                if (response.ok) {
-                    const userData = await response.json();
-                    userId = userData.id?.toString();
-                    if (userId) {
-                        localStorage.setItem('userId', userId);
-                        document.cookie = `userId=${userId}; path=/; max-age=86400`;
-                    }
-                }
-            } catch (error) {
-                console.error('Failed to fetch user profile:', error);
-            }
-        }
+        const userIdFromStorage = localStorage.getItem('userId');
+        const userIdFromCookie = document.cookie.match(/userId=([^;]+)/)?.[1];
         
-        return userId;
+        return userIdFromStorage || userIdFromCookie || null;
     }, []);
 
-    // Function to load user-specific cart
-    const loadUserCart = useCallback(async (userId?: string) => {
-        const targetUserId = userId || state.currentUserId;
-        if (!targetUserId) return;
+    // Generate user-specific cart key - memoized with useCallback
+    const getCartStorageKey = useCallback((): string => {
+        const userId = getCurrentUserId();
+        return userId ? `cart_${userId}` : 'cart_guest';
+    }, [getCurrentUserId]);
 
-        const cartKey = `customer-cart-${targetUserId}`;
-        const savedCartData = localStorage.getItem(cartKey);
-        
-        if (savedCartData) {
+    // Load cart from localStorage on mount
+    useEffect(() => {
+        const loadCart = () => {
             try {
-                const parsedData = JSON.parse(savedCartData);
+                const cartKey = getCartStorageKey();
+                const savedCart = localStorage.getItem(cartKey);
                 
-                // Convert old format to new format if needed
-                const cart: Cart = parsedData.id ? parsedData : {
-                    id: `cart-${targetUserId}`,
-                    userId: targetUserId,
-                    items: parsedData.items || [],
-                    totalAmount: parsedData.totalAmount || 0,
-                    createdAt: new Date(),
-                    updatedAt: new Date()
-                };
-                
-                dispatch({ type: 'SET_CART', payload: cart });
+                if (savedCart) {
+                    const parsedCart = JSON.parse(savedCart);
+                    const validatedCart: Cart = {
+                        ...createEmptyCart(),
+                        ...parsedCart,
+                        appliedPromoCodes: parsedCart.appliedPromoCodes || []
+                    };
+                    dispatch({ type: 'SET_CART', payload: validatedCart });
+                } else {
+                    dispatch({ type: 'CLEAR_CART' });
+                }
             } catch (error) {
                 console.error('Error loading cart from localStorage:', error);
-            }
-        }
-    }, [state.currentUserId]);
-
-    // Initialize user and cart on mount
-    useEffect(() => {
-        const initializeCart = async () => {
-            const userId = await getCurrentUserId();
-            if (userId) {
-                dispatch({ type: 'SET_USER_ID', payload: userId });
-                await loadUserCart(userId);
+                dispatch({ type: 'CLEAR_CART' });
             }
         };
-        
-        initializeCart();
-    }, [getCurrentUserId, loadUserCart]);
 
-    // Save cart to localStorage whenever it changes
+        loadCart();
+    }, [getCartStorageKey]); // Now properly includes the dependency
+
+    // Save cart to localStorage whenever cart state changes
     useEffect(() => {
-        if (state.cart && state.currentUserId) {
-            const cartKey = `customer-cart-${state.currentUserId}`;
-            localStorage.setItem(cartKey, JSON.stringify(state.cart));
+        if (cart && cart.items) {
+            try {
+                const cartKey = getCartStorageKey();
+                localStorage.setItem(cartKey, JSON.stringify(cart));
+            } catch (error) {
+                console.error('Error saving cart to localStorage:', error);
+            }
         }
-    }, [state.cart, state.currentUserId]);
+    }, [cart, getCartStorageKey]); // Include getCartStorageKey dependency
 
-    const addToCart = (item: Omit<CartItem, 'id'>) => {
-        dispatch({ type: 'ADD_ITEM', payload: item });
-    };
+    // Listen for user login/logout events
+    useEffect(() => {
+        const handleStorageChange = (e: StorageEvent) => {
+            if (e.key === 'userId' || e.key === 'isLoggedIn') {
+                const cartKey = getCartStorageKey();
+                const savedCart = localStorage.getItem(cartKey);
+                
+                if (savedCart) {
+                    try {
+                        const parsedCart = JSON.parse(savedCart);
+                        const validatedCart: Cart = {
+                            ...createEmptyCart(),
+                            ...parsedCart,
+                            appliedPromoCodes: parsedCart.appliedPromoCodes || []
+                        };
+                        dispatch({ type: 'SET_CART', payload: validatedCart });
+                    } catch (error) {
+                        console.error('Error loading cart after user change:', error);
+                        dispatch({ type: 'CLEAR_CART' });
+                    }
+                } else {
+                    dispatch({ type: 'CLEAR_CART' });
+                }
+            }
+        };
 
-    const removeFromCart = (itemId: string) => {
+        window.addEventListener('storage', handleStorageChange);
+        return () => window.removeEventListener('storage', handleStorageChange);
+    }, [getCartStorageKey]); // Include getCartStorageKey dependency
+
+    // Cart methods
+    const addToCart = useCallback((item: Omit<CartItem, 'id'>) => {
+        const price = typeof item.price === 'string' ? parseFloat(item.price) || 0 : (item.price || 0);
+        const originalPrice = typeof item.originalPrice === 'string'
+            ? parseFloat(item.originalPrice) || price
+            : (item.originalPrice ?? price);
+        const quantity = typeof item.quantity === 'string' ? parseInt(item.quantity) || 1 : (item.quantity || 1);
+
+        const sanitizedItem: Omit<CartItem, 'id'> = {
+            ...item,
+            price,
+            originalPrice,
+            quantity,
+        };
+
+        dispatch({ type: 'ADD_ITEM', payload: sanitizedItem });
+    }, []);
+
+    const removeFromCart = useCallback((itemId: string) => {
         dispatch({ type: 'REMOVE_ITEM', payload: itemId });
-    };
+    }, []);
 
-    const updateQuantity = (itemId: string, quantity: number) => {
-        if (quantity <= 0) {
-            removeFromCart(itemId);
-        } else {
-            dispatch({ type: 'UPDATE_QUANTITY', payload: { itemId, quantity } });
-        }
-    };
+    const updateQuantity = useCallback((itemId: string, quantity: number) => {
+        dispatch({ type: 'UPDATE_QUANTITY', payload: { itemId, quantity } });
+    }, []);
 
-    const clearCart = () => {
+    const clearCart = useCallback(() => {
         dispatch({ type: 'CLEAR_CART' });
-    };
+    }, []);
 
-    const getCartTotal = () => {
-        return state.cart?.totalAmount || 0;
-    };
+    const getCartTotal = useCallback((): number => {
+        const total = cart?.totalAmount || 0;
+        return isNaN(total) ? 0 : total;
+    }, [cart?.totalAmount]);
 
-    const getCartItemCount = () => {
-        return state.cart?.items.reduce((sum, item) => sum + item.quantity, 0) || 0;
-    };
+    const getCartOriginalTotal = useCallback((): number => {
+        if (!cart || !cart.items.length) return 0;
+        const totals = calculateCartTotals(cart.items);
+        const originalTotal = totals.originalTotal || 0;
+        return isNaN(originalTotal) ? 0 : originalTotal;
+    }, [cart]);
+
+    const getTotalSavings = useCallback((): number => {
+        const savings = cart?.totalSavings || 0;
+        return isNaN(savings) ? 0 : savings;
+    }, [cart?.totalSavings]);
+
+    const getCartItemCount = useCallback((): number => {
+        if (!cart?.items) return 0;
+        const count = cart.items.reduce((total, item) => {
+            const quantity = typeof item.quantity === 'number' ? item.quantity : parseInt(item.quantity) || 0;
+            return total + quantity;
+        }, 0);
+        return isNaN(count) ? 0 : count;
+    }, [cart?.items]);
+
+    const loadUserCart = useCallback(async (userId?: string) => {
+        try {
+            const response = await fetch(`/api/cart/${userId}`);
+            if (response.ok) {
+                const cartData = await response.json();
+                const validatedCart: Cart = {
+                    ...createEmptyCart(),
+                    ...cartData,
+                    appliedPromoCodes: cartData.appliedPromoCodes || []
+                };
+                dispatch({ type: 'SET_CART', payload: validatedCart });
+            }
+        } catch (error) {
+            console.error('Error loading user cart:', error);
+        }
+    }, []);
+
+    const applyPromoCode = useCallback(async (promoCode: string): Promise<boolean> => {
+        try {
+            const response = await fetch('/api/promo/apply', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ promoCode, cartItems: cart?.items })
+            });
+
+            if (response.ok) {
+                const { updatedItems } = await response.json();
+                dispatch({ type: 'APPLY_PROMO_CODE', payload: { promoCode, items: updatedItems } });
+                return true;
+            }
+            return false;
+        } catch (error) {
+            console.error('Error applying promo code:', error);
+            return false;
+        }
+    }, [cart?.items]);
+
+    const removePromoCode = useCallback((promoCode: string) => {
+        dispatch({ type: 'REMOVE_PROMO_CODE', payload: promoCode });
+    }, []);
 
     const value: CartContextType = {
-        cart: state.cart,
+        cart,
         addToCart,
         removeFromCart,
         updateQuantity,
         clearCart,
         getCartTotal,
+        getCartOriginalTotal,
+        getTotalSavings,
         getCartItemCount,
-        loadUserCart, // Add this to the context
+        loadUserCart,
+        applyPromoCode,
+        removePromoCode
     };
 
     return (
@@ -261,6 +348,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     );
 };
 
+// Custom hook to use cart context
 export const useCart = () => {
     const context = useContext(CartContext);
     if (context === undefined) {

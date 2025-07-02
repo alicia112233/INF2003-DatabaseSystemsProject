@@ -1,42 +1,43 @@
 'use client';
 
-import React, { useState } from 'react';
-import { IconButton, Tooltip, Snackbar, Alert } from '@mui/material';
+import React from 'react';
+import { IconButton, Tooltip } from '@mui/material';
 import { Star, StarBorder } from '@mui/icons-material';
 import { Product } from '@/types/cart';
 import { useWishlist } from '@/contexts/WishlistContext';
-
-type WishlistActionResult = { success: boolean; message: string };
+import { useSnackbar } from '@/contexts/SnackbarContext';
 
 interface WishlistButtonProps {
     product: Product;
     size?: 'small' | 'medium' | 'large';
 }
 
+function isUserLoggedInAndCustomer(): boolean {
+    if (typeof window === 'undefined') return false;
+    const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true' || document.cookie.includes('isLoggedIn=true');
+    const userRole = localStorage.getItem('userRole') || (document.cookie.match(/userRole=([^;]+)/)?.[1] || '');
+    return isLoggedIn && userRole === 'customer';
+}
+
 const WishlistButton: React.FC<WishlistButtonProps> = ({ product, size = 'medium' }) => {
-    const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
+    const { removeFromWishlist, addToWishlist, isInWishlist } = useWishlist();
     const inWishlist = isInWishlist(product.id.toString());
-    const [snack, setSnack] = useState({ open: false, msg: '', severity: 'success' });
+    const { showSnackbar } = useSnackbar();
 
     const handleToggleWishlist = async (e: React.MouseEvent) => {
         e.stopPropagation();
 
+        if (!isUserLoggedInAndCustomer()) {
+            showSnackbar('Please log in to add to wishlist.', 'warning');
+            return;
+        }
+
         if (inWishlist) {
             await removeFromWishlist(product.id.toString());
-            setSnack({ open: true, msg: 'Removed from wishlist', severity: 'success' });
+            showSnackbar('Removed from wishlist', 'success');
         } else {
-            // Directly call the API and check the response
-            const res = await fetch('/api/wishlist', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ gameId: product.id }),
-            });
-            const data = await res.json();
-            setSnack({
-                open: true,
-                msg: data.message === 'Already in wishlist' ? 'Already in wishlist' : 'Added to wishlist',
-                severity: data.message === 'Already in wishlist' ? 'warning' : 'success',
-            });
+            const result = await addToWishlist(product); 
+            showSnackbar(result.message, result.success ? 'success' : 'warning');
         }
     };
 
@@ -56,16 +57,6 @@ const WishlistButton: React.FC<WishlistButtonProps> = ({ product, size = 'medium
                     {inWishlist ? <Star /> : <StarBorder />}
                 </IconButton>
             </Tooltip>
-            <Snackbar
-                open={snack.open}
-                autoHideDuration={3000}
-                onClose={() => setSnack(s => ({ ...s, open: false }))}
-                anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-            >
-                <Alert onClose={() => setSnack(s => ({ ...s, open: false }))} severity={snack.severity as any}>
-                    {snack.msg}
-                </Alert>
-            </Snackbar>
         </>
     );
 };

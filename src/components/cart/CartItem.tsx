@@ -37,6 +37,42 @@ const CartItem: React.FC<CartItemProps> = ({ item }) => {
         removeFromCart(item.id);
     };
 
+    // Fix price handling - ensure we always have a valid number
+    const getValidPrice = (price: any): number => {
+        if (typeof price === 'number' && !isNaN(price)) {
+            return price;
+        }
+        if (typeof price === 'string') {
+            const parsed = parseFloat(price);
+            return isNaN(parsed) ? 0 : parsed;
+        }
+        return 0;
+    };
+
+    const getValidQuantity = (quantity: any): number => {
+        if (typeof quantity === 'number' && !isNaN(quantity)) {
+            return Math.max(quantity, 1);
+        }
+        if (typeof quantity === 'string') {
+            const parsed = parseInt(quantity);
+            return isNaN(parsed) ? 1 : Math.max(parsed, 1);
+        }
+        return 1;
+    };
+
+    const unitPrice = getValidPrice(item.price);
+    const quantity = getValidQuantity(item.quantity);
+    const totalPrice = unitPrice * quantity;
+
+    console.log('Cart item data:', {
+        id: item.id,
+        title: item.title,
+        price: item.price,
+        priceType: typeof item.price,
+        quantity: item.quantity,
+        quantityType: typeof item.quantity
+    });
+
     return (
         <Card sx={{ mb: 2 }}>
             <CardContent>
@@ -58,7 +94,7 @@ const CartItem: React.FC<CartItemProps> = ({ item }) => {
                         </Typography>
                         {item.type === 'rental' && (
                             <Typography variant="body2" color="success.main" fontWeight="bold">
-                                Rental: {item.rentalDays} day{item.rentalDays && item.rentalDays > 1 ? 's' : ''} @ ${item.dailyRate?.toFixed(2)}/day
+                                Rental: {item.rentalDays} day{item.rentalDays && item.rentalDays > 1 ? 's' : ''} @ ${getValidPrice(item.dailyRate).toFixed(2)}/day
                             </Typography>
                         )}
                         {item.description && (
@@ -67,7 +103,7 @@ const CartItem: React.FC<CartItemProps> = ({ item }) => {
                             </Typography>
                         )}
                         <Typography variant="h6" color="primary" sx={{ mt: 1 }}>
-                            ${typeof item.price === 'string' ? parseFloat(item.price).toFixed(2) : item.price.toFixed(2)}
+                            ${unitPrice.toFixed(2)}
                         </Typography>
                     </Box>
 
@@ -75,7 +111,7 @@ const CartItem: React.FC<CartItemProps> = ({ item }) => {
                     {item.type !== 'rental' ? (
                         <Box display="flex" alignItems="center" gap={1}>
                             <IconButton
-                                onClick={() => handleQuantityChange(item.quantity - 1)}
+                                onClick={() => handleQuantityChange(quantity - 1)}
                                 size="small"
                             >
                                 <Remove />
@@ -83,7 +119,7 @@ const CartItem: React.FC<CartItemProps> = ({ item }) => {
 
                             <TextField
                                 type="number"
-                                value={item.quantity}
+                                value={quantity}
                                 onChange={(e) => handleQuantityChange(parseInt(e.target.value) || 1)}
                                 inputProps={{ min: 1, style: { textAlign: 'center' } }}
                                 sx={{ width: 60 }}
@@ -91,7 +127,7 @@ const CartItem: React.FC<CartItemProps> = ({ item }) => {
                             />
 
                             <IconButton
-                                onClick={() => handleQuantityChange(item.quantity + 1)}
+                                onClick={() => handleQuantityChange(quantity + 1)}
                                 size="small"
                             >
                                 <Add />
@@ -107,7 +143,7 @@ const CartItem: React.FC<CartItemProps> = ({ item }) => {
 
                     <Box textAlign="right" minWidth={80}>
                         <Typography variant="h6">
-                            ${(item.price * item.quantity).toFixed(2)}
+                            ${totalPrice.toFixed(2)}
                         </Typography>
                     </Box>
 

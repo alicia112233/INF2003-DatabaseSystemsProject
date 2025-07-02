@@ -37,6 +37,7 @@ interface ProductFiltersProps {
     onPriceRangeChange: (value: PriceRange) => void;
     maxPrice?: number;
     minPrice?: number;
+    availableStockStatuses?: { value: string; label: string }[];
 }
 
 // Custom hook for debouncing
@@ -67,6 +68,12 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({
     onPriceRangeChange,
     maxPrice = 1000,
     minPrice = 0,
+    availableStockStatuses = [
+        { value: '', label: 'All Games' },
+        { value: 'onSale', label: 'On Sale' },
+        { value: 'inStock', label: 'In Stock' },
+        { value: 'outOfStock', label: 'Out of Stock' },
+    ],
 }) => {
     const [genres, setGenres] = useState<Genre[]>([]);
     const [loadingGenres, setLoadingGenres] = useState(false);
@@ -151,7 +158,7 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({
     );
 
     // Price range formatter
-    const formatPrice = (value: number) => `$${value}`;
+    const formatPrice = (value: number) => `${value}`;
 
     return (
         <Box sx={{ mb: 3 }}>
@@ -212,7 +219,7 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({
                     </FormControl>
                 </Grid>
 
-                {/* Stock Filter */}
+                {/* Games Status Filter */}
                 <Grid
                     size={{
                         xs: 12,
@@ -221,15 +228,17 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({
                     }}
                 >
                     <FormControl fullWidth>
-                        <InputLabel>Stock Status</InputLabel>
+                        <InputLabel>Games Status</InputLabel>
                         <Select
                             value={stockFilter}
-                            label="Stock Status"
+                            label="Games Status"
                             onChange={(e) => onStockFilterChange(e.target.value)}
                         >
-                            <MenuItem value="">All Stock Status</MenuItem>
-                            <MenuItem value="inStock">In Stock</MenuItem>
-                            <MenuItem value="outOfStock">Out of Stock</MenuItem>
+                            {availableStockStatuses.map((status) => (
+                                <MenuItem key={status.value} value={status.value}>
+                                    {status.label}
+                                </MenuItem>
+                            ))}
                         </Select>
                     </FormControl>
                 </Grid>
