@@ -5,14 +5,14 @@ export interface CartItem {
     productId: string;
     title: string;
     price: number;
-    originalPrice?: number; // Add original price before discount
+    originalPrice?: number;
     quantity: number;
     image_url?: string;
     description?: string;
     type?: 'purchase' | 'rental';
     rentalDays?: number;
     dailyRate?: number;
-    promo_code?: string; // Add promo code to cart item
+    promo_code?: string;
     promotion?: {
         discountValue: number;
         discountType: 'percentage' | 'fixed';
@@ -113,57 +113,57 @@ export const gameToProduct = (game: Game, promotion: Promotion | null = null): P
 
 // Helper function to calculate discounted price
 export const calculateDiscountedPrice = (
-  originalPrice: number,
-  promotion?: { discountValue: number; discountType: 'percentage' | 'fixed' }
+    originalPrice: number,
+    promotion?: { discountValue: number; discountType: 'percentage' | 'fixed' }
 ): number => {
-  if (!promotion) return originalPrice;
+    if (!promotion) return originalPrice;
 
-  const { discountType, discountValue } = promotion;
-  const value = Number(discountValue);
-  if (isNaN(value) || value < 0) return originalPrice;
+    const { discountType, discountValue } = promotion;
+    const value = Number(discountValue);
+    if (isNaN(value) || value < 0) return originalPrice;
 
-  if (discountType === 'percentage') {
-    return Math.max(originalPrice - (originalPrice * value) / 100, 0);
-  }
+    if (discountType === 'percentage') {
+        return Math.max(originalPrice - (originalPrice * value) / 100, 0);
+    }
 
-  return Math.max(originalPrice - value, 0);
+    return Math.max(originalPrice - value, 0);
 };
 
 // Helper function to convert Product to CartItem
 export const productToCartItem = (
-  product: Product,
-  promotion: Promotion | null = null,
-  quantity: number = 1,
-  type: 'purchase' | 'rental' = 'purchase'
+    product: Product,
+    promotion: Promotion | null = null,
+    quantity: number = 1,
+    type: 'purchase' | 'rental' = 'purchase'
 ): Omit<CartItem, 'id'> => {
-  const gamePromotion = promotion || product.promotion;
-  const originalPrice = Number(product.originalPrice ?? product.price);
-  if (isNaN(originalPrice) || originalPrice < 0) {
-    throw new Error('Invalid original price');
-  }
-  const discountedPrice = gamePromotion
-    ? calculateDiscountedPrice(originalPrice, {
-        discountValue: gamePromotion.discountValue,
-        discountType: gamePromotion.discountType,
-      })
-    : originalPrice;
-  return {
-    productId: product.id,
-    title: product.title,
-    price: discountedPrice,
-    originalPrice: originalPrice,
-    quantity: quantity,
-    image_url: product.image_url,
-    description: product.description,
-    type: type,
-    promo_code: product.promo_code,
-    promotion: gamePromotion
-      ? {
-          discountValue: gamePromotion.discountValue,
-          discountType: gamePromotion.discountType,
-        }
-      : undefined,
-  };
+    const gamePromotion = promotion || product.promotion;
+    const originalPrice = Number(product.originalPrice ?? product.price);
+    if (isNaN(originalPrice) || originalPrice < 0) {
+        throw new Error('Invalid original price');
+    }
+    const discountedPrice = gamePromotion
+        ? calculateDiscountedPrice(originalPrice, {
+            discountValue: gamePromotion.discountValue,
+            discountType: gamePromotion.discountType,
+        })
+        : originalPrice;
+    return {
+        productId: product.id,
+        title: product.title,
+        price: discountedPrice,
+        originalPrice: originalPrice,
+        quantity: quantity,
+        image_url: product.image_url,
+        description: product.description,
+        type: type,
+        promo_code: product.promo_code,
+        promotion: gamePromotion
+            ? {
+                discountValue: gamePromotion.discountValue,
+                discountType: gamePromotion.discountType,
+            }
+            : undefined,
+    };
 };
 
 // Helper function to calculate cart totals
@@ -172,13 +172,13 @@ export const calculateCartTotals = (items: CartItem[]) => {
         const originalPrice = item.originalPrice || item.price;
         return sum + (originalPrice * item.quantity);
     }, 0);
-    
+
     const discountedTotal = items.reduce((sum, item) => {
         return sum + (item.price * item.quantity);
     }, 0);
-    
+
     const totalSavings = originalTotal - discountedTotal;
-    
+
     return {
         originalTotal,
         discountedTotal,
@@ -192,6 +192,6 @@ export const getAppliedPromoCodes = (items: CartItem[]): string[] => {
         .filter(item => item.promo_code)
         .map(item => item.promo_code!)
         .filter((code, index, array) => array.indexOf(code) === index); // Remove duplicates
-    
+
     return promoCodes;
 };

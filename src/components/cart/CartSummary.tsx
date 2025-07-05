@@ -105,16 +105,80 @@ const CartSummary: React.FC<CartSummaryProps> = ({ onCheckout }) => {
                 </Typography>
 
                 {purchaseItems.length > 0 && (
-                    <Box display="flex" justifyContent="space-between" mb={1}>
+                    <Box display="flex" justifyContent="space-between" mb={1} flexDirection="column">
                         <Typography>Purchases ({purchaseItems.length})</Typography>
-                        <Typography>${purchaseTotal.toFixed(2)}</Typography>
+                        <Box>
+                            {purchaseItems.map((item, idx) => {
+                                const validOriginal = item.originalPrice && item.originalPrice > item.price;
+                                return (
+                                    <Box key={idx} display="flex" justifyContent="space-between" pl={1}>
+                                        <Typography variant="body2">
+                                            {item.title}
+                                        </Typography>
+                                        <Typography variant="body2" align="right">
+                                            {validOriginal ? (
+                                                <>
+                                                    <span style={{ textDecoration: 'line-through', color: '#888' }}>
+                                                        ${item.originalPrice!.toFixed(2)}
+                                                    </span>{' '}
+                                                    <span style={{ fontWeight: 600 }}>
+                                                        ${item.price.toFixed(2)}
+                                                    </span>
+                                                </>
+                                            ) : (
+                                                <>${item.price.toFixed(2)}</>
+                                            )}
+                                        </Typography>
+                                    </Box>
+                                );
+                            })}
+                        </Box>
+                        <Divider sx={{ my: 1 }} />
+                        <Box display="flex" justifyContent="space-between">
+                            <Typography fontWeight="bold">Purchase Subtotal</Typography>
+                            <Typography fontWeight="bold">${purchaseTotal.toFixed(2)}</Typography>
+                        </Box>
                     </Box>
                 )}
 
                 {rentalItems.length > 0 && (
-                    <Box display="flex" justifyContent="space-between" mb={1}>
+                    <Box display="flex" justifyContent="space-between" mb={1} flexDirection="column">
                         <Typography color="success.main">Rentals ({rentalItems.length})</Typography>
-                        <Typography color="success.main">${rentalTotal.toFixed(2)}</Typography>
+                        <Box>
+                            {rentalItems.map((item, idx) => {
+                                const validOriginal = item.originalPrice && item.originalPrice > item.price;
+                                return (
+                                    <Box key={idx} display="flex" justifyContent="space-between" pl={1}>
+                                        <Typography variant="body2">
+                                            {item.title}
+                                        </Typography>
+                                        <Typography variant="body2" align="right">
+                                            {validOriginal ? (
+                                                <>
+                                                    <span style={{ textDecoration: 'line-through', color: '#888' }}>
+                                                        ${item.originalPrice!.toFixed(2)}
+                                                    </span>{' '}
+                                                    <span style={{ fontWeight: 600 }}>
+                                                        ${item.price.toFixed(2)}
+                                                    </span>
+                                                </>
+                                            ) : (
+                                                <>${item.price.toFixed(2)}</>
+                                            )}
+                                        </Typography>
+                                    </Box>
+                                );
+                            })}
+                        </Box>
+                        <Divider sx={{ my: 1 }} />
+                        <Box display="flex" justifyContent="space-between">
+                            <Typography fontWeight="bold">
+                                Rental Subtotal
+                            </Typography>
+                            <Typography fontWeight="bold">
+                                ${rentalTotal.toFixed(2)}
+                            </Typography>
+                        </Box>
                     </Box>
                 )}
 

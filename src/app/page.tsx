@@ -11,26 +11,7 @@ import { useCart } from '@/contexts/CartContext';
 import AddToCartButton from '@/components/cart/AddToCartButton';
 import WishlistButton from '@/components/wishlist/WishlistButton';
 import { Product } from '@/types/cart';
-
-type Game = {
-    id: number;
-    title: string;
-    description?: string;
-    image_url?: string;
-    price: number | string;
-    promo_id?: number;
-    inStock?: boolean;
-    promotion?: {
-        id: number;
-        code: string;
-        description: string;
-        discountValue: number | string;
-        discountType: 'percentage' | 'fixed';
-        isActive: boolean;
-        startDate: string;
-        endDate: string;
-    };
-};
+import { Game } from '@/types/cart';
 
 // Helper function to check if user is logged in and is a customer
 function isUserLoggedInAndCustomer(): boolean {
@@ -304,7 +285,22 @@ const RecommendationsCarousel: React.FC = () => {
                     <Typography variant="body2" color="text.secondary" sx={{ mb: 2, minHeight: 60 }}>
                         {game.description ? capitalizeDescription(game.description).slice(0, 100) + (game.description.length > 100 ? '...' : '') : ''}
                     </Typography>
-                    <PriceDisplay game={game} />
+
+                    <Typography variant="h6" sx={{ mb: 2 }}>
+                        {game.promotion && game.originalPrice && Number(game.originalPrice) > Number(game.price) ? (
+                            <>
+                                <span style={{ textDecoration: 'line-through', color: '#888', marginRight: 8 }}>
+                                    ${Number(game.originalPrice).toFixed(2)}
+                                </span>
+                                <span style={{ fontWeight: 'bold', color: 'green' }}>
+                                    ${Number(game.price).toFixed(2)}
+                                </span>
+                            </>
+                        ) : (
+                            <>${Number(game.price).toFixed(2)}</>
+                        )}
+                    </Typography>
+
                     <Stack direction="row" spacing={2}>
                         <AddToCartButton
                             product={{
@@ -315,6 +311,7 @@ const RecommendationsCarousel: React.FC = () => {
                                 description: game.description,
                                 genreNames: [],
                                 inStock: game.inStock,
+                                promotion: game.promotion,
                             }}
                             onSuccess={(message) => setSnack({ open: true, msg: message, severity: 'success' })}
                             onWarning={(message) => setSnack({ open: true, msg: message, severity: 'warning' })}
@@ -544,7 +541,13 @@ const MoreGames: React.FC<ProductCardProps> = () => {
                                         product={{
                                             id: String(game.id),
                                             title: game.title,
-                                            price: typeof game.price === 'string' ? parseFloat(game.price) : game.price,
+                                            price: discountedPrice,
+                                            originalPrice: originalPrice,
+                                            promotion: game.promotion ? {
+                                                discountValue: game.promotion.discountValue,
+                                                discountType: game.promotion.discountType
+                                            } : undefined,
+
                                             image_url: game.image_url,
                                             description: game.description,
                                             genreNames: [],

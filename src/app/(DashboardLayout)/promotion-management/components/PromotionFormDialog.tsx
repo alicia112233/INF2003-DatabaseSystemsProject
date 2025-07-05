@@ -207,6 +207,7 @@ const PromotionFormDialog: React.FC<PromotionFormDialogProps> = ({
         description?: string;
         dateRange?: string;
         startDate?: string;
+        endDate?: string;
         selectedGames?: string;
     }>({});
 
@@ -229,25 +230,29 @@ const PromotionFormDialog: React.FC<PromotionFormDialogProps> = ({
             if (startDate < today) {
                 newErrors.startDate = 'Start date cannot be in the past';
             } else {
-                // Start date is valid, clear start date error
                 delete newErrors.startDate;
             }
         } else {
-            // If start date is missing, clear start date error
             delete newErrors.startDate;
+        }
+
+        // Validate end date (must be today or after)
+        if (hasEndDate) {
+            if (endDate < today) {
+                newErrors.endDate = 'End date cannot be in the past';
+            } else {
+                delete newErrors.endDate;
+            }
+        } else {
+            delete newErrors.endDate;
         }
 
         // Check date range validity
         if (hasStartDate && hasEndDate) {
             if (startDate <= endDate) {
-                // Dates are valid, clear date range error
                 delete newErrors.dateRange;
-            } else {
-                // End date is before start date
-                newErrors.dateRange = 'End date must be after start date';
             }
         } else {
-            // If either date is missing, clear date range error
             delete newErrors.dateRange;
         }
 
@@ -385,18 +390,17 @@ const PromotionFormDialog: React.FC<PromotionFormDialogProps> = ({
 
         // If switching applicableToAll to false, fetch games and assigned games
         if (field === 'applicableToAll' && value === false) {
+            // Always clear selected games when unchecking "Applicable to All"
+            newFormData.selectedGameIds = [];
+            
+            // Clear game selection error
+            const newErrors = { ...errors };
+            delete newErrors.selectedGames;
+            setErrors(newErrors);
+            
+            // Fetch games if not already loaded
             if (games.length === 0) {
                 fetchGames();
-            }
-
-            // If editing an existing promotion, fetch currently assigned games
-            if (promotion && promotion.id) {
-                fetchAssignedGames(promotion.id).then((assignedGameIds) => {
-                    setFormData(prev => ({
-                        ...prev,
-                        selectedGameIds: assignedGameIds,
-                    }));
-                });
             }
         }
 
@@ -487,6 +491,13 @@ const PromotionFormDialog: React.FC<PromotionFormDialogProps> = ({
                             {errors.startDate && (
                                 <Alert severity="error" sx={{ mb: 2 }}>
                                     {errors.startDate}
+                                </Alert>
+                            )}
+
+                            {/* End Date Error Alert */}
+                            {errors.endDate && (
+                                <Alert severity="error" sx={{ mb: 2 }}>
+                                    {errors.endDate}
                                 </Alert>
                             )}
 
@@ -630,7 +641,12 @@ const PromotionFormDialog: React.FC<PromotionFormDialogProps> = ({
                                         type="date"
                                         value={formData.endDate}
                                         onChange={handleChange('endDate')}
-                                        slotProps={{ inputLabel: { shrink: true } }}
+                                        error={!!errors.endDate}
+                                        helperText={errors.endDate || "End date must be today or later"}
+                                        slotProps={{ 
+                                            inputLabel: { shrink: true },
+                                            htmlInput: { min: getTodayDate() }
+                                        }}
                                         required
                                     />
                                 </Grid>
@@ -688,31 +704,17 @@ const PromotionFormDialog: React.FC<PromotionFormDialogProps> = ({
                                             }}
                                             loading={loadingGames}
                                             disabled={loadingGames}
-                                            renderTags={(value, getTagProps) =>
-                                                value.map((game, index) => {
-                                                    const { key, ...tagProps } = getTagProps({ index });
-                                                    return (
-                                                        <Chip
-                                                            key={key}
-                                                            label={game.title}
-                                                            size="small"
-                                                            clickable={false}
-                                                            {...tagProps}
-                                                        />
-                                                    );
-                                                })
-                                            }
                                             renderOption={(props, game) => {
                                                 const { key, ...optionProps } = props;
                                                 const isSelected = (formData.selectedGameIds || []).includes(game.id);
                                                 
-                                                const currentPromoId = String(promotion?.id);
-                                                const gamePromoId = String(game.promo_id);
+                                                const currentPromoId = promotion?.id;
+                                                const gamePromoId = game.promo_id;
 
                                                 const hasCurrentPromotion = gamePromoId === currentPromoId;
-                                                const hasOtherPromotion = !!gamePromoId && !hasCurrentPromotion;
+                                                const hasOtherPromotion = gamePromoId && gamePromoId !== currentPromoId;
                                                 const hasNoPromotion = !gamePromoId;
-
+                                                
                                                 // console.log('DEBUG - game:', game);
 
                                                 return (

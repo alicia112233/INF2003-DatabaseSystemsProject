@@ -1,13 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import mysql from 'mysql2/promise';
-
-const dbConfig = {
-    host: process.env.MYSQL_HOST,
-    user: process.env.MYSQL_USER,
-    password: process.env.MYSQL_PASSWORD,
-    port: Number(process.env.MYSQL_PORT),
-    database: process.env.MYSQL_DATABASE,
-};
+import { pool } from '@/app/lib/db';
 
 function toTitleCase(str: string) {
     return str
@@ -37,7 +29,6 @@ export async function GET(request: NextRequest) {
         const searchTerm = searchParams.get('search');
         const stockFilter = searchParams.get('stock');
 
-        const pool = mysql.createPool(dbConfig);
         connection = await pool.getConnection();
 
         let query = `
