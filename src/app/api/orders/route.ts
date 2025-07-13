@@ -113,24 +113,79 @@ export async function POST(req: NextRequest) {
   }
 }
 
-// PUT: Update an order (only purchase_date for demo)
+// PUT: Update an order
 export async function PUT(req: NextRequest) {
   try {
     const data = await req.json();
     
-    const result = await executeQuery(
-      `UPDATE Orders SET purchase_date = ? WHERE id = ?`,
-      [data.purchase_date, data.id]
-    ) as ResultSetHeader;
-    
-    if (result.affectedRows === 0) {
-      return NextResponse.json({ error: "Order not found" }, { status: 404 });
+    // Look up user_id by email if provided
+    let user_id = undefined;
+    if (data.email) {
+      const users = await executeQuery(
+        `SELECT id FROM users WHERE email = ?`,
+        [data.email]
+      ) as RowDataPacket[];
+      
+      if (!Array.isArray(users) || users.length === 0) {
+        return NextResponse.json({ error: "User with this email not found" }, { status: 400 });
+      }
+      user_id = users[0].id;
     }
+
+    // Use transaction for order update
+    const result = await executeTransaction(async (connection) => {
+      // Update order details if provided
+      if (data.total !== undefined || user_id !== undefined) {
+        const updateFields = [];
+        const updateParams = [];
+        
+        if (data.total !== undefined) {
+          updateFields.push('total = ?');
+          updateParams.push(data.total);
+        }
+        
+        if (user_id !== undefined) {
+          updateFields.push('user_id = ?');
+          updateParams.push(user_id);
+        }
+        
+        if (updateFields.length > 0) {
+          updateParams.push(data.id);
+          const [orderResult] = await connection.query<ResultSetHeader>(
+            `UPDATE Orders SET ${updateFields.join(', ')} WHERE id = ?`,
+            updateParams
+          );
+          
+          if (orderResult.affectedRows === 0) {
+            throw new Error("Order not found");
+          }
+        }
+      }
+
+      // Update games if provided
+      if (data.games && Array.isArray(data.games)) {
+        // Delete existing games for this order
+        await connection.query(
+          `DELETE FROM OrderGame WHERE order_id = ?`,
+          [data.id]
+        );
+
+        // Insert new games
+        for (const game of data.games) {
+          await connection.query(
+            `INSERT INTO OrderGame (order_id, game_id, quantity, price) VALUES (?, ?, ?, ?)`,
+            [data.id, game.gameId, game.quantity, game.price]
+          );
+        }
+      }
+
+      return { success: true };
+    });
     
-    return NextResponse.json({ success: true });
+    return NextResponse.json(result);
   } catch (error: any) {
     console.error('PUT /api/orders error:', error);
-    return NextResponse.json({ error: "Failed to update order" }, { status: 500 });
+    return NextResponse.json({ error: error.message || "Failed to update order" }, { status: 500 });
   }
 }
 

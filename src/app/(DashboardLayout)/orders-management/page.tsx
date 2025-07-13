@@ -57,6 +57,19 @@ const OrdersManagementPage = () => {
   });
   const [search, setSearch] = useState("");
 
+  // Fetch game details by ID
+  const fetchGameById = async (gameId: number) => {
+    try {
+      const response = await fetch(`/api/games`);
+      const data = await response.json();
+      const game = data.games?.find((g: any) => g.id == gameId);
+      return game ? { title: game.title, price: game.price } : null;
+    } catch (error) {
+      console.error('Error fetching game:', error);
+      return null;
+    }
+  };
+
     // Fetch orders
     const fetchOrders = async () => {
         const res = await fetch("/api/orders");
@@ -82,11 +95,31 @@ const OrdersManagementPage = () => {
         }));
     };
 
-  const handleGameChange = <K extends keyof GameSelection>(idx: number, field: K, value: GameSelection[K]) => {
+  const handleGameChange = async <K extends keyof GameSelection>(idx: number, field: K, value: GameSelection[K]) => {
     setForm((prev) => {
       const games = [...prev.games];
       games[idx] = { ...games[idx], [field]: value };
-      // recalculate total
+      
+      // If gameId is being updated, fetch game details
+      if (field === 'gameId' && value && Number(value) > 0) {
+        fetchGameById(Number(value)).then(gameDetails => {
+          if (gameDetails) {
+            setForm((prevForm) => {
+              const updatedGames = [...prevForm.games];
+              updatedGames[idx] = { 
+                ...updatedGames[idx], 
+                title: gameDetails.title,
+                price: gameDetails.price
+              };
+              // Recalculate total
+              const total = updatedGames.reduce((sum, g) => sum + (Number(g.price) * Number(g.quantity)), 0);
+              return { ...prevForm, games: updatedGames, total: total.toFixed(2) };
+            });
+          }
+        });
+      }
+      
+      // Recalculate total
       const total = games.reduce((sum, g) => sum + (Number(g.price) * Number(g.quantity)), 0);
       return { ...prev, games, total: total.toFixed(2) };
     });
@@ -265,6 +298,8 @@ const OrdersManagementPage = () => {
                   value={g.title}
                   onChange={e => handleGameChange(idx, "title", e.target.value)}
                   sx={{ width: 120 }}
+                  InputProps={{ readOnly: true }}
+                  placeholder="Auto-filled"
                 />
                 <TextField
                   label="Qty"
@@ -279,6 +314,8 @@ const OrdersManagementPage = () => {
                   value={g.price}
                   onChange={e => handleGameChange(idx, "price", Number(e.target.value))}
                   sx={{ width: 80 }}
+                  InputProps={{ readOnly: true }}
+                  placeholder="Auto-filled"
                 />
                 <Button
                   color="error"

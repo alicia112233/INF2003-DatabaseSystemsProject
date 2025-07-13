@@ -20,7 +20,10 @@ import {
   CircularProgress,
   Alert,
   Chip,
+  IconButton,
+  Snackbar,
 } from "@mui/material";
+import CancelIcon from "@mui/icons-material/Cancel";
 import Layout from '@/components/layout';
 import { format } from 'date-fns';
 
@@ -49,6 +52,7 @@ export default function MyOrdersPage() {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [editMode, setEditMode] = useState(false);
   const [form, setForm] = useState({ games: [] as Game[] });
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' as 'success' | 'error' });
 
   // Fetch user's orders
   useEffect(() => {
@@ -116,6 +120,55 @@ export default function MyOrdersPage() {
     setOpen(false);
     setEditMode(false);
     setSelectedOrder(null);
+  };
+
+  // Cancel a specific game from an order
+  const handleCancelGame = async (orderId: number, gameId: number) => {
+    try {
+      const response = await fetch('/api/orders/cancel-game', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId, gameId }),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        setSnackbar({ 
+          open: true, 
+          message: result.message || 'Game cancelled successfully', 
+          severity: 'success' 
+        });
+        
+        // Refresh orders to get updated data
+        const ordersResponse = await fetch("/api/orders");
+        if (ordersResponse.ok) {
+          const data = await ordersResponse.json();
+          setOrders(data);
+          
+          // Update the selected order if it's currently open
+          if (selectedOrder && selectedOrder.id === orderId) {
+            const updatedOrder = data.find((order: Order) => order.id === orderId);
+            if (updatedOrder) {
+              setSelectedOrder(updatedOrder);
+            }
+          }
+        }
+      } else {
+        const error = await response.json();
+        setSnackbar({ 
+          open: true, 
+          message: error.error || 'Failed to cancel game', 
+          severity: 'error' 
+        });
+      }
+    } catch (error) {
+      console.error('Error cancelling game:', error);
+      setSnackbar({ 
+        open: true, 
+        message: 'An error occurred while cancelling the game', 
+        severity: 'error' 
+      });
+    }
   };
 
   if (loading) {
@@ -251,6 +304,7 @@ export default function MyOrdersPage() {
                         <TableCell>Quantity</TableCell>
                         <TableCell>Price</TableCell>
                         <TableCell>Subtotal</TableCell>
+                        <TableCell>Actions</TableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>
@@ -262,11 +316,21 @@ export default function MyOrdersPage() {
                             <TableCell>{game.quantity || 1}</TableCell>
                             <TableCell>${Number(game.price || 0).toFixed(2)}</TableCell>
                             <TableCell>${(Number(game.price || 0) * Number(game.quantity || 1)).toFixed(2)}</TableCell>
+                            <TableCell>
+                              <IconButton
+                                color="error"
+                                size="small"
+                                onClick={() => handleCancelGame(selectedOrder.id, game.game_id)}
+                                title="Cancel this game"
+                              >
+                                <CancelIcon />
+                              </IconButton>
+                            </TableCell>
                           </TableRow>
                         ))
                       ) : (
                         <TableRow>
-                          <TableCell colSpan={5} align="center">
+                          <TableCell colSpan={6} align="center">
                             <Typography color="text.secondary">No games in this order</Typography>
                           </TableCell>
                         </TableRow>
@@ -285,6 +349,21 @@ export default function MyOrdersPage() {
             <Button onClick={handleClose}>Close</Button>
           </DialogActions>
         </Dialog>
+
+        {/* Snackbar for feedback */}
+        <Snackbar
+          open={snackbar.open}
+          autoHideDuration={6000}
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
+        >
+          <Alert 
+            onClose={() => setSnackbar({ ...snackbar, open: false })} 
+            severity={snackbar.severity}
+            sx={{ width: '100%' }}
+          >
+            {snackbar.message}
+          </Alert>
+        </Snackbar>
       </Container>
     </Layout>
   );
