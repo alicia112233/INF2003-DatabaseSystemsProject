@@ -234,7 +234,7 @@ const OrdersManagementPage = () => {
                   <TableCell>
                     {order.games && order.games.length > 0
                       ? order.games.map(g => `${g.title} (x${g.quantity})`).join(", ")
-                      : "-"}
+                      : "Cancelled"}
                   </TableCell>
                   <TableCell>${Number(order.total).toFixed(2)}</TableCell>
                   {/* Status cell removed */}
