@@ -62,7 +62,11 @@ export default function MyOrdersPage() {
         if (response.ok) {
           const data = await response.json();
           console.log('Orders data received:', data); // Debug log
-          setOrders(data);
+          // Sort orders by date (latest first)
+          const sortedOrders = data.sort((a: Order, b: Order) => {
+            return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+          });
+          setOrders(sortedOrders);
         } else {
           throw new Error(`Failed to fetch orders: ${response.status}`);
         }
@@ -111,7 +115,11 @@ export default function MyOrdersPage() {
     const response = await fetch("/api/orders");
     if (response.ok) {
       const data = await response.json();
-      setOrders(data);
+      // Sort orders by date (latest first)
+      const sortedOrders = data.sort((a: Order, b: Order) => {
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      });
+      setOrders(sortedOrders);
     }
   };
 
@@ -143,11 +151,15 @@ export default function MyOrdersPage() {
         const ordersResponse = await fetch("/api/orders");
         if (ordersResponse.ok) {
           const data = await ordersResponse.json();
-          setOrders(data);
+          // Sort orders by date (latest first)
+          const sortedOrders = data.sort((a: Order, b: Order) => {
+            return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+          });
+          setOrders(sortedOrders);
           
           // Update the selected order if it's currently open
           if (selectedOrder && selectedOrder.id === orderId) {
-            const updatedOrder = data.find((order: Order) => order.id === orderId);
+            const updatedOrder = sortedOrders.find((order: Order) => order.id === orderId);
             if (updatedOrder) {
               setSelectedOrder(updatedOrder);
             }
@@ -210,7 +222,6 @@ export default function MyOrdersPage() {
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableCell>Order ID</TableCell>
                   <TableCell>Games</TableCell>
                   <TableCell>Total</TableCell>
                   <TableCell>Promotion</TableCell>
@@ -219,22 +230,19 @@ export default function MyOrdersPage() {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {orders.map((order) => (
+                {orders
+                  .filter(order => order.games && order.games.length > 0) // Filter out orders with no games
+                  .map((order) => (
                   <TableRow key={order.id}>
-                    <TableCell>#{order.id}</TableCell>
                     <TableCell>
                       <Box>
-                        {order.games && order.games.length > 0 ? (
-                          order.games.map((game, index) => (
-                            <Box key={index} display="flex" alignItems="center" gap={1} mb={index < order.games.length - 1 ? 1 : 0}>
-                              <Typography variant="body2">
-                                {game.title} (x{game.quantity})
-                              </Typography>
-                            </Box>
-                          ))
-                        ) : (
-                          <Typography variant="body2" color="text.secondary">No games</Typography>
-                        )}
+                        {order.games.map((game, index) => (
+                          <Box key={index} display="flex" alignItems="center" gap={1} mb={index < order.games.length - 1 ? 1 : 0}>
+                            <Typography variant="body2">
+                              {game.title} (x{game.quantity})
+                            </Typography>
+                          </Box>
+                        ))}
                       </Box>
                     </TableCell>
                     <TableCell>${Number(order.total).toFixed(2)}</TableCell>
