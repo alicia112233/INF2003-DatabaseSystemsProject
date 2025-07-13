@@ -226,7 +226,7 @@ export default function MyOrdersPage() {
                 <Typography variant="subtitle1" gutterBottom>Order ID: #{selectedOrder.id}</Typography>
                 <Typography variant="body2" gutterBottom>Total: ${Number(selectedOrder.total || 0).toFixed(2)}</Typography>
                 <Typography variant="body2" gutterBottom>
-                  Order Date: {selectedOrder.createdAt ? format(new Date(selectedOrder.createdAt), 'MMM dd, yyyy HH:mm') : '-'}
+                  Order Date: {selectedOrder.createdAt ? format(new Date(selectedOrder.createdAt), 'MMM dd, yyyy') : '-'}
                 </Typography>
                 {selectedOrder.promotion_code && (
                   <Box sx={{ mt: 1, mb: 2 }}>

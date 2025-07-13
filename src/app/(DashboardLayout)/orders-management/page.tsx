@@ -168,7 +168,7 @@ const OrdersManagementPage = () => {
             onClick={() => {
               setOpen(true);
               setEditOrder(null);
-              setForm({ email: "", games: [], total: "", status: "Pending" });
+              setForm({ email: "", games: [], total: ""});
             }}
           >
             Add Order

@@ -48,8 +48,8 @@ export async function POST(req: NextRequest) {
     
     const user_id = users[0].id;
     const purchase_date = data.purchase_date
-      ? new Date(data.purchase_date).toISOString().slice(0, 10)
-      : new Date().toISOString().slice(0, 10);
+      ? new Date(data.purchase_date).toLocaleDateString('en-CA')
+      : new Date().toLocaleDateString('en-CA');
 
     // Debug: log the promotionCode received
     console.log('Received promotionCode:', data.promotionCode);
