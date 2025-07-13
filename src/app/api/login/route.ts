@@ -1,19 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import mysql from 'mysql2/promise';
 import bcrypt from 'bcrypt';
+import { executeQuery } from '@/lib/database';
 import { RowDataPacket } from 'mysql2';
 
-const dbConfig = {
-    host: process.env.MYSQL_HOST,
-    user: process.env.MYSQL_USER,
-    password: process.env.MYSQL_PASSWORD,
-    port: Number(process.env.MYSQL_PORT),
-    database: process.env.MYSQL_DATABASE,
-};
-
 export async function POST(req: NextRequest) {
-    let connection;
-
     try {
         const { email, password } = await req.json();
 
@@ -25,13 +15,11 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        // Create direct database connection
-        connection = await mysql.createConnection(dbConfig);
-
         // Query the unified users table
-        const [users] = await connection.query<(RowDataPacket)[]>(
-            'SELECT * FROM users WHERE email = ?', [email]
-        );
+        const users = await executeQuery(
+            'SELECT * FROM users WHERE email = ?', 
+            [email]
+        ) as RowDataPacket[];
 
         if (!Array.isArray(users) || users.length === 0) {
             console.log("No user found with this email");
@@ -134,9 +122,5 @@ export async function POST(req: NextRequest) {
             { error: 'An error occurred during login!' },
             { status: 500 }
         );
-    } finally {
-        if (connection) {
-            await connection.end();
-        }
     }
 }
