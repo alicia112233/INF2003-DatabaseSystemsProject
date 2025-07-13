@@ -70,7 +70,9 @@ const CartItem: React.FC<CartItemProps> = ({ item }) => {
         price: item.price,
         priceType: typeof item.price,
         quantity: item.quantity,
-        quantityType: typeof item.quantity
+        quantityType: typeof item.quantity,
+        promo_code: item.promo_code,
+        promotion: item.promotion
     });
 
     return (
@@ -89,9 +91,43 @@ const CartItem: React.FC<CartItemProps> = ({ item }) => {
                     />
 
                     <Box flex={1}>
-                        <Typography variant="h6" component="div">
-                            {item.title}
-                        </Typography>
+                        <Box display="flex" alignItems="center" gap={1}>
+                            <Typography variant="h6" component="div">
+                                {item.title}
+                            </Typography>
+                            {item.promo_code ? (
+                                <Box
+                                    sx={{
+                                        bgcolor: 'success.main',
+                                        color: 'white',
+                                        px: 1,
+                                        py: 0.25,
+                                        borderRadius: 0.5,
+                                        fontSize: '0.7rem',
+                                        fontWeight: 'bold'
+                                    }}
+                                >
+                                    {item.promo_code}
+                                </Box>
+                            ) : (
+                                // Fallback: if item has discount but no promo_code, show generic discount indicator
+                                item.originalPrice && item.originalPrice > unitPrice && (
+                                    <Box
+                                        sx={{
+                                            bgcolor: 'warning.main',
+                                            color: 'white',
+                                            px: 1,
+                                            py: 0.25,
+                                            borderRadius: 0.5,
+                                            fontSize: '0.7rem',
+                                            fontWeight: 'bold'
+                                        }}
+                                    >
+                                        DISCOUNT
+                                    </Box>
+                                )
+                            )}
+                        </Box>
                         {item.type === 'rental' && (
                             <Typography variant="body2" color="success.main" fontWeight="bold">
                                 Rental: {item.rentalDays} day{item.rentalDays && item.rentalDays > 1 ? 's' : ''} @ ${getValidPrice(item.dailyRate).toFixed(2)}/day
@@ -102,9 +138,24 @@ const CartItem: React.FC<CartItemProps> = ({ item }) => {
                                 {truncateText(item.description, 80)}
                             </Typography>
                         )}
-                        <Typography variant="h6" color="primary" sx={{ mt: 1 }}>
-                            ${unitPrice.toFixed(2)}
-                        </Typography>
+                        <Box display="flex" alignItems="center" gap={1} sx={{ mt: 1 }}>
+                            {item.originalPrice && item.originalPrice > unitPrice && (
+                                <Typography 
+                                    variant="body2" 
+                                    sx={{ textDecoration: 'line-through', color: 'text.disabled' }}
+                                >
+                                    ${item.originalPrice.toFixed(2)}
+                                </Typography>
+                            )}
+                            <Typography variant="h6" color="primary">
+                                ${unitPrice.toFixed(2)}
+                            </Typography>
+                            {item.originalPrice && item.originalPrice > unitPrice && (
+                                <Typography variant="caption" color="success.main" fontWeight="bold">
+                                    Save ${(item.originalPrice - unitPrice).toFixed(2)}
+                                </Typography>
+                            )}
+                        </Box>
                     </Box>
 
                     {/* Quantity controls - only for purchase items */}

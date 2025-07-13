@@ -76,6 +76,17 @@ const CartSummary: React.FC<CartSummaryProps> = ({ onCheckout }) => {
     const safeOriginalTotal = isNaN(originalTotal) ? safeDiscountedTotal : originalTotal;
     const safeTotalSavings = isNaN(totalSavings) ? Math.max(safeOriginalTotal - safeDiscountedTotal, 0) : totalSavings;
 
+    // Debug cart data
+    console.log('CartSummary - Cart data:', {
+        appliedPromoCodes: cart?.appliedPromoCodes,
+        items: cart?.items?.map(item => ({ 
+            title: item.title, 
+            promo_code: item.promo_code,
+            promotion: item.promotion 
+        })),
+        safeTotalSavings
+    });
+
     // Calculate tax on the discounted total (after promo codes)
     const tax = safeDiscountedTotal * 0.1;
 
@@ -182,6 +193,39 @@ const CartSummary: React.FC<CartSummaryProps> = ({ onCheckout }) => {
                     </Box>
                 )}
 
+                {cart.appliedPromoCodes && cart.appliedPromoCodes.length > 0 && (
+                    <Box sx={{ mb: 2, p: 2, bgcolor: 'success.light', borderRadius: 1 }}>
+                        <Typography variant="subtitle2" color="success.dark" gutterBottom>
+                            🎯 Active Promotion{cart.appliedPromoCodes.length > 1 ? 's' : ''}:
+                        </Typography>
+                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 1 }}>
+                            {cart.appliedPromoCodes.map((code, index) => (
+                                <Box
+                                    key={index}
+                                    sx={{
+                                        bgcolor: 'white',
+                                        color: 'success.main',
+                                        px: 1.5,
+                                        py: 0.5,
+                                        borderRadius: 0.5,
+                                        fontWeight: 'bold',
+                                        fontSize: '0.75rem',
+                                        border: '1px solid',
+                                        borderColor: 'success.main'
+                                    }}
+                                >
+                                    {code}
+                                </Box>
+                            ))}
+                        </Box>
+                        {safeTotalSavings > 0 && (
+                            <Typography variant="body2" color="success.dark" fontWeight="bold">
+                                Savings: -${safeTotalSavings.toFixed(2)}
+                            </Typography>
+                        )}
+                    </Box>
+                )}
+
                 {safeTotalSavings > 0 && (
                     <Box display="flex" justifyContent="space-between" mb={1}>
                         <Typography color="text.secondary">
@@ -189,22 +233,6 @@ const CartSummary: React.FC<CartSummaryProps> = ({ onCheckout }) => {
                         </Typography>
                         <Typography color="text.secondary">
                             ${safeOriginalTotal.toFixed(2)}
-                        </Typography>
-                    </Box>
-                )}
-
-                {cart.appliedPromoCodes && cart.appliedPromoCodes.length > 0 && safeTotalSavings > 0 && (
-                    <Box display="flex" justifyContent="space-between" mb={1}>
-                        <Box>
-                            <Typography color="success.main" variant="body2">
-                                Promo Code{cart.appliedPromoCodes.length > 1 ? 's' : ''} Applied:
-                            </Typography>
-                            <Typography component="span" variant="caption" color="text.secondary">
-                                {cart.appliedPromoCodes.join(', ')}
-                            </Typography>
-                        </Box>
-                        <Typography color="success.main" fontWeight="bold">
-                            -${safeTotalSavings.toFixed(2)}
                         </Typography>
                     </Box>
                 )}

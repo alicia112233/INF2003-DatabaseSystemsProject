@@ -17,7 +17,7 @@ export async function GET(req: NextRequest) {
     connection = await mysql.createConnection(dbConfig);
     // Get all orders with user info (removed status as it's not needed for digital purchases)
     const [orders] = await connection.query(
-      `SELECT o.id, u.email, o.total, o.purchase_date AS createdAt
+      `SELECT o.id, u.email, o.total, o.purchase_date AS createdAt, o.promotion_code
        FROM Orders o
        JOIN users u ON o.user_id = u.id`
     );
@@ -59,10 +59,12 @@ export async function POST(req: NextRequest) {
     const purchase_date = data.purchase_date
       ? new Date(data.purchase_date).toISOString().slice(0, 10)
       : new Date().toISOString().slice(0, 10);
-    // Insert order (digital purchases don't need status tracking)
+    // Debug: log the promotionCode received
+    console.log('Received promotionCode:', data.promotionCode);
+    // Insert order (now includes promotion_code)
     const [result] = await connection.query<ResultSetHeader>(
-      `INSERT INTO Orders (user_id, total, purchase_date) VALUES (?, ?, ?)`,
-      [user_id, data.total, purchase_date]
+      `INSERT INTO Orders (user_id, total, purchase_date, promotion_code) VALUES (?, ?, ?, ?)`,
+      [user_id, data.total, purchase_date, data.promotionCode || null]
     );
     const orderId = (result as ResultSetHeader).insertId;
     // Insert games
@@ -72,7 +74,27 @@ export async function POST(req: NextRequest) {
         [orderId, game.gameId, game.quantity, game.price]
       );
     }
-    return NextResponse.json({ id: orderId, ...data, user_id, purchase_date }, { status: 201 });
+    // Promotion logic: check maxUsage and usedCount before incrementing
+    let promoAffectedRows = undefined;
+    if (data.promotionCode) {
+      const [promoRows] = await connection.query<RowDataPacket[]>(
+        `SELECT usedCount, maxUsage FROM Promotion WHERE code = ?`,
+        [data.promotionCode]
+      );
+      if (!Array.isArray(promoRows) || promoRows.length === 0) {
+        return NextResponse.json({ error: "Invalid promotion code" }, { status: 400 });
+      }
+      const promo = promoRows[0];
+      if (promo.usedCount >= promo.maxUsage) {
+        return NextResponse.json({ error: "Promotion code usage limit reached" }, { status: 400 });
+      }
+      const [updateResult] = await connection.query<ResultSetHeader>(
+        `UPDATE Promotion SET usedCount = usedCount + 1 WHERE code = ?`,
+        [data.promotionCode]
+      );
+      promoAffectedRows = updateResult.affectedRows;
+    }
+    return NextResponse.json({ id: orderId, ...data, user_id, purchase_date, promoAffectedRows }, { status: 201 });
   } catch (error) {
     console.error(error);
     return NextResponse.json({ error: "Failed to create order" }, { status: 500 });

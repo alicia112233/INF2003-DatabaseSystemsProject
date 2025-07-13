@@ -37,6 +37,7 @@ interface Order {
   email: string;
   total: number;
   createdAt: string;
+  promotion_code?: string; // Add promotion code field
   games: Game[];
 }
 
@@ -159,6 +160,7 @@ export default function MyOrdersPage() {
                   <TableCell>Order ID</TableCell>
                   <TableCell>Games</TableCell>
                   <TableCell>Total</TableCell>
+                  <TableCell>Promotion</TableCell>
                   <TableCell>Order Date</TableCell>
                   <TableCell>Actions</TableCell>
                 </TableRow>
@@ -183,6 +185,18 @@ export default function MyOrdersPage() {
                       </Box>
                     </TableCell>
                     <TableCell>${Number(order.total).toFixed(2)}</TableCell>
+                    <TableCell>
+                      {order.promotion_code ? (
+                        <Chip 
+                          label={order.promotion_code}
+                          color="success"
+                          size="small"
+                          variant="outlined"
+                        />
+                      ) : (
+                        <Typography variant="body2" color="text.secondary">-</Typography>
+                      )}
+                    </TableCell>
                     <TableCell>
                       {order.createdAt ? format(new Date(order.createdAt), 'MMM dd, yyyy') : '-'}
                     </TableCell>
@@ -214,6 +228,19 @@ export default function MyOrdersPage() {
                 <Typography variant="body2" gutterBottom>
                   Order Date: {selectedOrder.createdAt ? format(new Date(selectedOrder.createdAt), 'MMM dd, yyyy HH:mm') : '-'}
                 </Typography>
+                {selectedOrder.promotion_code && (
+                  <Box sx={{ mt: 1, mb: 2 }}>
+                    <Typography variant="body2" color="text.secondary" gutterBottom>
+                      Promotion Applied:
+                    </Typography>
+                    <Chip 
+                      label={selectedOrder.promotion_code}
+                      color="success"
+                      size="small"
+                      sx={{ fontWeight: 'bold' }}
+                    />
+                  </Box>
+                )}
                 <Typography variant="subtitle2" sx={{ mt: 2, mb: 1 }}>Games Purchased:</Typography>
                 <TableContainer component={Paper} variant="outlined">
                   <Table size="small">

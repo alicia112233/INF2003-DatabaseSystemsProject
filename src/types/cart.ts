@@ -147,6 +147,10 @@ export const productToCartItem = (
             discountType: gamePromotion.discountType,
         })
         : originalPrice;
+        
+    // Get promotion code from the promotion parameter (full object) or product.promo_code
+    const promoCode = promotion?.code || product.promo_code;
+        
     return {
         productId: product.id,
         title: product.title,
@@ -156,7 +160,7 @@ export const productToCartItem = (
         image_url: product.image_url,
         description: product.description,
         type: type,
-        promo_code: product.promo_code,
+        promo_code: promoCode,
         promotion: gamePromotion
             ? {
                 discountValue: gamePromotion.discountValue,

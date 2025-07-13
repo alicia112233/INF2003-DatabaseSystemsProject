@@ -140,12 +140,25 @@ const RecommendationsCarousel: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [snack, setSnack] = useState({ open: false, msg: '', severity: 'success' });
+    const [selectedPromotionCode, setSelectedPromotionCode] = useState<string | null>(null);
     const { addToCart } = useCart();
 
     const handlePrev = () => setCurrent((prev) => (prev === 0 ? games.length - 1 : prev - 1));
     const handleNext = useCallback(() => {
         setCurrent((prev) => (prev === games.length - 1 ? 0 : prev + 1));
     }, [games.length]);
+    
+    // Store the current game for promotion code tracking
+    const game = games[current];
+    
+    // Track promotion code for checkout (must be before any early returns)
+    useEffect(() => {
+        if (game && game.promotion && game.promotion.code) {
+            setSelectedPromotionCode(game.promotion.code);
+        } else {
+            setSelectedPromotionCode(null);
+        }
+    }, [game]);
     
     // 1. Fetch recommendations on mount
     useEffect(() => {
@@ -248,8 +261,6 @@ const RecommendationsCarousel: React.FC = () => {
         );
     }
 
-    const game = games[current];
-
     return (
         <Box sx={{ minWidth: '80%', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 350 }}>
             <IconButton onClick={handlePrev}><ArrowBackIosIcon /></IconButton>
@@ -279,7 +290,13 @@ const RecommendationsCarousel: React.FC = () => {
                                 display: 'inline-block'
                             }}
                         >
-                            🎉 {game.promotion.code}: {game.promotion.description}
+                            🎉 Promotion Code: <b>{game.promotion.code}</b> <br />{game.promotion.description}
+                        </Typography>
+                    )}
+                    {/* Show the selected promotion code for debugging/checkout */}
+                    {selectedPromotionCode && (
+                        <Typography variant="body2" color="primary" sx={{ mt: 1 }}>
+                            <b>Selected Promotion Code:</b> {selectedPromotionCode}
                         </Typography>
                     )}
                     <Typography variant="body2" color="text.secondary" sx={{ mb: 2, minHeight: 60 }}>
@@ -312,6 +329,7 @@ const RecommendationsCarousel: React.FC = () => {
                                 genreNames: [],
                                 inStock: game.inStock,
                                 promotion: game.promotion,
+                                promotionObj: game.promotion // Pass full promotion object
                             }}
                             onSuccess={(message) => setSnack({ open: true, msg: message, severity: 'success' })}
                             onWarning={(message) => setSnack({ open: true, msg: message, severity: 'warning' })}
@@ -547,7 +565,7 @@ const MoreGames: React.FC<ProductCardProps> = () => {
                                                 discountValue: game.promotion.discountValue,
                                                 discountType: game.promotion.discountType
                                             } : undefined,
-
+                                            promotionObj: game.promotion, // Pass full promotion object
                                             image_url: game.image_url,
                                             description: game.description,
                                             genreNames: [],
