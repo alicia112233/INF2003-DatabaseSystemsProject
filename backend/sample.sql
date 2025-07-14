@@ -183,3 +183,11 @@ CREATE TABLE IF NOT EXISTS Wishlist (
     FOREIGN KEY (game_id) REFERENCES Game(id),
     UNIQUE KEY unique_wishlist (user_id, game_id)
 );
+
+-- 10. Screenshot Table
+CREATE TABLE Screenshot (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  game_id INT NOT NULL,
+  url TEXT NOT NULL,
+  FOREIGN KEY (game_id) REFERENCES Game(id)
+);

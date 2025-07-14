@@ -8,6 +8,7 @@ import {
     Typography,
     Box,
     Chip,
+    Button,
 } from '@mui/material';
 import AddToCartButton from '@/components/cart/AddToCartButton';
 import { Product } from '@/types/cart';
@@ -42,15 +43,13 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
                 top: 8, 
                 right: 8, 
                 zIndex: 1000,
-                background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.7))',
-                borderRadius: '50%',
-                padding: '2px',
-                boxShadow: '0 2px 3px rgba(0, 0, 0, 0.15)',
-                border: '1px solid rgba(255, 255, 255, 0.3)',
-                '&:hover': {
-                    background: 'linear-gradient(135deg, rgba(255, 255, 255, 1), rgba(255, 255, 255, 0.9))',
-                    boxShadow: '0 4px 5px rgba(0, 0, 0, 0.2)',
-                }
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'flex-end',
+                gap: 1,
+                background: 'none',
+                boxShadow: 'none',
+                border: 'none',
             }}>
                 <WishlistButton product={product} />
             </Box>
@@ -118,6 +117,15 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
                         variant="outlined"
                     />
                 )}
+                <Button
+                  variant="outlined"
+                  color="primary"
+                  fullWidth
+                  sx={{ mt: 1 }}
+                  href={`/game/${product.id}`}
+                >
+                  See Details
+                </Button>
             </Box>
         </Card>
     );
