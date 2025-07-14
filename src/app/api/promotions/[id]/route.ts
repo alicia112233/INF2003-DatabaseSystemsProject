@@ -1,23 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import mysql from 'mysql2/promise';
-
-// Database connection configuration
-const dbConfig = {
-    host: process.env.MYSQL_HOST,
-    user: process.env.MYSQL_USER,
-    password: process.env.MYSQL_PASSWORD,
-    port: Number(process.env.MYSQL_PORT),
-    database: process.env.MYSQL_DATABASE,
-};
+import { pool } from '@/app/lib/db';
 
 // GET single promotion which includes selected games
 export async function GET(
-    request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
         const { id } = await params;
-        const connection = await mysql.createConnection(dbConfig);
+        const connection = await pool.getConnection();
 
         // Get promotion details
         const [promotionRows] = await connection.execute(
@@ -27,7 +17,7 @@ export async function GET(
 
         const promotions = promotionRows as any[];
         if (promotions.length === 0) {
-            await connection.end();
+            await connection.release();
             return NextResponse.json({ error: 'Promotion not found' }, { status: 404 });
         }
 
@@ -43,7 +33,7 @@ export async function GET(
             selectedGameIds = (gameRows as any[]).map(row => row.id);
         }
 
-        await connection.end();
+        await connection.release();
 
         return NextResponse.json({
             ...promotion,
@@ -78,7 +68,7 @@ export async function PUT(
             selectedGameIds,
         } = body;
 
-        connection = await mysql.createConnection(dbConfig);
+        connection = await pool.getConnection();
 
         // Update the promotion
         await connection.execute(
@@ -126,7 +116,7 @@ export async function PUT(
         );
     } finally {
         if (connection) {
-            await connection.end();
+            await connection.release();
         }
     }
 }
@@ -140,14 +130,14 @@ export async function DELETE(
         // Await params before using
         const { id } = await params;
 
-        const connection = await mysql.createConnection(dbConfig);
+        const connection = await pool.getConnection();
 
         await connection.execute(
             'DELETE FROM promotion WHERE id = ?',
             [id]
         );
 
-        await connection.end();
+        await connection.release();
 
         return NextResponse.json({ message: 'Promotion deleted successfully' });
     } catch (error) {

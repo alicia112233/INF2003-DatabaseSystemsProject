@@ -1,6 +1,6 @@
 -- This script sets up the initial database and tables for our application.
 
--- Uncomment this command below if your tables are different
+-- Comment this command below if your tables are the same!
 DROP DATABASE IF EXISTS game_haven;
 
 SET profiling = 1;
@@ -44,7 +44,7 @@ SET NEW.avatarUrl =
     ELSE NEW.avatarUrl
   END;
 
--- Default password: Password1234
+-- All Default Password: Password1234
 
 -- Admin account
 INSERT IGNORE INTO
@@ -69,7 +69,7 @@ VALUES (
         '/images/profile/user-1.jpg'
     );
 
--- user account
+-- User account
 INSERT IGNORE INTO
     game_haven.users (
         firstName,
@@ -146,7 +146,7 @@ CREATE TABLE IF NOT EXISTS Promotion (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
--- Insert Promotion data
+-- Insert some Promotion data
 INSERT IGNORE INTO
     game_haven.Promotion (
         id,
@@ -195,7 +195,7 @@ CREATE TABLE IF NOT EXISTS Game (
     image_url VARCHAR(512),
     release_date DATE,
     is_digital BOOLEAN DEFAULT FALSE,
-    stock_count INT DEFAULT 10, -- Set default stock to 10 instead of 0
+    stock_count INT DEFAULT 10,
     promo_id INT,
     head_image_url VARCHAR(255),
     screenshot_url VARCHAR(255),
@@ -219,8 +219,7 @@ CREATE TABLE IF NOT EXISTS GameGenre (
     FOREIGN KEY (genre_id) REFERENCES Genre (id)
 );
 
--- 7. Order Table
-
+-- 7. Orders Table
 CREATE TABLE IF NOT EXISTS Orders (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,

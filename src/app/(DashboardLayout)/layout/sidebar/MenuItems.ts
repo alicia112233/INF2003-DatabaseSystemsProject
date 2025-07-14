@@ -5,6 +5,8 @@ import {
     IconReportAnalytics,
     IconDiscount,
     IconCalendarStats,
+    IconChartBar,
+    IconChartLine,
 } from "@tabler/icons-react";
 import { Upgrade } from "./Upgrade";
 import { uniqueId } from "lodash";
@@ -133,10 +135,14 @@ export const getMenuItems = (isLoggedIn: boolean, userRole: string = 'customer')
             href: '/promotion-management',
         },
         {
+            navlabel: true,
+            subheader: 'System',
+        },
+        {
             id: uniqueId(),
-            title: "Reports",
-            icon: IconReportAnalytics,
-            href: "/reports",
+            title: 'Performance',
+            icon: IconChartLine,
+            href: '/performance-dashboard',
         },
     ];
 

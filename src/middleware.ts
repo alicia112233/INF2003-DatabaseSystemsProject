@@ -5,12 +5,11 @@ import type { NextRequest } from 'next/server';
 let hasHandledRestart = false;
 
 export function middleware(request: NextRequest) {
-    const path = request.nextUrl.pathname;
+    // Continue with the request
     const response = NextResponse.next();
-
+     
     // Handle logout route specifically - always process this first
-    if (path === '/logout') {
-        // console.log('Processing logout request');
+    if (request.nextUrl.pathname === '/logout') {
         const redirectResponse = NextResponse.redirect(new URL('/', request.url));
         
         // Clear authentication cookies
@@ -38,8 +37,8 @@ export function middleware(request: NextRequest) {
         const isLoggedIn = request.cookies.get('isLoggedIn')?.value;
         const userRole = request.cookies.get('userRole')?.value;
 
-        if (path !== '/' && (isLoggedIn || userRole)) {
-            console.log(`Server restart detected - redirecting from ${path} to home`);
+        if (request.nextUrl.pathname !== '/' && (isLoggedIn || userRole)) {
+            console.log(`Server restart detected - redirecting from ${request.nextUrl.pathname} to home`);
 
             const redirectResponse = NextResponse.redirect(new URL('/', request.url));
 
@@ -53,7 +52,7 @@ export function middleware(request: NextRequest) {
                 path: '/',
             });
 
-            // Add a special header to trigger localStorage clearing
+            // a special header to trigger localStorage clearing
             redirectResponse.headers.set('x-server-restarted', 'true');
             redirectResponse.headers.set('x-clear-storage', 'true');
 
@@ -61,7 +60,7 @@ export function middleware(request: NextRequest) {
         }
 
         // If on home page, just clear cookies without redirect
-        if (path === '/' && (isLoggedIn || userRole)) {
+        if (request.nextUrl.pathname === '/' && (isLoggedIn || userRole)) {
             console.log('Server restart detected on home page - clearing cookies');
             response.cookies.set('isLoggedIn', '', {
                 expires: new Date(0),
@@ -78,7 +77,7 @@ export function middleware(request: NextRequest) {
 
         // Public routes that don't require authentication
         const publicRoutes = ['/', '/products', '/authentication'];
-        const isPublicRoute = publicRoutes.some(route => path === route || path.startsWith(route));
+        const isPublicRoute = publicRoutes.some(route => request.nextUrl.pathname === route || request.nextUrl.pathname.startsWith(route));
 
         // Protected routes logic - only redirect if not on a public route
         if (!isPublicRoute && !isLoggedIn) {
@@ -95,7 +94,7 @@ export function middleware(request: NextRequest) {
         const userRole = request.cookies.get('userRole')?.value;
 
         // Home page logic
-        if (path === '/') {
+        if (request.nextUrl.pathname === '/') {
             if (isLoggedIn && userRole === 'admin') {
                 return NextResponse.redirect(new URL('/admin-dashboard', request.url));
             }
@@ -104,7 +103,7 @@ export function middleware(request: NextRequest) {
 
         // Public routes that don't require authentication
         const publicRoutes = ['/', '/products', '/authentication'];
-        const isPublicRoute = publicRoutes.some(route => path === route || path.startsWith(route));
+        const isPublicRoute = publicRoutes.some(route => request.nextUrl.pathname === route || request.nextUrl.pathname.startsWith(route));
 
         // Protected routes logic - only redirect if not on a public route
         if (!isPublicRoute && !isLoggedIn) {
@@ -112,7 +111,7 @@ export function middleware(request: NextRequest) {
         }
 
         // Admin-only routes
-        if (path.startsWith('/admin') || path.includes('DashboardLayout')) {
+        if (request.nextUrl.pathname.startsWith('/admin') || request.nextUrl.pathname.includes('DashboardLayout') || request.nextUrl.pathname.includes('/performance-dashboard')) {
             if (!isLoggedIn || userRole !== 'admin') {
                 return NextResponse.redirect(new URL('/', request.url));
             }
@@ -120,7 +119,7 @@ export function middleware(request: NextRequest) {
 
         // Customer-only routes (cart, wishlist, orders, etc.)
         const customerOnlyRoutes = ['/cart', '/wishlist', '/my-orders', '/profile'];
-        const isCustomerOnlyRoute = customerOnlyRoutes.some(route => path === route || path.startsWith(route));
+        const isCustomerOnlyRoute = customerOnlyRoutes.some(route => request.nextUrl.pathname === route || request.nextUrl.pathname.startsWith(route));
         
         if (isCustomerOnlyRoute) {
             if (!isLoggedIn || userRole !== 'customer') {

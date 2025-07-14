@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { pool } from '@/app/lib/db';
+import { withPerformanceTracking } from '@/middleware/trackPerformance';
 
 function toTitleCase(str: string) {
     return str
@@ -21,7 +22,7 @@ function capitalizeFirstLetterOfParagraphs(str: string) {
         .join('');
 }
 
-export async function GET(request: NextRequest) {
+async function handler(request: NextRequest) {
     let connection;
     try {
         const { searchParams } = new URL(request.url);
@@ -122,3 +123,5 @@ export async function GET(request: NextRequest) {
         }
     }
 }
+
+export const GET = withPerformanceTracking(handler);

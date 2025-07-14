@@ -1,17 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import mysql from 'mysql2/promise';
+import { pool } from '@/app/lib/db';
 import bcrypt from 'bcrypt';
+import { withPerformanceTracking } from '@/middleware/trackPerformance';
 
-// Database connection configuration
-const dbConfig = {
-    host: process.env.MYSQL_HOST,
-  user: process.env.MYSQL_USER,
-  password: process.env.MYSQL_PASSWORD,
-  port: Number(process.env.MYSQL_PORT),
-  database: process.env.MYSQL_DATABASE,
-};
-
-export async function POST(request: NextRequest) {
+async function postHandler(request: NextRequest) {
     try {
         const { token, password } = await request.json();
 
@@ -30,7 +22,7 @@ export async function POST(request: NextRequest) {
         }
 
         // Create database connection
-        const connection = await mysql.createConnection(dbConfig);
+        const connection = await pool.getConnection();
 
         try {
             // Find user with valid reset token
@@ -66,7 +58,7 @@ export async function POST(request: NextRequest) {
             );
 
         } finally {
-            await connection.end();
+            connection.release();
         }
 
     } catch (error) {
@@ -77,3 +69,5 @@ export async function POST(request: NextRequest) {
         );
     }
 }
+
+export const POST = withPerformanceTracking(postHandler);

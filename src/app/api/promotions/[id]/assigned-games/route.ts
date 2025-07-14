@@ -1,16 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
-import mysql from 'mysql2/promise';
-
-const dbConfig = {
-    host: process.env.MYSQL_HOST,
-    user: process.env.MYSQL_USER,
-    password: process.env.MYSQL_PASSWORD,
-    port: Number(process.env.MYSQL_PORT),
-    database: process.env.MYSQL_DATABASE,
-};
+import { NextResponse } from 'next/server';
+import { pool } from '@/app/lib/db';
 
 export async function GET(
-    request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
@@ -24,7 +15,7 @@ export async function GET(
             );
         }
 
-        const connection = await mysql.createConnection(dbConfig);
+        const connection = await pool.getConnection();
         
         // Fetch games that have this promotion assigned
         const [rows] = await connection.execute(
@@ -32,7 +23,7 @@ export async function GET(
             [promotionId]
         );
         
-        await connection.end();
+        connection.release();
         
         return NextResponse.json(rows);
     } catch (error) {
