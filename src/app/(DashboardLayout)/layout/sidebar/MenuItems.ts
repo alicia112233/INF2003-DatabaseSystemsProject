@@ -2,10 +2,8 @@ import {
     IconLayoutDashboard,
     IconDeviceGamepad,
     IconUsers,
-    IconReportAnalytics,
     IconDiscount,
     IconCalendarStats,
-    IconChartBar,
     IconChartLine,
 } from "@tabler/icons-react";
 import { Upgrade } from "./Upgrade";
@@ -42,28 +40,6 @@ export const getMenuItems = (isLoggedIn: boolean, userRole: string = 'customer')
 
     // Guest-specific menu items (without Upgrade)
     const guestItems: MenuItem[] = [
-        {
-            navlabel: true,
-            subheader: "CATEGORIES",
-        },
-        {
-            id: uniqueId(),
-            title: "Top Sellers",
-            icon: IconDeviceGamepad,
-            href: "/view-top-sellers",
-        },
-        {
-            id: uniqueId(),
-            title: "New Releases",
-            icon: IconDeviceGamepad,
-            href: "/view-new-releases",
-        },
-        {
-            id: uniqueId(),
-            title: "Upcoming Games",
-            icon: IconDeviceGamepad,
-            href: "/view-upcoming",
-        },
         {
             navlabel: true,
             subheader: "Genres",
@@ -163,28 +139,6 @@ export const getMenuItems = (isLoggedIn: boolean, userRole: string = 'customer')
             title: "My Rentals",
             icon: IconCalendarStats,
             href: "/my-rentals",
-        },
-        {
-            navlabel: true,
-            subheader: "CATEGORIES",
-        },
-        {
-            id: uniqueId(),
-            title: "Top Sellers",
-            icon: IconDeviceGamepad,
-            href: "/view-top-sellers",
-        },
-        {
-            id: uniqueId(),
-            title: "New Releases",
-            icon: IconDeviceGamepad,
-            href: "/view-new-releases",
-        },
-        {
-            id: uniqueId(),
-            title: "Upcoming Games",
-            icon: IconDeviceGamepad,
-            href: "/view-upcoming",
         },
         {
             navlabel: true,

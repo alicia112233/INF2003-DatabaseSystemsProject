@@ -110,7 +110,7 @@ const AuthResetPassword = ({ title, subtitle, subtext }: ResetPasswordType) => {
             // Redirect to login after success
             setTimeout(() => {
                 window.location.href = "/authentication/login";
-            }, 2000);
+            }, 1000);
 
         } catch (err) {
             setToastSeverity("error");

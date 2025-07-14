@@ -143,7 +143,9 @@ CREATE TABLE IF NOT EXISTS Promotion (
     isActive BOOLEAN DEFAULT TRUE,
     applicableToAll BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE INDEX idx_promotion_isActive (isActive) VISIBLE,
+    UNIQUE INDEX idx_promotion_startDate_endDate (startDate, endDate) VISIBLE
 );
 
 -- Insert some Promotion data
@@ -199,7 +201,9 @@ CREATE TABLE IF NOT EXISTS Game (
     promo_id INT,
     head_image_url VARCHAR(255),
     screenshot_url VARCHAR(255),
-    FOREIGN KEY (promo_id) REFERENCES Promotion (id)
+    FOREIGN KEY (promo_id) REFERENCES Promotion (id),
+    UNIQUE INDEX idx_game_promo_id (promo_id) VISIBLE,
+    INDEX idx_game_title (title) VISIBLE
 );
 
 -- Update existing games to have stock if they currently have 0
@@ -216,7 +220,9 @@ CREATE TABLE IF NOT EXISTS GameGenre (
     genre_id INT NOT NULL,
     PRIMARY KEY (game_id, genre_id),
     FOREIGN KEY (game_id) REFERENCES Game (id),
-    FOREIGN KEY (genre_id) REFERENCES Genre (id)
+    FOREIGN KEY (genre_id) REFERENCES Genre (id),
+    UNIQUE INDEX idx_gamegenre_game_id (game_id) VISIBLE,
+    UNIQUE INDEX idx_gamegenre_genre_id (genre_id) VISIBLE
 );
 
 -- 7. Orders Table
@@ -226,7 +232,9 @@ CREATE TABLE IF NOT EXISTS Orders (
     total DECIMAL(10, 2) NOT NULL,
     purchase_date DATE NOT NULL,
     promotion_code VARCHAR(50) NULL,
-    FOREIGN KEY (user_id) REFERENCES users (id)
+    FOREIGN KEY (user_id) REFERENCES users (id),
+    UNIQUE INDEX idx_orders_user_id (user_id) VISIBLE,
+    UNIQUE INDEX idx_orders_promotion_code (promotion_code) VISIBLE
 );
 
 -- Join table for many-to-many Orders <-> Games
@@ -237,7 +245,9 @@ CREATE TABLE IF NOT EXISTS OrderGame (
     price DECIMAL(10, 2) NOT NULL,
     PRIMARY KEY (order_id, game_id),
     FOREIGN KEY (order_id) REFERENCES Orders (id) ON DELETE CASCADE,
-    FOREIGN KEY (game_id) REFERENCES Game (id)
+    FOREIGN KEY (game_id) REFERENCES Game (id),
+    UNIQUE INDEX idx_ordergame_order_id (order_id) VISIBLE,
+    UNIQUE INDEX idx_ordergame_game_id (game_id) VISIBLE
 );
 
 -- 8. Rental Table
@@ -250,7 +260,9 @@ CREATE TABLE IF NOT EXISTS RentalRecord (
     duration INT,
     returned BOOLEAN DEFAULT FALSE,
     FOREIGN KEY (user_id) REFERENCES users (id),
-    FOREIGN KEY (game_id) REFERENCES Game (id)
+    FOREIGN KEY (game_id) REFERENCES Game (id),
+    UNIQUE INDEX idx_rental_user_id (user_id) VISIBLE,
+    UNIQUE INDEX idx_rental_game_id (game_id) VISIBLE
 );
 
 -- 9. Wishlist Table
@@ -261,5 +273,7 @@ CREATE TABLE IF NOT EXISTS Wishlist (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users (id),
     FOREIGN KEY (game_id) REFERENCES Game (id),
-    UNIQUE KEY unique_wishlist (user_id, game_id)
+    UNIQUE KEY unique_wishlist (user_id, game_id),
+    UNIQUE INDEX idx_wishlist_user_id (user_id) VISIBLE,
+    UNIQUE INDEX idx_wishlist_game_id (game_id) VISIBLE
 );

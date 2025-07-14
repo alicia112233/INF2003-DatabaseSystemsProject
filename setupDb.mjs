@@ -5,7 +5,7 @@ import { parse } from 'csv-parse/sync';
 
 config();
 
-// Import the database pool using ES module syntax
+// Import the database pool
 let pool;
 try {
     const dbModule = await import('./src/app/lib/db.js');
@@ -24,16 +24,13 @@ async function importCSVtoMySQL(connection, table, filePath, insertFn) {
             return;
         }
 
-        // console.log(`Importing ${table} from ${filePath}...`);
         const csvData = readFileSync(filePath, 'utf8');
         const records = parse(csvData, { 
             columns: true, 
             skip_empty_lines: true,
             trim: true
         });
-        
-        // console.log(`Found ${records.length} records in ${table}`);
-        
+                
         for (const row of records) {
             try {
                 await insertFn(connection, row);
@@ -42,8 +39,6 @@ async function importCSVtoMySQL(connection, table, filePath, insertFn) {
                 // Continue with other rows
             }
         }
-        
-        console.log(`Successfully imported ${table}`);
     } catch (error) {
         console.error(`Error importing ${table}:`, error.message);
         throw error;
@@ -59,6 +54,9 @@ async function setupDatabase() {
         connection = await pool.getConnection();
         console.log('Database connection established');
 
+        // Use the database
+        await connection.query('USE game_haven;');
+
         // Check if schema file exists
         const sqlFilePath = join(process.cwd(), 'backend', 'mysql-queries.sql');
         if (!existsSync(sqlFilePath)) {
@@ -70,25 +68,9 @@ async function setupDatabase() {
         // Run schema
         console.log('Running database schema...');
         const sqlScript = readFileSync(sqlFilePath, 'utf8');
-        const statements = sqlScript
-            .split(';')
-            .map(stmt => stmt.trim())
-            .filter(stmt => stmt !== '' && !stmt.startsWith('--'));
-
-        for (const statement of statements) {
-            if (statement.trim()) {
-                try {
-                    await connection.query(statement + ';');
-                } catch (error) {
-                    console.warn('SQL statement warning:', error.message);
-                    // Continue - some statements might be expected to fail
-                }
-            }
-        }
-
-        // Use the database
-        await connection.query('USE game_haven;');
-        // console.log('Using game_haven database');
+        await connection.query(sqlScript);
+        console.log('✅ Schema executed successfully');
+        console.log('Importing data from CSVs...');
 
         // Import Genre
         await importCSVtoMySQL(
@@ -182,7 +164,7 @@ async function setupDatabase() {
             }
         );
 
-        console.log('✅ Database setup and CSV import completed successfully');
+        console.log('✅ Database setup and CSV import completed successfully!');
         
     } catch (error) {
         console.error('❌ Database setup failed:', error.message);

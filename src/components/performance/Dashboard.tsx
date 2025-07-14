@@ -231,24 +231,6 @@ const PerformanceDashboard: React.FC = () => {
                     </Select>
                 </FormControl>
 
-                {/* <FormControl size="small" sx={{ minWidth: 120 }}>
-                    <InputLabel>Status Code</InputLabel>
-                    <Select
-                        value={statusFilter}
-                        label="Status Code"
-                        onChange={(e) => setStatusFilter(e.target.value)}
-                    >
-                        <MenuItem value="All">All</MenuItem>
-                        <MenuItem value="200">200</MenuItem>
-                        <MenuItem value="400">400</MenuItem>
-                        <MenuItem value="401">401</MenuItem>
-                        <MenuItem value="402">402</MenuItem>
-                        <MenuItem value="403">403</MenuItem>
-                        <MenuItem value="404">404</MenuItem>
-                        <MenuItem value="Others">Others</MenuItem>
-                    </Select>
-                </FormControl> */}
-
                 <FormControl size="small" sx={{ minWidth: 120 }}>
                     <InputLabel>User Role</InputLabel>
                     <Select
@@ -380,6 +362,7 @@ const PerformanceDashboard: React.FC = () => {
                                         <MenuItem value="402">402</MenuItem>
                                         <MenuItem value="403">403</MenuItem>
                                         <MenuItem value="404">404</MenuItem>
+                                        <MenuItem value="500">500</MenuItem>
                                         <MenuItem value="Others">Others</MenuItem>
                                     </Select>
                                 </FormControl>

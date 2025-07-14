@@ -1,28 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { executeQuery, executeTransaction } from '@/lib/database';
-import type { ResultSetHeader } from 'mysql2';
 import { pool } from '@/app/lib/db';
+import type { ResultSetHeader } from 'mysql2';
 import { withPerformanceTracking } from '@/middleware/trackPerformance';
 
 // GET - Fetch all promotions
 async function getHandler() {
     try {
-        const rows = await executeQuery(
-            'SELECT * FROM promotion ORDER BY id DESC'
-        );
-
+        const [rows] = await pool.query('SELECT * FROM promotion ORDER BY id DESC');
         return NextResponse.json(rows);
     } catch (error) {
         console.error('GET /api/promotions error:', error);
-        return NextResponse.json(
-            { error: 'Failed to fetch promotions' },
-            { status: 500 }
-        );
+        return NextResponse.json({ error: 'Failed to fetch promotions' }, { status: 500 });
     }
 }
 
 // POST - Create new promotion
 async function postHandler(request: NextRequest) {
+    const conn = await pool.getConnection();
     try {
         const body = await request.json();
         const {
@@ -38,48 +32,36 @@ async function postHandler(request: NextRequest) {
             selectedGameIds,
         } = body;
 
-        const result = await executeTransaction(async (connection) => {
-            // Insert new promotion
-            const [promotionResult] = await connection.execute(
-                `INSERT INTO promotion 
-          (code, description, discountValue, discountType, maxUsage, startDate, endDate, isActive, applicableToAll)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-                [
-                    code,
-                    description,
-                    discountValue,
-                    discountType,
-                    maxUsage,
-                    startDate,
-                    endDate,
-                    isActive,
-                    applicableToAll,
-                ]
-            );
+        await conn.beginTransaction();
 
-            const promotionId = (promotionResult as ResultSetHeader).insertId;
-
-            // Update games with the new promotion ID
-            if (applicableToAll) {
-                await connection.execute('UPDATE Game SET promo_id = ?', [promotionId]);
-            } else if (selectedGameIds && selectedGameIds.length > 0) {
-                const placeholders = selectedGameIds.map(() => '?').join(',');
-                await connection.execute(
-                    `UPDATE Game SET promo_id = ? WHERE id IN (${placeholders})`,
-                    [promotionId, ...selectedGameIds]
-                );
-            }
-
-            return { promotionId };
-        });
-
-        return NextResponse.json({ message: 'Promotion created', id: result.promotionId });
-    } catch (error) {
-        console.error('POST /api/promotions error:', error);
-        return NextResponse.json(
-            { error: 'Failed to create promotion' },
-            { status: 500 }
+        const [promotionResult] = await conn.execute<ResultSetHeader>(
+            `INSERT INTO promotion 
+             (code, description, discountValue, discountType, maxUsage, startDate, endDate, isActive, applicableToAll)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [code, description, discountValue, discountType, maxUsage, startDate, endDate, isActive, applicableToAll]
         );
+
+        const promotionId = promotionResult.insertId;
+
+        if (applicableToAll) {
+            await conn.execute('UPDATE Game SET promo_id = ?', [promotionId]);
+        } else if (selectedGameIds && selectedGameIds.length > 0) {
+            const placeholders = selectedGameIds.map(() => '?').join(',');
+            await conn.execute(
+                `UPDATE Game SET promo_id = ? WHERE id IN (${placeholders})`,
+                [promotionId, ...selectedGameIds]
+            );
+        }
+
+        await conn.commit();
+
+        return NextResponse.json({ message: 'Promotion created', id: promotionId });
+    } catch (error) {
+        await conn.rollback();
+        console.error('POST /api/promotions error:', error);
+        return NextResponse.json({ error: 'Failed to create promotion' }, { status: 500 });
+    } finally {
+        conn.release();
     }
 }
 

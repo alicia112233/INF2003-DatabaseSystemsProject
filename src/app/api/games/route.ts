@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { executeQuery } from '@/lib/database';
+import { pool } from '@/app/lib/db';
 import { withPerformanceTracking } from '@/middleware/trackPerformance';
 
 function toTitleCase(str: string) {
@@ -23,7 +23,7 @@ function capitalizeFirstLetterOfParagraphs(str: string) {
 }
 
 async function handler(request: NextRequest) {
-    let connection;
+    const connection = await pool.getConnection();
     try {
         const { searchParams } = new URL(request.url);
         const genreId = searchParams.get('genre');
@@ -83,28 +83,34 @@ async function handler(request: NextRequest) {
 
         query += ' GROUP BY g.id ORDER BY g.title ASC';
 
-        const rows = await executeQuery(query, queryParams) as any[];
+        const [rows] = await connection.query(query, queryParams) as any[];
 
-        const gamesWithGenres = rows.map(game => ({
+        const gamesWithGenres = rows.map((game: any) => ({
             ...game,
             id: game.id.toString(),
             price: parseFloat(game.price),
             stockCount: game.stock_count,
-            genres: game.genre_ids ? game.genre_ids.split(',').map((id: string) => parseInt(id)) : [],
-            genreNames: game.genre_names ? game.genre_names.split(',').map((genre_name: string) => toTitleCase(genre_name)) : [],
+            genres: game.genre_ids
+                ? game.genre_ids.split(',').map((id: string) => parseInt(id))
+                : [],
+            genreNames: game.genre_names
+                ? game.genre_names.split(',').map((genre_name: string) => toTitleCase(genre_name))
+                : [],
             title: toTitleCase(game.title),
             description: capitalizeFirstLetterOfParagraphs(game.description),
-            
-            promotion: game.promo_id_alias && game.promo_isActive_alias ? {
-                id: game.promo_id_alias,
-                code: game.promo_code_alias,
-                description: game.promo_description_alias,
-                discountValue: parseFloat(game.promo_discountValue_alias),
-                discountType: game.promo_discountType_alias,
-                startDate: game.promo_startDate_alias,
-                endDate: game.promo_endDate_alias,
-                isActive: Boolean(game.promo_isActive_alias),
-            } : null,
+
+            promotion: game.promo_id_alias && game.promo_isActive_alias
+                ? {
+                      id: game.promo_id_alias,
+                      code: game.promo_code_alias,
+                      description: game.promo_description_alias,
+                      discountValue: parseFloat(game.promo_discountValue_alias),
+                      discountType: game.promo_discountType_alias,
+                      startDate: game.promo_startDate_alias,
+                      endDate: game.promo_endDate_alias,
+                      isActive: Boolean(game.promo_isActive_alias),
+                  }
+                : null,
             promo_code: game.promo_code_alias || null,
         }));
 
@@ -115,6 +121,8 @@ async function handler(request: NextRequest) {
             { error: 'Failed to fetch games', details: error.message },
             { status: 500 }
         );
+    } finally {
+        connection.release();
     }
 }
 
