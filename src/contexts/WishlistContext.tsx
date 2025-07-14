@@ -16,7 +16,7 @@ interface WishlistState {
 
 interface WishlistContextType {
     wishlist: WishlistItem[];
-    addToWishlist: (item: WishlistItem) => void;
+    addToWishlist: (item: WishlistItem) => Promise<{ success: boolean; message: string }>;
     removeFromWishlist: (itemId: string) => void;
     isInWishlist: (itemId: string) => boolean;
     getWishlistCount: () => number;

@@ -69,12 +69,28 @@ const PromotionManagement = () => {
         try {
             setLoading(true);
             const response = await fetch('/api/promotions');
-            if (response.ok) {
-                const data = await response.json();
-                setPromotions(data);
-            } else {
-                throw new Error('Failed to fetch promotions');
-            }
+            if (!response.ok) throw new Error('Failed to fetch promotions');
+            
+            const data: Promotion[] = await response.json();
+
+            // Fetch assigned games for each promotion in parallel
+            const enrichedData = await Promise.all(
+                data.map(async (promotion) => {
+                    try {
+                        const res = await fetch(`/api/promotions/${promotion.id}/assigned-games`);
+                        if (res.ok) {
+                            const games = await res.json();
+                            return { ...promotion, selectedGames: games };
+                        } else {
+                            return { ...promotion, selectedGames: [] };
+                        }
+                    } catch {
+                        return { ...promotion, selectedGames: [] };
+                    }
+                })
+            );
+
+            setPromotions(enrichedData);
         } catch (error) {
             showSnackbar('Failed to fetch promotions', 'error');
         } finally {
@@ -314,6 +330,7 @@ const PromotionManagement = () => {
                                             <TableCell>Usage</TableCell>
                                             <TableCell>Start Date</TableCell>
                                             <TableCell>End Date</TableCell>
+                                            <TableCell>Applied Games</TableCell>
                                             <TableCell>Status</TableCell>
                                             <TableCell>Actions</TableCell>
                                         </TableRow>
@@ -354,6 +371,23 @@ const PromotionManagement = () => {
                                                     </TableCell>
                                                     <TableCell>{formatDate(promotion.startDate)}</TableCell>
                                                     <TableCell>{formatDate(promotion.endDate)}</TableCell>
+                                                    <TableCell sx={{ maxWidth: 200 }}>
+                                                        {promotion.applicableToAll ? (
+                                                            <Chip label="All Games" size="small" color="info" />
+                                                        ) : (
+                                                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                                                                {promotion.selectedGames?.length ? (
+                                                                    promotion.selectedGames.map((game) => (
+                                                                        <Chip key={game.id} label={game.title} size="small" />
+                                                                    ))
+                                                                ) : (
+                                                                    <Typography variant="body2" color="text.secondary">
+                                                                        No games
+                                                                    </Typography>
+                                                                )}
+                                                            </Box>
+                                                        )}
+                                                    </TableCell>
                                                     <TableCell>
                                                         <Chip
                                                             label={status.label}

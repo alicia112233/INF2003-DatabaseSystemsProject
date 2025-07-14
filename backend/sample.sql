@@ -7,27 +7,29 @@ SET profiling = 1;
 
 -- 1. Create the database
 CREATE DATABASE IF NOT EXISTS game_haven;
+
 USE game_haven;
 
 -- 2. Users table
 CREATE TABLE IF NOT EXISTS users (
-  id INT NOT NULL AUTO_INCREMENT,
-  firstName VARCHAR(100) NOT NULL,
-  lastName VARCHAR(100) NOT NULL,
-  gender CHAR(1) NOT NULL,
-  contactNo VARCHAR(20) NOT NULL,
-  email VARCHAR(200) NOT NULL,
-  password VARCHAR(200) NOT NULL,
-  is_admin CHAR(1) NOT NULL DEFAULT 'F',
-  avatarUrl VARCHAR(200) NOT NULL,
-  createdAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  paymentMethod VARCHAR(45) NULL,
-  loyaltyPoints INT NULL DEFAULT 0,
-  resetToken VARCHAR(255) NULL,
-  resetTokenExpiry DATETIME NULL,
-  PRIMARY KEY (id),
-  UNIQUE INDEX email_UNIQUE (email ASC) VISIBLE,
-  UNIQUE INDEX id_UNIQUE (id ASC) VISIBLE
+    id INT NOT NULL AUTO_INCREMENT,
+    firstName VARCHAR(100) NOT NULL,
+    lastName VARCHAR(100) NOT NULL,
+    gender CHAR(1) NOT NULL,
+    contactNo VARCHAR(20) NOT NULL,
+    email VARCHAR(200) NOT NULL,
+    password VARCHAR(200) NOT NULL,
+    is_admin CHAR(1) NOT NULL DEFAULT 'F',
+    avatarUrl VARCHAR(200) NOT NULL,
+    createdAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    paymentMethod VARCHAR(45) NULL,
+    loyaltyPoints INT NULL DEFAULT 0,
+    resetToken VARCHAR(255) NULL,
+    resetTokenExpiry DATETIME NULL,
+    is_Deleted CHAR(1) NOT NULL DEFAULT 'F',
+    PRIMARY KEY (id),
+    UNIQUE INDEX email_UNIQUE (email ASC) VISIBLE,
+    UNIQUE INDEX id_UNIQUE (id ASC) VISIBLE
 );
 
 DROP TRIGGER IF EXISTS set_default_avatar_users;
@@ -45,12 +47,50 @@ SET NEW.avatarUrl =
 -- Default password: Password1234
 
 -- Admin account
-INSERT IGNORE INTO game_haven.users (firstName, lastName, gender, contactNo, email, password, is_admin, avatarUrl)
-VALUES ('Qwerty', 'Tan', 'M', '84738837', 'qwerty@admin.com', '$2b$10$lk0vHQMPHYMtbX4BtCzJ.OCGgQ6qcSYQGOixa4Y4hEsrmNMC7P.v2', 'T', '/images/profile/user-1.jpg');
+INSERT IGNORE INTO
+    game_haven.users (
+        firstName,
+        lastName,
+        gender,
+        contactNo,
+        email,
+        password,
+        is_admin,
+        avatarUrl
+    )
+VALUES (
+        'Qwerty',
+        'Tan',
+        'M',
+        '84738837',
+        'qwerty@admin.com',
+        '$2b$10$lk0vHQMPHYMtbX4BtCzJ.OCGgQ6qcSYQGOixa4Y4hEsrmNMC7P.v2',
+        'T',
+        '/images/profile/user-1.jpg'
+    );
 
 -- user account
-INSERT IGNORE INTO game_haven.users (firstName, lastName, gender, contactNo, email, password, is_admin, avatarUrl) 
-VALUES ('alicia', 'tang', 'F', '80354633', 'aliciatangweishan@gmail.com', '$2b$10$lk0vHQMPHYMtbX4BtCzJ.OCGgQ6qcSYQGOixa4Y4hEsrmNMC7P.v2', 'F', '/images/profile/user-2.jpg');
+INSERT IGNORE INTO
+    game_haven.users (
+        firstName,
+        lastName,
+        gender,
+        contactNo,
+        email,
+        password,
+        is_admin,
+        avatarUrl
+    )
+VALUES (
+        'alicia',
+        'tang',
+        'F',
+        '80354633',
+        'aliciatangweishan@gmail.com',
+        '$2b$10$lk0vHQMPHYMtbX4BtCzJ.OCGgQ6qcSYQGOixa4Y4hEsrmNMC7P.v2',
+        'F',
+        '/images/profile/user-2.jpg'
+    );
 
 -- 3. Genre Table
 CREATE TABLE IF NOT EXISTS Genre (
@@ -59,34 +99,35 @@ CREATE TABLE IF NOT EXISTS Genre (
 );
 
 -- Insert Genre data
-INSERT IGNORE INTO game_haven.Genre (id, name) VALUES
-(1, 'action'),
-(2, 'adventure'),
-(3, 'animation modeling'),
-(4, 'audio production'),
-(5, 'casual'),
-(6, 'design illustration'),
-(7, 'early access'),
-(8, 'education'),
-(9, 'free to play'),
-(10, 'game development'),
-(11, 'gore'),
-(12, 'indie'),
-(13, 'massively multiplayer'),
-(14, 'nudity'),
-(15, 'photo editing'),
-(16, 'racing'),
-(17, 'rpg'),
-(18, 'sexual content'),
-(19, 'simulation'),
-(20, 'software training'),
-(21, 'sports'),
-(22, 'strategy'),
-(23, 'survival'),
-(24, 'utilities'),
-(25, 'video production'),
-(26, 'violent'),
-(27, 'web publishing');
+INSERT IGNORE INTO
+    game_haven.Genre (id, name)
+VALUES (1, 'action'),
+    (2, 'adventure'),
+    (3, 'animation modeling'),
+    (4, 'audio production'),
+    (5, 'casual'),
+    (6, 'design illustration'),
+    (7, 'early access'),
+    (8, 'education'),
+    (9, 'free to play'),
+    (10, 'game development'),
+    (11, 'gore'),
+    (12, 'indie'),
+    (13, 'massively multiplayer'),
+    (14, 'nudity'),
+    (15, 'photo editing'),
+    (16, 'racing'),
+    (17, 'rpg'),
+    (18, 'sexual content'),
+    (19, 'simulation'),
+    (20, 'software training'),
+    (21, 'sports'),
+    (22, 'strategy'),
+    (23, 'survival'),
+    (24, 'utilities'),
+    (25, 'video production'),
+    (26, 'violent'),
+    (27, 'web publishing');
 
 -- 4. Promotion Table
 CREATE TABLE IF NOT EXISTS Promotion (
@@ -106,9 +147,43 @@ CREATE TABLE IF NOT EXISTS Promotion (
 );
 
 -- Insert Promotion data
-INSERT IGNORE INTO game_haven.Promotion (id, code, description, discountValue, discountType, maxUsage, startDate, endDate, isActive, applicableToAll) VALUES
-(1, 'BLACKFRIDAY', 'Black Friday Sale', 20.00, 'percentage', 100, '2023-11-24', '2023-11-30', TRUE, TRUE),
-(2, 'SUMMER2023', 'Summer Sale 2023', 15.00, 'fixed', 50, '2023-06-01', '2023-06-30', TRUE, TRUE);
+INSERT IGNORE INTO
+    game_haven.Promotion (
+        id,
+        code,
+        description,
+        discountValue,
+        discountType,
+        maxUsage,
+        startDate,
+        endDate,
+        isActive,
+        applicableToAll
+    )
+VALUES (
+        1,
+        'BLACKFRIDAY',
+        'Black Friday Sale',
+        20.00,
+        'percentage',
+        100,
+        '2023-11-24',
+        '2023-11-30',
+        TRUE,
+        TRUE
+    ),
+    (
+        2,
+        'SUMMER2023',
+        'Summer Sale 2023',
+        15.00,
+        'fixed',
+        50,
+        '2023-06-01',
+        '2023-06-30',
+        TRUE,
+        TRUE
+    );
 
 -- 5. Game Table (references Promotion table)
 CREATE TABLE IF NOT EXISTS Game (
@@ -116,7 +191,7 @@ CREATE TABLE IF NOT EXISTS Game (
     title VARCHAR(150) NOT NULL,
     description TEXT,
     platform VARCHAR(50),
-    price DECIMAL(10,2),
+    price DECIMAL(10, 2),
     image_url VARCHAR(512),
     release_date DATE,
     is_digital BOOLEAN DEFAULT FALSE,
@@ -124,19 +199,24 @@ CREATE TABLE IF NOT EXISTS Game (
     promo_id INT,
     head_image_url VARCHAR(255),
     screenshot_url VARCHAR(255),
-    FOREIGN KEY (promo_id) REFERENCES Promotion(id)
+    FOREIGN KEY (promo_id) REFERENCES Promotion (id)
 );
 
 -- Update existing games to have stock if they currently have 0
-UPDATE Game SET stock_count = 10 WHERE stock_count = 0 OR stock_count IS NULL;
+UPDATE Game
+SET
+    stock_count = 10
+WHERE
+    stock_count = 0
+    OR stock_count IS NULL;
 
 -- 6. GameGenre Table (references Game and Genre tables)
 CREATE TABLE IF NOT EXISTS GameGenre (
     game_id INT NOT NULL,
     genre_id INT NOT NULL,
     PRIMARY KEY (game_id, genre_id),
-    FOREIGN KEY (game_id) REFERENCES Game(id),
-    FOREIGN KEY (genre_id) REFERENCES Genre(id)
+    FOREIGN KEY (game_id) REFERENCES Game (id),
+    FOREIGN KEY (genre_id) REFERENCES Genre (id)
 );
 
 -- 7. Order Table
@@ -144,9 +224,10 @@ CREATE TABLE IF NOT EXISTS GameGenre (
 CREATE TABLE IF NOT EXISTS Orders (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
-    total DECIMAL(10,2) NOT NULL,
+    total DECIMAL(10, 2) NOT NULL,
     purchase_date DATE NOT NULL,
-    FOREIGN KEY (user_id) REFERENCES users(id)
+    promotion_code VARCHAR(50) NULL,
+    FOREIGN KEY (user_id) REFERENCES users (id)
 );
 
 -- Join table for many-to-many Orders <-> Games
@@ -154,10 +235,10 @@ CREATE TABLE IF NOT EXISTS OrderGame (
     order_id INT NOT NULL,
     game_id INT NOT NULL,
     quantity INT NOT NULL DEFAULT 1,
-    price DECIMAL(10,2) NOT NULL,
+    price DECIMAL(10, 2) NOT NULL,
     PRIMARY KEY (order_id, game_id),
-    FOREIGN KEY (order_id) REFERENCES Orders(id) ON DELETE CASCADE,
-    FOREIGN KEY (game_id) REFERENCES Game(id)
+    FOREIGN KEY (order_id) REFERENCES Orders (id) ON DELETE CASCADE,
+    FOREIGN KEY (game_id) REFERENCES Game (id)
 );
 
 -- 8. Rental Table
@@ -169,8 +250,8 @@ CREATE TABLE IF NOT EXISTS RentalRecord (
     return_date DATE,
     duration INT,
     returned BOOLEAN DEFAULT FALSE,
-    FOREIGN KEY (user_id) REFERENCES users(id),
-    FOREIGN KEY (game_id) REFERENCES Game(id)
+    FOREIGN KEY (user_id) REFERENCES users (id),
+    FOREIGN KEY (game_id) REFERENCES Game (id)
 );
 
 -- 9. Wishlist Table
@@ -179,8 +260,8 @@ CREATE TABLE IF NOT EXISTS Wishlist (
     user_id INT NOT NULL,
     game_id INT NOT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id),
-    FOREIGN KEY (game_id) REFERENCES Game(id),
+    FOREIGN KEY (user_id) REFERENCES users (id),
+    FOREIGN KEY (game_id) REFERENCES Game (id),
     UNIQUE KEY unique_wishlist (user_id, game_id)
 );
 

@@ -43,10 +43,9 @@ const Header = ({ toggleMobileSidebar }: ItemType) => {
                 if (!localStorageLogin && cookieLogin) {
                     console.log('Syncing localStorage with cookies');
                     localStorage.setItem('isLoggedIn', 'true');
-                    // You might want to set other localStorage items here if needed
                 }
 
-                const finalLoginStatus = cookieLogin; // Use cookies as the source of truth
+                const finalLoginStatus = cookieLogin;
                 setIsLoggedIn(finalLoginStatus);
 
                 // Setup inactivity tracker if user is logged in

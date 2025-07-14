@@ -35,6 +35,7 @@ import {
     Person as PersonIcon,
     AdminPanelSettings as AdminIcon,
     People as PeopleIcon,
+    CheckCircle
 } from '@mui/icons-material';
 import PageContainer from '@/app/(DashboardLayout)/components/container/PageContainer';
 import DashboardCard from '@/app/(DashboardLayout)/components/shared/DashboardCard';
@@ -51,6 +52,7 @@ interface User {
     is_admin: 'T' | 'F';
     avatarUrl: string;
     createdAt: string;
+    is_Deleted: 'T' | 'F';
     loyaltyPoints: number;
 }
 
@@ -74,6 +76,7 @@ const UserManagement = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [roleFilter, setRoleFilter] = useState('');
     const [genderFilter, setGenderFilter] = useState('');
+    const [statusFilter, setStatusFilter] = useState('');
 
     // Pagination
     const [page, setPage] = useState(0);
@@ -115,10 +118,11 @@ const UserManagement = () => {
 
             const matchesRole = roleFilter === '' || user.is_admin === roleFilter;
             const matchesGender = genderFilter === '' || user.gender === genderFilter;
+            const matchesStatus = statusFilter === '' || user.is_Deleted === statusFilter;
 
-            return matchesSearch && matchesRole && matchesGender;
+            return matchesSearch && matchesRole && matchesGender && matchesStatus;
         });
-    }, [users, searchTerm, roleFilter, genderFilter]);
+    }, [users, searchTerm, roleFilter, genderFilter, statusFilter]);
 
     // Paginated users
     const paginatedUsers = useMemo(() => {
@@ -350,9 +354,11 @@ const UserManagement = () => {
                         searchTerm={searchTerm}
                         roleFilter={roleFilter}
                         genderFilter={genderFilter}
+                        statusFilter={statusFilter}
                         onSearchChange={setSearchTerm}
                         onRoleFilterChange={setRoleFilter}
                         onGenderFilterChange={setGenderFilter}
+                        onStatusFilterChange={setStatusFilter}
                     />
 
                     <TableContainer component={Paper}>
@@ -367,6 +373,7 @@ const UserManagement = () => {
                                     <TableCell>Role</TableCell>
                                     <TableCell>Loyalty Points</TableCell>
                                     <TableCell>Created At</TableCell>
+                                    <TableCell>Deleted?</TableCell>
                                     <TableCell>Actions</TableCell>
                                 </TableRow>
                             </TableHead>
@@ -402,6 +409,14 @@ const UserManagement = () => {
                                         </TableCell>
                                         <TableCell>{user.loyaltyPoints || 0}</TableCell>
                                         <TableCell>{formatDate(user.createdAt)}</TableCell>
+                                        <TableCell>
+                                            <Chip
+                                                label={user.is_Deleted === 'T' ? 'True' : 'False'}
+                                                size="small"
+                                                color={user.is_Deleted === 'T' ? 'error' : 'success'}
+                                                icon={user.is_Deleted === 'T' ? <DeleteIcon /> : <CheckCircle />}
+                                            />
+                                        </TableCell>
                                         <TableCell>
                                             <Tooltip title="Edit User">
                                                 <IconButton
@@ -487,7 +502,8 @@ const UserManagement = () => {
                     <DialogTitle>Confirm Delete</DialogTitle>
                     <DialogContent>
                         <Typography>
-                            Are you sure you want to delete user &quot;{userToDelete?.firstName} {userToDelete?.lastName}&quot;?
+
+                            Are you sure you want to delete user "{userToDelete?.firstName} {userToDelete?.lastName}"?
                             This action cannot be undone.
                         </Typography>
                     </DialogContent>

@@ -51,14 +51,23 @@ const AddToCartButton: React.FC<AddToCartButtonProps> = ({
                 // Check if it's already a Product or needs conversion from Game
                 if (product.genreNames !== undefined || product.genres !== undefined) {
                     // It's likely a Game object, convert it
-                    productData = gameToProduct(product);
+                    productData = gameToProduct(product, product.promotionObj || product.promotion || null);
                 } else {
                     // Assume it's already a Product
                     productData = product as Product;
                 }
                 
-                // Create cart item
-                const cartItem = productToCartItem(productData, 1);
+                // Create cart item with promotion info
+                const cartItem = productToCartItem(productData, product.promotionObj || product.promotion || null, 1);
+                
+                // Add promo_code if available from promotionObj or promotion
+                const promoSource = product.promotionObj || product.promotion;
+                if (promoSource && promoSource.code) {
+                    cartItem.promo_code = promoSource.code;
+                    console.log('Setting promo code from promotion:', promoSource.code);
+                } else {
+                    console.log('No promotion code found:', { promotionObj: product.promotionObj, promotion: product.promotion });
+                }
                 
                 // Use context method - it will handle localStorage automatically
                 addToCart(cartItem);
@@ -80,6 +89,7 @@ const AddToCartButton: React.FC<AddToCartButtonProps> = ({
             {...buttonProps}
             onClick={handleAddToCart}
             disabled={disabled || product.inStock === false}
+            variant="contained"
         >
             {buttonText}
         </Button>

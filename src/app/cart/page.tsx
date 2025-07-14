@@ -62,6 +62,11 @@ const CartPage: React.FC = () => {
         try {
             // Process purchases if any
             if (purchaseItems.length > 0) {
+                // Get the first promotion code from applied promo codes (for now, using first one)
+                const promotionCode = cart.appliedPromoCodes && cart.appliedPromoCodes.length > 0 
+                    ? cart.appliedPromoCodes[0] 
+                    : null;
+
                 const orderData = {
                     email,
                     total: purchaseItems.reduce((sum, item) => sum + (item.price * item.quantity), 0),
@@ -70,7 +75,8 @@ const CartPage: React.FC = () => {
                         title: item.title,
                         quantity: item.quantity,
                         price: item.price
-                    }))
+                    })),
+                    promotionCode: promotionCode // Pass promotion code to backend
                 };
 
                 const orderRes = await fetch('/api/orders', {
@@ -176,19 +182,69 @@ const CartPage: React.FC = () => {
                         </Button>
                     </Paper>
                 ) : (
-                    <Grid container spacing={3}>
-                        <Grid size={{ xs: 12, md: 8 }}>
-                            <Box>
-                                {cart.items.map((item: CartItemType, index: number) => (
-                                    <CartItem key={`${item.productId}-${index}`} item={item} />
-                                ))}
-                            </Box>
-                        </Grid>
+                    <>
+                        {/* Applied Promotion Codes Section */}
+                        {cart.appliedPromoCodes && cart.appliedPromoCodes.length > 0 ? (
+                            <Paper sx={{ p: 3, mb: 3, bgcolor: 'success.light', color: 'success.contrastText' }}>
+                                <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                    🎉 Promotion{cart.appliedPromoCodes.length > 1 ? 's' : ''} Applied!
+                                </Typography>
+                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                                    {cart.appliedPromoCodes.map((code, index) => (
+                                        <Box
+                                            key={index}
+                                            sx={{
+                                                bgcolor: 'white',
+                                                color: 'success.main',
+                                                px: 2,
+                                                py: 0.5,
+                                                borderRadius: 1,
+                                                fontWeight: 'bold',
+                                                fontSize: '0.875rem'
+                                            }}
+                                        >
+                                            {code}
+                                        </Box>
+                                    ))}
+                                </Box>
+                                <Typography variant="body2" sx={{ mt: 1, opacity: 0.9 }}>
+                                    Your promotional discount{cart.appliedPromoCodes.length > 1 ? 's have' : ' has'} been applied to eligible items in your cart.
+                                </Typography>
+                            </Paper>
+                        ) : (
+                            // Check if there are items with discounts but no promo codes tracked
+                            cart.items.some(item => item.originalPrice && item.originalPrice > item.price) && (
+                                <Paper sx={{ p: 3, mb: 3, bgcolor: 'warning.light', color: 'warning.contrastText' }}>
+                                    <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                        💰 Discounts Applied!
+                                    </Typography>
+                                    <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                                        You have items with promotional discounts in your cart.
+                                    </Typography>
+                                    <Typography variant="body2" sx={{ mt: 1, fontSize: '0.875rem' }}>
+                                        Total savings: ${cart.items.reduce((sum, item) => {
+                                            const original = item.originalPrice || item.price;
+                                            return sum + ((original - item.price) * item.quantity);
+                                        }, 0).toFixed(2)}
+                                    </Typography>
+                                </Paper>
+                            )
+                        )}
 
-                        <Grid size={{ xs: 12, md: 4 }}>
-                            <CartSummary onCheckout={handleCheckout} />
+                        <Grid container spacing={3}>
+                            <Grid size={{ xs: 12, md: 8 }}>
+                                <Box>
+                                    {cart.items.map((item: CartItemType, index: number) => (
+                                        <CartItem key={`${item.productId}-${index}`} item={item} />
+                                    ))}
+                                </Box>
+                            </Grid>
+
+                            <Grid size={{ xs: 12, md: 4 }}>
+                                <CartSummary onCheckout={handleCheckout} />
+                            </Grid>
                         </Grid>
-                    </Grid>
+                    </>
                 )}
             </Container>
         </Layout>
