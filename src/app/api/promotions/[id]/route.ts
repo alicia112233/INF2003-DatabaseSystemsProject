@@ -17,7 +17,7 @@ export async function GET(
 
         const promotions = promotionRows as any[];
         if (promotions.length === 0) {
-            await connection.release();
+            connection.release();
             return NextResponse.json({ error: 'Promotion not found' }, { status: 404 });
         }
 
@@ -33,7 +33,7 @@ export async function GET(
             selectedGameIds = (gameRows as any[]).map(row => row.id);
         }
 
-        await connection.release();
+        connection.release();
 
         return NextResponse.json({
             ...promotion,
@@ -116,14 +116,13 @@ export async function PUT(
         );
     } finally {
         if (connection) {
-            await connection.release();
+            connection.release();
         }
     }
 }
 
 // DELETE promotion
 export async function DELETE(
-    request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
@@ -137,7 +136,7 @@ export async function DELETE(
             [id]
         );
 
-        await connection.release();
+        connection.release();
 
         return NextResponse.json({ message: 'Promotion deleted successfully' });
     } catch (error) {

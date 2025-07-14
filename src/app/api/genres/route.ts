@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { pool } from '@/app/lib/db';
+import { RowDataPacket } from 'mysql2';
 import { withPerformanceTracking } from '@/middleware/trackPerformance';
 
 function toProperCase(str: string) {
@@ -11,17 +12,10 @@ function toProperCase(str: string) {
 }
 
 async function handler() {
-    let connection;
     try {
-        connection = await pool.getConnection();
-
-        const [rows] = await connection.execute(`
-        SELECT DISTINCT id, name 
-        FROM Genre 
-        ORDER BY name ASC
-        `);
-
-        connection.release();
+        const [rows] = await pool.query<RowDataPacket[]>(
+            'SELECT id, name FROM Genre ORDER BY name ASC'
+        );
 
         // Format the genre names to proper case
         const formattedGenres = (rows as any[]).map(genre => ({

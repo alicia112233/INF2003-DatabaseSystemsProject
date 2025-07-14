@@ -144,8 +144,7 @@ CREATE TABLE IF NOT EXISTS Promotion (
     applicableToAll BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    UNIQUE INDEX idx_promotion_isActive (isActive) VISIBLE,
-    UNIQUE INDEX idx_promotion_startDate_endDate (startDate, endDate) VISIBLE
+    INDEX idx_promotion_startDate_endDate (startDate, endDate) VISIBLE
 );
 
 -- Insert some Promotion data
@@ -202,7 +201,7 @@ CREATE TABLE IF NOT EXISTS Game (
     head_image_url VARCHAR(255),
     screenshot_url VARCHAR(255),
     FOREIGN KEY (promo_id) REFERENCES Promotion (id),
-    UNIQUE INDEX idx_game_promo_id (promo_id) VISIBLE,
+    INDEX idx_game_promo_id (promo_id) VISIBLE,
     INDEX idx_game_title (title) VISIBLE
 );
 

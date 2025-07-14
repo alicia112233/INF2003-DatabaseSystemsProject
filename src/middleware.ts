@@ -111,7 +111,8 @@ export function middleware(request: NextRequest) {
         }
 
         // Admin-only routes
-        if (request.nextUrl.pathname.startsWith('/admin') || request.nextUrl.pathname.includes('DashboardLayout') || request.nextUrl.pathname.includes('/performance-dashboard')) {
+        if (request.nextUrl.pathname.startsWith('/admin') || request.nextUrl.pathname.includes('DashboardLayout') || 
+            request.nextUrl.pathname.includes('/performance-dashboard') || request.nextUrl.pathname.includes('/promotion-management')) {
             if (!isLoggedIn || userRole !== 'admin') {
                 return NextResponse.redirect(new URL('/', request.url));
             }
