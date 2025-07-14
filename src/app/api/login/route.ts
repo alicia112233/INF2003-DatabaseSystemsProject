@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { pool } from '@/app/lib/db';
 import bcrypt from 'bcrypt';
+import { executeQuery } from '@/lib/database';
 import { RowDataPacket } from 'mysql2';
 import { withPerformanceTracking } from '@/middleware/trackPerformance';
 
@@ -22,9 +23,10 @@ async function postHandler(req: NextRequest) {
         connection = await pool.getConnection();
 
         // Query the unified users table
-        const [users] = await connection.query<(RowDataPacket)[]>(
-            'SELECT * FROM users WHERE email = ?', [email]
-        );
+        const users = await executeQuery(
+            'SELECT * FROM users WHERE email = ?', 
+            [email]
+        ) as RowDataPacket[];
 
         if (!Array.isArray(users) || users.length === 0) {
             console.log("No user found with this email");
@@ -129,7 +131,7 @@ async function postHandler(req: NextRequest) {
         );
     } finally {
         if (connection) {
-            await connection.release();
+            connection.release();
         }
     }
 }

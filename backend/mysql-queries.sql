@@ -225,6 +225,7 @@ CREATE TABLE IF NOT EXISTS Orders (
     user_id INT NOT NULL,
     total DECIMAL(10, 2) NOT NULL,
     purchase_date DATE NOT NULL,
+    promotion_code VARCHAR(50) NULL,
     FOREIGN KEY (user_id) REFERENCES users (id)
 );
 

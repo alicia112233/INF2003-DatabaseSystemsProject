@@ -68,8 +68,8 @@ export async function POST(request: NextRequest) {
       `, [
         userId,
         gameId,
-        rentalDate.toISOString().split('T')[0],
-        returnDate.toISOString().split('T')[0],
+        rentalDate.toLocaleDateString('en-CA'),
+        returnDate.toLocaleDateString('en-CA'),
         days,
         false
       ]);
@@ -94,8 +94,8 @@ export async function POST(request: NextRequest) {
           gameTitle: game.title,
           dailyRate,
           totalCost,
-          rentalDate: rentalDate.toISOString().split('T')[0],
-          returnDate: returnDate.toISOString().split('T')[0],
+          rentalDate: rentalDate.toLocaleDateString('en-CA'),
+          returnDate: returnDate.toLocaleDateString('en-CA'),
           daysRented: days,
         }
       }, { status: 201 });

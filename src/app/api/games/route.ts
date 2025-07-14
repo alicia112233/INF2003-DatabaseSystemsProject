@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { pool } from '@/app/lib/db';
+import { executeQuery } from '@/lib/database';
 import { withPerformanceTracking } from '@/middleware/trackPerformance';
 
 function toTitleCase(str: string) {
@@ -29,8 +29,6 @@ async function handler(request: NextRequest) {
         const genreId = searchParams.get('genre');
         const searchTerm = searchParams.get('search');
         const stockFilter = searchParams.get('stock');
-
-        connection = await pool.getConnection();
 
         let query = `
             SELECT 
@@ -85,9 +83,9 @@ async function handler(request: NextRequest) {
 
         query += ' GROUP BY g.id ORDER BY g.title ASC';
 
-        const [rows] = await connection.execute(query, queryParams);
+        const rows = await executeQuery(query, queryParams) as any[];
 
-        const gamesWithGenres = (rows as any[]).map(game => ({
+        const gamesWithGenres = rows.map(game => ({
             ...game,
             id: game.id.toString(),
             price: parseFloat(game.price),
@@ -117,10 +115,6 @@ async function handler(request: NextRequest) {
             { error: 'Failed to fetch games', details: error.message },
             { status: 500 }
         );
-    } finally {
-        if (connection) {
-            connection.release();
-        }
     }
 }
 

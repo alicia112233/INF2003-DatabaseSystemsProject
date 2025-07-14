@@ -60,13 +60,20 @@ const cartReducer = (state: Cart, action: CartAction): Cart => {
                        
             const totals = calculateCartTotals(updatedItems);
             const appliedPromoCodes = getAppliedPromoCodes(updatedItems);
+            
+            // Also add any new promotion code from the added item
+            const existingPromoCodes = state.appliedPromoCodes || [];
+            let newPromoCodes = [...existingPromoCodes];
+            if (action.payload.promo_code && !newPromoCodes.includes(action.payload.promo_code)) {
+                newPromoCodes.push(action.payload.promo_code);
+            }
                        
             return {
                 ...state,
                 items: updatedItems,
                 totalAmount: totals.discountedTotal,
                 totalSavings: totals.totalSavings,
-                appliedPromoCodes: appliedPromoCodes || [],
+                appliedPromoCodes: newPromoCodes,
                 updatedAt: new Date()
             };
                    
