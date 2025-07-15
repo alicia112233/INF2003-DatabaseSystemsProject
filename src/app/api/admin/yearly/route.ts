@@ -13,40 +13,69 @@ export async function GET(req: NextRequest) {
   try {
     const connection = await mysql.createConnection(dbConfig);
 
-    // Get current year and last year dynamically in JS
     const currentYear = new Date().getFullYear();
     const lastYear = currentYear - 1;
 
-    // Query to get totals grouped by year, filtered to last year and current year
-    const [rows]: any = await connection.execute(
+    // 1️⃣ Orders revenue grouped by year
+    const [orderRows]: any = await connection.execute(
       `
       SELECT
-        YEAR(o.purchase_date) AS order_year,
+        YEAR(o.purchase_date) AS year,
         SUM(
           IF(p.discountValue IS NOT NULL,
-             g.price * (1 - p.discountValue / 100),
-             g.price)
+             og.price * (1 - p.discountValue / 100),
+             og.price)
         ) AS total
       FROM orders o
       JOIN ordergame og ON o.id = og.order_id
       JOIN game g ON g.id = og.game_id
       LEFT JOIN promotion p ON g.promo_id = p.id
       WHERE YEAR(o.purchase_date) IN (?, ?)
-      GROUP BY YEAR(o.purchase_date);
+      GROUP BY YEAR(o.purchase_date)
+      `,
+      [lastYear, currentYear]
+    );
+
+    // 2️⃣ Rental revenue grouped by year
+    const [rentalRows]: any = await connection.execute(
+      `
+      SELECT
+        YEAR(r.depart_date) AS year,
+        SUM(
+          g.price * 0.25 * r.duration
+        ) AS total
+      FROM rentalrecord r
+      JOIN game g ON g.id = r.game_id
+      WHERE YEAR(r.depart_date) IN (?, ?)
+      GROUP BY YEAR(r.depart_date)
       `,
       [lastYear, currentYear]
     );
 
     await connection.end();
 
-    // Initialize totals
-    let totalCurrentYear = 0;
-    let totalLastYear = 0;
+    // 3️⃣ Initialize totals
+    const revenueMap: Record<number, number> = {
+      [currentYear]: 0,
+      [lastYear]: 0,
+    };
 
-    for (const row of rows) {
-      if (row.order_year === currentYear) totalCurrentYear = Number(row.total) || 0;
-      else if (row.order_year === lastYear) totalLastYear = Number(row.total) || 0;
+    // Add order totals
+    for (const row of orderRows) {
+      if (row.year === currentYear || row.year === lastYear) {
+        revenueMap[row.year] += Number(row.total) || 0;
+      }
     }
+
+    // Add rental totals
+    for (const row of rentalRows) {
+      if (row.year === currentYear || row.year === lastYear) {
+        revenueMap[row.year] += Number(row.total) || 0;
+      }
+    }
+
+    const totalCurrentYear = revenueMap[currentYear];
+    const totalLastYear = revenueMap[lastYear];
 
     const percentageChange = totalLastYear > 0
       ? (((totalCurrentYear - totalLastYear) / totalLastYear) * 100).toFixed(2)

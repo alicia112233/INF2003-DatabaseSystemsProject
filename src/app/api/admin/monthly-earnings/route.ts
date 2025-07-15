@@ -17,26 +17,42 @@ export async function GET(req: NextRequest) {
   try {
     const connection = await mysql.createConnection(dbConfig);
 
-    // Earnings per day for given month/year
+    // Query: Get earnings per day from orders and rental records, combined
     const [rows]: any = await connection.execute(
       `
-      SELECT 
-        DAY(o.purchase_date) as day,
-        SUM(
-          IF(p.discountValue IS NOT NULL,
-            og.price * (1 - p.discountValue / 100) * og.quantity,
-            og.price * og.quantity
-          )
-        ) AS earnings
-      FROM orders o
-      JOIN ordergame og ON o.id = og.order_id
-      JOIN game g ON g.id = og.game_id
-      LEFT JOIN promotion p ON g.promo_id = p.id
-      WHERE MONTH(o.purchase_date) = ? AND YEAR(o.purchase_date) = ?
+      SELECT day, SUM(earnings) AS earnings
+      FROM (
+        -- Orders revenue
+        SELECT 
+          DAY(o.purchase_date) AS day,
+          SUM(
+            IF(p.discountValue IS NOT NULL,
+              og.price * (1 - p.discountValue / 100) * og.quantity,
+              og.price * og.quantity
+            )
+          ) AS earnings
+        FROM orders o
+        JOIN ordergame og ON o.id = og.order_id
+        JOIN game g ON g.id = og.game_id
+        LEFT JOIN promotion p ON g.promo_id = p.id
+        WHERE MONTH(o.purchase_date) = ? AND YEAR(o.purchase_date) = ?
+        GROUP BY day
+
+        UNION ALL
+
+        -- Rental revenue
+        SELECT 
+          DAY(r.depart_date) AS day,
+          SUM(g.price * 0.25 * r.duration) AS earnings
+        FROM rentalrecord r
+        JOIN game g ON g.id = r.game_id
+        WHERE MONTH(r.depart_date) = ? AND YEAR(r.depart_date) = ?
+        GROUP BY day
+      ) AS combined
       GROUP BY day
       ORDER BY day;
       `,
-      [month, year]
+      [month, year, month, year]
     );
 
     await connection.end();

@@ -132,7 +132,7 @@ const YearlyBreakup = () => {
         {/* Left column: totals and percent */}
         <Grid size={{xs: 7,sm: 7}}>
           <Typography variant="h3" fontWeight="700">
-            ${totalCurrentYear.toLocaleString()}
+            ${totalCurrentYear.toFixed(2)}
           </Typography>
           <Stack direction="row" spacing={1} mt={1} alignItems="center">
             <Avatar sx={{ bgcolor: percentBg, width: 27, height: 27 }}>
