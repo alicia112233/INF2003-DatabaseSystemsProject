@@ -1,154 +1,635 @@
 'use client';
-import { useState, useEffect } from 'react';
-import { Box, Typography, Button, Card, CardContent, CardMedia, Stack, IconButton, Grid } from '@mui/material';
+import { useState, useEffect, useCallback } from 'react';
+import { Box, Typography, Button, Card, CardContent, CardMedia, Chip, Stack, IconButton, Grid, CircularProgress, Skeleton, Snackbar, Alert } from '@mui/material';
 import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import PageContainer from '@/app/(DashboardLayout)/components/container/PageContainer';
 import DashboardCard from '@/app/(DashboardLayout)/components/shared/DashboardCard';
 import Layout from '@/components/layout';
+import RentButton from '@/components/products/RentButton';
+import { useCart } from '@/contexts/CartContext';
+import AddToCartButton from '@/components/cart/AddToCartButton';
+import WishlistButton from '@/components/wishlist/WishlistButton';
+import { Product } from '@/types/cart';
+import { Game } from '@/types/cart';
 
-type Game = {
-  id: number;
-  title: string;
-  description?: string;
-  image_url?: string;
-  price: number;
+// Helper function to check if user is logged in and is a customer
+function isUserLoggedInAndCustomer(): boolean {
+    // Check both localStorage and cookies for robustness
+    if (typeof window === 'undefined') return false;
+    const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true' || document.cookie.includes('isLoggedIn=true');
+    const userRole = localStorage.getItem('userRole') || (
+        document.cookie.match(/userRole=([^;]+)/)?.[1] || ''
+    );
+    // Your app uses 'customer' for normal users (see login logic)
+    return isLoggedIn && userRole === 'customer';
+}
+
+function calculatePromotionalPrice(originalPrice: number | string, promotion: Game['promotion']) {
+    if (!promotion || !promotion.isActive) return typeof originalPrice === 'string' ? parseFloat(originalPrice) : originalPrice;
+    
+    const price = typeof originalPrice === 'string' ? parseFloat(originalPrice) : originalPrice;
+    const discountValue = typeof promotion.discountValue === 'string' ? parseFloat(promotion.discountValue) : promotion.discountValue;
+    
+    if (isNaN(price) || isNaN(discountValue)) return price;
+    
+    if (promotion.discountType === 'percentage') {
+        return price * (1 - discountValue / 100);
+    } else {
+        return Math.max(0, price - discountValue);
+    }
+}
+
+// Component to display price with promotion
+const PriceDisplay = ({ game }: { game: Game }) => {
+    const hasActivePromo = game.promotion && game.promotion.isActive;
+    // Convert price to number to ensure .toFixed() works
+    const originalPrice = typeof game.price === 'string' ? parseFloat(game.price) : game.price;
+    const promoPrice = hasActivePromo ? calculatePromotionalPrice(originalPrice, game.promotion) : originalPrice;
+    
+    // Add safety checks for NaN values
+    if (isNaN(originalPrice)) {
+        return (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                <Typography variant="h6" color="error">
+                    Price unavailable
+                </Typography>
+            </Box>
+        );
+    }
+    
+    return (
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+            {hasActivePromo && game.promotion ? (
+                <>
+                    <Typography 
+                        variant="h6" 
+                        color="error" 
+                        sx={{ fontWeight: 'bold' }}
+                    >
+                        ${promoPrice.toFixed(2)}
+                    </Typography>
+                    <Typography 
+                        variant="body2" 
+                        sx={{ 
+                            textDecoration: 'line-through', 
+                            color: 'text.secondary' 
+                        }}
+                    >
+                        ${originalPrice.toFixed(2)}
+                    </Typography>
+                    <Typography 
+                        variant="caption" 
+                        sx={{ 
+                            bgcolor: 'error.main', 
+                            color: 'white', 
+                            px: 1, 
+                            py: 0.5, 
+                            borderRadius: 1,
+                            fontWeight: 'bold'
+                        }}
+                    >
+                        -{game.promotion.discountType === 'percentage' 
+                            ? `${game.promotion.discountValue}%` 
+                            : `$${game.promotion.discountValue}`}
+                    </Typography>
+                </>
+            ) : (
+                <Typography variant="h6" color="primary">
+                    ${originalPrice.toFixed(2)}
+                </Typography>
+            )}
+        </Box>
+    );
 };
 
 function capitalizeTitle(title: string) {
-  return title.replace(/\b\w/g, (c) => c.toUpperCase());
+    return title.replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
-const RecommendationsCarousel = () => {
-  const [games, setGames] = useState<Game[]>([]);
-  const [current, setCurrent] = useState(0);
+function capitalizeDescription(description: string) {
+    if (!description) return description;
+    
+    // Split by sentences and capitalize the first letter of each
+    return description
+        .split(/(\. |\.\s+|\n)/)
+        .map(sentence => {
+            const trimmed = sentence.trim();
+            if (trimmed.length === 0) return sentence;
+            return trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
+        })
+        .join('');
+}
 
-  useEffect(() => {
-    fetch('/api/recommendations')
-      .then(res => res.json())
-      .then(data => setGames(data.recommendations || []));
-  }, []);
-
-  if (games.length === 0) return <Typography>No recommendations available.</Typography>;
-
-  const game = games[current];
-
-  const handlePrev = () => setCurrent((prev) => (prev === 0 ? games.length - 1 : prev - 1));
-  const handleNext = () => setCurrent((prev) => (prev === games.length - 1 ? 0 : prev + 1));
-
-  return (
-    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 350 }}>
-      <IconButton onClick={handlePrev}><ArrowBackIosIcon /></IconButton>
-      <Card sx={{ width: 500, minHeight: 350, mx: 2, display: 'flex', flexDirection: 'row', boxShadow: 3 }}>
-        {game.image_url && (
-          <CardMedia
-            component="img"
-            image={game.image_url}
-            alt={game.title}
-            sx={{ width: 220, objectFit: 'cover' }}
-          />
-        )}
-        <CardContent sx={{ flex: 1 }}>
-          <Typography variant="h5" gutterBottom>
-            {capitalizeTitle(game.title)}
-          </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 2, minHeight: 60 }}>
-            {game.description ? game.description.slice(0, 100) + (game.description.length > 100 ? '...' : '') : ''}
-          </Typography>
-          <Typography variant="h6" color="primary" sx={{ mb: 2 }}>
-            ${game.price}
-          </Typography>
-          <Stack direction="row" spacing={2}>
-            <Button variant="contained" color="primary">Add to Cart</Button>
-            <Button
-  variant="contained"
-  sx={{ bgcolor: '#B8860B', '&:hover': { bgcolor: '#9A7209' } }}
-  onClick={async () => {
-    await fetch('/api/wishlist', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ gameId: game.id }),
-    });
-    // Optional: show a toast/snackbar and/or update UI state
-  }}
->
-  Add to Wishlist
-</Button>
-
-          </Stack>
-        </CardContent>
-      </Card>
-      <IconButton onClick={handleNext}><ArrowForwardIosIcon /></IconButton>
-    </Box>
-  );
+// Function to check if user is customer (not admin)
+const isCustomer = () => {
+    if (typeof window === 'undefined') return false;
+    const userRole = localStorage.getItem('userRole') || (
+        document.cookie.match(/userRole=([^;]+)/)?.[1] || ''
+    );
+    return userRole !== 'admin';
 };
 
-const MoreGames = () => {
-  const [games, setGames] = useState<Game[]>([]);
-  useEffect(() => {
-    fetch('/api/games') // Replace with your actual endpoint for all games
-      .then(res => res.json())
-      .then(data => setGames(data.games || []));
-  }, []);
-  if (games.length === 0) return null;
-  return (
-    <Box sx={{ mt: 6 }}>
-      <Typography variant="h5" sx={{ mb: 2 }}>More Games</Typography>
-      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
-        {games.slice(0, 8).map(game => (
-          <Card key={game.id} sx={{ width: 260, minHeight: 340, display: 'flex', flexDirection: 'column' }}>
-            {game.image_url && (
-              <CardMedia
-                component="img"
-                height="140"
-                image={game.image_url}
-                alt={game.title}
-                sx={{ objectFit: 'cover' }}
-              />
-            )}
-            <CardContent>
-              <Typography variant="subtitle1">{capitalizeTitle(game.title)}</Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                {game.description ? game.description.slice(0, 60) + (game.description.length > 60 ? '...' : '') : ''}
-              </Typography>
-              <Typography variant="body2" color="primary" sx={{ mb: 1 }}>
-                ${game.price}
-              </Typography>
-              <Stack direction="row" spacing={1}>
-                <Button variant="contained" color="primary" size="small">Add to Cart</Button>
-                <Button
-  variant="contained"
-  sx={{ bgcolor: '#B8860B', '&:hover': { bgcolor: '#9A7209' } }}
-  onClick={async () => {
-    await fetch('/api/wishlist', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ gameId: game.id }),
-    });
-    // Optional: show a toast/snackbar and/or update UI state
-  }}
->
-  Add to Wishlist
-</Button>
+interface ProductCardProps {
+    product: Product;
+}
 
-              </Stack>
-            </CardContent>
-          </Card>
-        ))}
-      </Box>
-    </Box>
-  );
+const RecommendationsCarousel: React.FC = () => {
+    const [games, setGames] = useState<Game[]>([]);
+    const [current, setCurrent] = useState(0);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const [snack, setSnack] = useState({ open: false, msg: '', severity: 'success' });
+    const [selectedPromotionCode, setSelectedPromotionCode] = useState<string | null>(null);
+    const { addToCart } = useCart();
+
+    const handlePrev = () => setCurrent((prev) => (prev === 0 ? games.length - 1 : prev - 1));
+    const handleNext = useCallback(() => {
+        setCurrent((prev) => (prev === games.length - 1 ? 0 : prev + 1));
+    }, [games.length]);
+    
+    // Store the current game for promotion code tracking
+    const game = games[current];
+    
+    // Track promotion code for checkout (must be before any early returns)
+    useEffect(() => {
+        if (game && game.promotion && game.promotion.code) {
+            setSelectedPromotionCode(game.promotion.code);
+        } else {
+            setSelectedPromotionCode(null);
+        }
+    }, [game]);
+    
+    // 1. Fetch recommendations on mount
+    useEffect(() => {
+        const fetchRecommendations = async () => {
+            try {
+                setLoading(true);
+                setError(null);
+                const res = await fetch('/api/recommendations');
+                
+                if (!res.ok) {
+                    throw new Error(`Failed to fetch recommendations: ${res.status}`);
+                }
+                
+                const data = await res.json();
+                setGames(data.recommendations || []);
+            } catch (err) {
+                console.error('Failed to fetch recommendations:', err);
+                setError(err instanceof Error ? err.message : 'Failed to fetch recommendations');
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchRecommendations();
+    }, []);
+
+    // 2. Handle auto-slide when games are available
+    useEffect(() => {
+        if (games.length === 0 || loading) return;
+
+        const interval = setInterval(() => {
+            handleNext();
+        }, 3000);
+
+        return () => clearInterval(interval);
+    }, [handleNext, games.length, loading]);
+
+    // Loading state
+    if (loading) {
+        return (
+            <Box sx={{ minWidth: '80%', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 350 }}>
+                <IconButton disabled><ArrowBackIosIcon /></IconButton>
+                <Card sx={{ minHeight: 350, mx: 2, display: 'flex', flexDirection: 'row', boxShadow: 3, width: '100%' }}>
+                    <Skeleton variant="rectangular" sx={{ width: '60%' }} />
+                    <CardContent sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                        <Skeleton variant="text" sx={{ fontSize: '2rem', width: '80%' }} />
+                        <Skeleton variant="text" sx={{ fontSize: '1rem', width: '100%' }} />
+                        <Skeleton variant="text" sx={{ fontSize: '1rem', width: '90%' }} />
+                        <Skeleton variant="text" sx={{ fontSize: '1.5rem', width: '30%' }} />
+                        <Stack direction="row" spacing={2}>
+                            <Skeleton variant="rectangular" width={120} height={36} />
+                            <Skeleton variant="rectangular" width={140} height={36} />
+                        </Stack>
+                    </CardContent>
+                </Card>
+                <IconButton disabled><ArrowForwardIosIcon /></IconButton>
+            </Box>
+        );
+    }
+
+    // Error state
+    if (error) {
+        return (
+            <Box sx={{ minWidth: '80%', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 350 }}>
+                <Card sx={{ minHeight: 350, mx: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 3 }}>
+                    <CardContent sx={{ textAlign: 'center' }}>
+                        <Typography variant="h6" color="error" gutterBottom>
+                            Failed to load recommendations
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                            {error}
+                        </Typography>
+                        <Button 
+                            variant="contained" 
+                            onClick={() => window.location.reload()}
+                        >
+                            Retry
+                        </Button>
+                    </CardContent>
+                </Card>
+            </Box>
+        );
+    }
+
+    // No games state
+    if (games.length === 0) {
+        return (
+            <Box sx={{ minWidth: '80%', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 350 }}>
+                <Card sx={{ minHeight: 350, mx: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 3 }}>
+                    <CardContent sx={{ textAlign: 'center' }}>
+                        <Typography variant="h6" gutterBottom>
+                            No recommendations available
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                            Check back later for personalized game recommendations!
+                        </Typography>
+                    </CardContent>
+                </Card>
+            </Box>
+        );
+    }
+
+    return (
+        <Box sx={{ minWidth: '80%', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 350 }}>
+            <IconButton onClick={handlePrev}><ArrowBackIosIcon /></IconButton>
+            <Card sx={{ minHeight: 350, mx: 2, display: 'flex', flexDirection: 'row', boxShadow: 3 }}>
+                {game.image_url && (
+                    <CardMedia
+                        component="img"
+                        image={game.image_url}
+                        alt={game.title}
+                        sx={{ width: '60%', objectFit: 'cover' }}
+                    />
+                )}
+                <CardContent sx={{ flex: 1 }}>
+                    <Typography variant="h5" gutterBottom sx={{ fontWeight: 'bold', mt: 3 }}>
+                        {capitalizeTitle(game.title)}
+                    </Typography>
+                    {game.promotion && (
+                        <Typography 
+                            variant="caption" 
+                            sx={{ 
+                                bgcolor: 'success.main', 
+                                color: 'white', 
+                                px: 1, 
+                                py: 0.5, 
+                                borderRadius: 1,
+                                mb: 1,
+                                display: 'inline-block'
+                            }}
+                        >
+                            🎉 Promotion Code: <b>{game.promotion.code}</b> <br />{game.promotion.description}
+                        </Typography>
+                    )}
+                    {/* Show the selected promotion code for debugging/checkout */}
+                    {selectedPromotionCode && (
+                        <Typography variant="body2" color="primary" sx={{ mt: 1 }}>
+                            <b>Selected Promotion Code:</b> {selectedPromotionCode}
+                        </Typography>
+                    )}
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2, minHeight: 60 }}>
+                        {game.description ? capitalizeDescription(game.description).slice(0, 100) + (game.description.length > 100 ? '...' : '') : ''}
+                    </Typography>
+
+                    <Typography variant="h6" sx={{ mb: 2 }}>
+                        {game.promotion && game.originalPrice && Number(game.originalPrice) > Number(game.price) ? (
+                            <>
+                                <span style={{ textDecoration: 'line-through', color: '#888', marginRight: 8 }}>
+                                    ${Number(game.originalPrice).toFixed(2)}
+                                </span>
+                                <span style={{ fontWeight: 'bold', color: 'green' }}>
+                                    ${Number(game.price).toFixed(2)}
+                                </span>
+                            </>
+                        ) : (
+                            <>${Number(game.price).toFixed(2)}</>
+                        )}
+                    </Typography>
+
+                    <Stack direction="row" spacing={2}>
+                        <AddToCartButton
+                            product={{
+                                id: String(game.id),
+                                title: game.title,
+                                price: typeof game.price === 'string' ? parseFloat(game.price) : game.price,
+                                image_url: game.image_url,
+                                description: game.description,
+                                genreNames: [],
+                                inStock: game.inStock,
+                                promotion: game.promotion,
+                                promotionObj: game.promotion // Pass full promotion object
+                            }}
+                            onSuccess={(message) => setSnack({ open: true, msg: message, severity: 'success' })}
+                            onWarning={(message) => setSnack({ open: true, msg: message, severity: 'warning' })}
+                            onError={(message) => setSnack({ open: true, msg: message, severity: 'error' })}
+                        />
+                        
+                        <Button
+                            variant="contained"
+                            sx={{ bgcolor: '#B8860B', '&:hover': { bgcolor: '#9A7209' } }}
+                            onClick={async () => {
+                                if (!isUserLoggedInAndCustomer()) {
+                                    setSnack({
+                                        open: true,
+                                        msg: 'Please log in to add to wishlist.',
+                                        severity: 'warning',
+                                    });
+                                    return;
+                                }
+                                const res = await fetch('/api/wishlist', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ gameId: game.id }),
+                                });
+                                const data = await res.json();
+                                setSnack({
+                                    open: true,
+                                    msg: data.message === 'Already in wishlist' ? 'Already in wishlist' : 'Added to wishlist',
+                                    severity: data.message === 'Already in wishlist' ? 'warning' : 'success',
+                                });
+                            }}
+                        >
+                            Add to Wishlist
+                        </Button>
+                    </Stack>
+                </CardContent>
+            </Card>
+            <IconButton onClick={handleNext}><ArrowForwardIosIcon /></IconButton>
+            <Snackbar
+                open={snack.open}
+                autoHideDuration={3000}
+                onClose={() => setSnack(s => ({ ...s, open: false }))}
+                anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+            >
+                <Alert onClose={() => setSnack(s => ({ ...s, open: false }))} severity={snack.severity as any}>
+                    {snack.msg}
+                </Alert>
+            </Snackbar>
+        </Box>
+    );
+};
+
+const MoreGames: React.FC<ProductCardProps> = () => {
+    const [games, setGames] = useState<Game[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const [snack, setSnack] = useState({ open: false, msg: '', severity: 'success' });
+    
+    useEffect(() => {
+        const fetchGames = async () => {
+            try {
+                setLoading(true);
+                setError(null);
+                const res = await fetch('/api/games');
+                
+                if (!res.ok) {
+                    throw new Error(`Failed to fetch games: ${res.status}`);
+                }
+                
+                const data = await res.json();
+                setGames(data.games || []);
+            } catch (err) {
+                console.error('Failed to fetch games:', err);
+                setError(err instanceof Error ? err.message : 'Failed to fetch games');
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchGames();
+    }, []);
+
+    if (loading) {
+        return (
+            <Box sx={{ mt: 6 }}>
+                <Typography variant="h5" sx={{ mb: 2 }}>More Games</Typography>
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
+                    {Array.from({ length: 8 }).map((_, index) => (
+                        <Card key={index} sx={{ width: 260, minHeight: 340, display: 'flex', flexDirection: 'column' }}>
+                            <Skeleton variant="rectangular" height={140} />
+                            <CardContent>
+                                <Skeleton variant="text" sx={{ fontSize: '1.2rem', mb: 1 }} />
+                                <Skeleton variant="text" sx={{ fontSize: '0.9rem', mb: 1 }} />
+                                <Skeleton variant="text" sx={{ fontSize: '0.9rem', mb: 1, width: '40%' }} />
+                                <Stack direction="row" spacing={1}>
+                                    <Skeleton variant="rectangular" width={80} height={32} />
+                                    <Skeleton variant="rectangular" width={100} height={32} />
+                                </Stack>
+                            </CardContent>
+                        </Card>
+                    ))}
+                </Box>
+            </Box>
+        );
+    }
+
+    if (error) {
+        return (
+            <Box sx={{ mt: 6 }}>
+                <Typography variant="h5" sx={{ mb: 2 }}>More Games</Typography>
+                <Card sx={{ p: 3, textAlign: 'center' }}>
+                    <Typography variant="h6" color="error" gutterBottom>
+                        Failed to load games
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                        {error}
+                    </Typography>
+                    <Button variant="contained" onClick={() => window.location.reload()}>
+                        Retry
+                    </Button>
+                </Card>
+            </Box>
+        );
+    }
+
+    if (games.length === 0) return null;
+
+    return (
+        <Box sx={{ mt: 6 }}>
+            <Typography variant="h5" sx={{ mb: 2 }}>More Games</Typography>
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
+                {games.slice(0, 8).map(game => {      
+                    const isOutOfStock = game.inStock === false;
+                    const originalPrice = typeof game.price === 'string' ? parseFloat(game.price) : game.price;
+                    const hasPromotion = game.promotion?.isActive;
+                    const discountedPrice = hasPromotion ? calculatePromotionalPrice(originalPrice, game.promotion) : originalPrice;
+                    
+                    return (
+                        <Card key={game.id} sx={{ width: 260, minHeight: 340, display: 'flex', flexDirection: 'column', position: 'relative' }}>
+                            {/* Sale Badge */}
+                            {game.promotion?.isActive && (
+                                <Chip
+                                    label="ON SALE"
+                                    color="warning"
+                                    size="small"
+                                    sx={{
+                                        position: 'absolute',
+                                        top: 8,
+                                        left: 8,
+                                        zIndex: 1000,
+                                        fontWeight: 'bold',
+                                    }}
+                                />
+                            )}
+
+                            {/* Wishlist Button */}
+                            <Box
+                                sx={{
+                                    position: 'absolute',
+                                    top: 8,
+                                    right: 8,
+                                    zIndex: 1000,
+                                    background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.7))',
+                                    borderRadius: '50%',
+                                    padding: '2px',
+                                    boxShadow: '0 2px 3px rgba(0, 0, 0, 0.15)',
+                                    border: '1px solid rgba(255, 255, 255, 0.3)',
+                                }}
+                            >
+                                <WishlistButton
+                                    product={{
+                                        id: String(game.id),
+                                        title: game.title,
+                                        price: typeof game.price === 'string' ? parseFloat(game.price) : game.price,
+                                        image_url: game.image_url,
+                                        description: game.description,
+                                        genreNames: [],
+                                        inStock: game.inStock,
+                                    }}
+                                />
+                            </Box>
+
+                            {game.image_url && (
+                                <CardMedia
+                                    component="img"
+                                    height="140"
+                                    image={game.image_url}
+                                    alt={game.title}
+                                    sx={{ objectFit: 'cover' }}
+                                />
+                            )}
+                            <CardContent>
+                                <Typography variant="subtitle1">{capitalizeTitle(game.title)}</Typography>
+                                <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                                    {game.description ? game.description.slice(0, 60) + (game.description.length > 60 ? '...' : '') : ''}
+                                </Typography>
+                                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, mb: 1 }}>
+                                    {hasPromotion && originalPrice > discountedPrice ? (
+                                        <>
+                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                <Typography
+                                                    variant="body2"
+                                                    color="text.secondary"
+                                                    sx={{ textDecoration: 'line-through' }}
+                                                >
+                                                    ${originalPrice.toFixed(2)}
+                                                </Typography>
+                                                <Typography variant="h6" color="primary" sx={{ fontWeight: 'bold' }}>
+                                                    ${discountedPrice.toFixed(2)}
+                                                </Typography>
+                                            </Box>
+                                            <Typography variant="caption" color="success.main" sx={{ fontWeight: 'medium' }}>
+                                                Save ${(originalPrice - discountedPrice).toFixed(2)}
+                                            </Typography>
+                                        </>
+                                    ) : (
+                                        <Typography variant="h6" color="primary">
+                                            ${originalPrice.toFixed(2)}
+                                        </Typography>
+                                    )}
+                                </Box>
+                            </CardContent>
+
+                            {isCustomer() && (
+                                <Box sx={{ p: 2, pt: 0 }}>
+                                    <AddToCartButton
+                                        fullWidth
+                                        product={{
+                                            id: String(game.id),
+                                            title: game.title,
+                                            price: discountedPrice,
+                                            originalPrice: originalPrice,
+                                            promotion: game.promotion ? {
+                                                discountValue: game.promotion.discountValue,
+                                                discountType: game.promotion.discountType
+                                            } : undefined,
+                                            promotionObj: game.promotion, // Pass full promotion object
+                                            image_url: game.image_url,
+                                            description: game.description,
+                                            genreNames: [],
+                                            inStock: game.inStock,
+                                        }}
+                                        onSuccess={(message) => setSnack({ open: true, msg: message, severity: 'success' })}
+                                        onWarning={(message) => setSnack({ open: true, msg: message, severity: 'warning' })}
+                                        onError={(message) => setSnack({ open: true, msg: message, severity: 'error' })}
+                                    />
+                                    
+                                    {!isOutOfStock && (
+                                        <RentButton 
+                                            product={{
+                                                id: String(game.id),
+                                                title: game.title,
+                                                price: originalPrice,
+                                                image_url: game.image_url,
+                                                description: game.description,
+                                                genreNames: [],
+                                                inStock: game.inStock,
+                                            }}
+                                            fullWidth
+                                            onSuccess={(message) => setSnack({ open: true, msg: message, severity: 'success' })}
+                                            onWarning={(message) => setSnack({ open: true, msg: message, severity: 'warning' })}
+                                            onError={(message) => setSnack({ open: true, msg: message, severity: 'error' })}
+                                        />
+                                    )}
+                                </Box>
+                            )}
+                        </Card>
+                    );
+                })}
+            </Box>
+            <Snackbar
+                open={snack.open}
+                autoHideDuration={3000}
+                onClose={() => setSnack(s => ({ ...s, open: false }))}
+                anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+            >
+                <Alert onClose={() => setSnack(s => ({ ...s, open: false }))} severity={snack.severity as any}>
+                    {snack.msg}
+                </Alert>
+            </Snackbar>
+        </Box>
+    );
 };
 
 export default function HomePage() {
-  return (
-    <Layout>
-      <PageContainer title="Game Haven" description="Your ultimate gaming destination">
-        <DashboardCard title="Featured & Recommended 👍">
-          <RecommendationsCarousel />
-        </DashboardCard>
-        <MoreGames />
-      </PageContainer>
-    </Layout>
-  );
+    return (
+        <Layout>
+            <PageContainer title="Game Haven" description="Your ultimate gaming destination">
+                <DashboardCard title="Featured & Recommended 👍">
+                    <RecommendationsCarousel />
+                </DashboardCard>
+                <MoreGames product={{
+                    id: '',
+                    title: '',
+                    price: 0,
+                    image_url: '',
+                    description: '',
+                    genreNames: [],
+                    inStock: true
+                }} />
+            </PageContainer>
+        </Layout>
+    );
 }

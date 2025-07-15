@@ -5,125 +5,211 @@ import PropTypes from 'prop-types';
 import Profile from './Profile';
 import { IconBellRinging, IconMenu } from '@tabler/icons-react';
 import Link from 'next/link';
-import { Logo } from 'react-mui-sidebar';
+import Logo from "@/app/(DashboardLayout)/layout/shared/logo/Logo";
 import { setupInactivityTracker, clearInactivityTracker } from '@/utils/inactivityTracker';
 import { Analytics } from "@vercel/analytics/next"
 
 interface ItemType {
-  toggleMobileSidebar: (event: React.MouseEvent<HTMLElement>) => void;
+    toggleMobileSidebar: (event: React.MouseEvent<HTMLElement>) => void;
 }
 
 // LOGGED IN HEADER
 const Header = ({ toggleMobileSidebar }: ItemType) => {
-  // const lgUp = useMediaQuery((theme) => theme.breakpoints.up('lg'));
-  // const lgDown = useMediaQuery((theme) => theme.breakpoints.down('lg'));
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+    const [isLoggedIn, setIsLoggedIn] = useState(false);
 
-  useEffect(() => {
-    const userEmail = localStorage.getItem("userEmail");
-    const loggedIn = localStorage.getItem("isLoggedIn");
-    console.log("userEmail:", userEmail);
-    console.log("isLoggedIn:", loggedIn);
-    
-    const loginStatus = localStorage.getItem("isLoggedIn") === "true";
-    setIsLoggedIn(loginStatus);
+    useEffect(() => {
+        const checkAuthStatus = () => {
+            try {
+                // Check both localStorage and cookies for auth state
+                const localStorageLogin = localStorage.getItem("isLoggedIn") === "true";
+                const cookieLogin = document.cookie.includes('isLoggedIn=true');
 
-    // Setup inactivity tracker if user is logged in
-    if (loginStatus) {
-      setupInactivityTracker();
-    }
+                // If localStorage says logged in but cookies don't, clear localStorage
+                if (localStorageLogin && !cookieLogin) {
+                    console.log('Mismatch between localStorage and cookies - clearing localStorage');
+                    localStorage.removeItem('isLoggedIn');
+                    localStorage.removeItem('userEmail');
+                    localStorage.removeItem('userRole');
+                    setIsLoggedIn(false);
 
-    // Cleanup function
-    return () => {
-      clearInactivityTracker();
-    };
-  }, []);
+                    // Redirect to home if on protected route
+                    if (window.location.pathname !== '/') {
+                        window.location.replace('/');
+                    }
+                    return;
+                }
 
-  const AppBarStyled = styled(AppBar)(({ theme }) => ({
-    boxShadow: 'none',
-    background: theme.palette.background.paper,
-    justifyContent: 'center',
-    backdropFilter: 'blur(4px)',
-    // [theme.breakpoints.up('lg')]: {
-    //   minHeight: '70px',
-    // },
-  }));
+                // If cookies say logged in but localStorage doesn't, sync localStorage
+                if (!localStorageLogin && cookieLogin) {
+                    console.log('Syncing localStorage with cookies');
+                    localStorage.setItem('isLoggedIn', 'true');
+                }
 
-  const ToolbarStyled = styled(Toolbar)(({ theme }) => ({
-    width: '100%',
-    color: theme.palette.text.secondary,
-  }));
+                const finalLoginStatus = cookieLogin;
+                setIsLoggedIn(finalLoginStatus);
 
-  return (
-    <AppBarStyled position="sticky" color="default">
-      <Analytics/>
-      <ToolbarStyled sx={{ position: 'relative' }}>
-        <IconButton
-          color="inherit"
-          aria-label="menu"
-          onClick={toggleMobileSidebar}
-          sx={{
-            display: {
-              lg: "none",
-              xs: "inline",
-            },
-          }}
-        >
-          <IconMenu width="20" height="20" />
-        </IconButton>
+                // Setup inactivity tracker if user is logged in
+                if (finalLoginStatus) {
+                    setupInactivityTracker();
+                } else {
+                    clearInactivityTracker();
+                }
 
-        <IconButton
-          size="large"
-          aria-label="show notifications"
-          color="inherit"
-        >
-          <Badge variant="dot" color="primary">
-            <IconBellRinging size="21" stroke="1.5" />
-          </Badge>
-        </IconButton>
+            } catch (error) {
+                console.error('Error checking auth status:', error);
 
-        {isLoggedIn && (
-          <Box
-            sx={{
-              position: 'absolute',
-              left: '50%',
-              transform: 'translateX(-50%)',
-              display: {
-                xs: 'block',
-                lg: 'none',
-              },
-            }}
-          >
-            <Logo component={Link} to="/">
-              Game Haven
-            </Logo>
-          </Box>
-        )}
+                // Fallback to checking cookies only
+                const cookieLogin = document.cookie.includes('isLoggedIn=true');
+                setIsLoggedIn(cookieLogin);
 
-        <Box flexGrow={1} />
+                if (!cookieLogin) {
+                    // Clear localStorage if cookies indicate not logged in
+                    localStorage.removeItem('isLoggedIn');
+                    localStorage.removeItem('userEmail');
+                    localStorage.removeItem('userRole');
 
-        <Stack spacing={1} direction="row" alignItems="center">
-          {isLoggedIn ? (
-            <Profile />
-          ) : (
-            <Button
-              variant="contained"
-              component={Link}
-              href="/authentication/login"
-              disableElevation
-              color="primary"
-            >
-              Login / Sign Up
-            </Button>
-          )}
-        </Stack>
-      </ToolbarStyled>
-    </AppBarStyled>
-  );
+                    // Redirect if on protected route
+                    if (window.location.pathname !== '/') {
+                        window.location.replace('/');
+                    }
+                }
+            }
+        };
+
+        // Check auth status once on mount
+        checkAuthStatus();
+
+        // Listen for storage changes (e.g., from other tabs or manual logout)
+        const handleStorageChange = (e: StorageEvent) => {
+            if (e.key === 'isLoggedIn' || e.key === null) {
+                checkAuthStatus();
+            }
+        };
+
+        window.addEventListener('storage', handleStorageChange);
+
+        // Cleanup function
+        return () => {
+            window.removeEventListener('storage', handleStorageChange);
+            clearInactivityTracker();
+        };
+    }, []);
+
+    // Handle visibility changes (when user switches tabs) - but only check auth state, no API calls
+    useEffect(() => {
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === 'visible') {
+                // Quick check when user returns to tab
+                const cookieLogin = document.cookie.includes('isLoggedIn=true');
+                const localStorageLogin = localStorage.getItem("isLoggedIn") === "true";
+
+                if (localStorageLogin !== cookieLogin) {
+                    console.log('Auth state mismatch detected on tab focus');
+
+                    if (!cookieLogin) {
+                        localStorage.removeItem('isLoggedIn');
+                        localStorage.removeItem('userEmail');
+                        localStorage.removeItem('userRole');
+                        setIsLoggedIn(false);
+
+                        if (window.location.pathname !== '/') {
+                            window.location.replace('/');
+                        }
+                    } else {
+                        localStorage.setItem('isLoggedIn', 'true');
+                        setIsLoggedIn(true);
+                    }
+                }
+            }
+        };
+
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+
+        return () => {
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+        };
+    }, []);
+
+    const AppBarStyled = styled(AppBar)(({ theme }) => ({
+        boxShadow: 'none',
+        background: theme.palette.background.paper,
+        justifyContent: 'center',
+        backdropFilter: 'blur(4px)',
+    }));
+
+    const ToolbarStyled = styled(Toolbar)(({ theme }) => ({
+        width: '100%',
+        color: theme.palette.text.secondary,
+    }));
+
+    return (
+        <AppBarStyled position="sticky" color="default">
+            <Analytics />
+            <ToolbarStyled sx={{ position: 'relative' }}>
+                <IconButton
+                    color="inherit"
+                    aria-label="menu"
+                    onClick={toggleMobileSidebar}
+                    sx={{
+                        display: {
+                            lg: "none",
+                            xs: "inline",
+                        },
+                    }}
+                >
+                    <IconMenu width="20" height="20" />
+                </IconButton>
+
+                <IconButton
+                    size="large"
+                    aria-label="show notifications"
+                    color="inherit"
+                >
+                    <Badge variant="dot" color="primary">
+                        <IconBellRinging size="21" stroke="1.5" />
+                    </Badge>
+                </IconButton>
+
+                {isLoggedIn && (
+                    <Box
+                        sx={{
+                            position: 'absolute',
+                            left: '50%',
+                            transform: 'translateX(-50%)',
+                            display: {
+                                xs: 'block',
+                                lg: 'none',
+                            },
+                        }}
+                    >
+                        <Logo />
+                    </Box>
+                )}
+
+                <Box flexGrow={1} />
+
+                <Stack spacing={1} direction="row" alignItems="center">
+                    {isLoggedIn ? (
+                        <Profile />
+                    ) : (
+                        <Button
+                            variant="contained"
+                            component={Link}
+                            href="/authentication/login"
+                            disableElevation
+                            color="primary"
+                        >
+                            Login / Sign Up
+                        </Button>
+                    )}
+                </Stack>
+            </ToolbarStyled>
+        </AppBarStyled>
+    );
 };
 
 Header.propTypes = {
-  sx: PropTypes.object,
+    sx: PropTypes.object,
 };
 
 export default Header;

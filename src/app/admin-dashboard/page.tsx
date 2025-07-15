@@ -6,7 +6,6 @@ import SalesOverview from '@/app/(DashboardLayout)/components/dashboard/SalesOve
 import YearlyBreakup from '@/app/(DashboardLayout)/components/dashboard/YearlyBreakup';
 import RecentTransactions from '@/app/(DashboardLayout)/components/dashboard/RecentTransactions';
 import ProductPerformance from '@/app/(DashboardLayout)/components/dashboard/ProductPerformance';
-import Blog from '@/app/(DashboardLayout)/components/dashboard/Blog';
 import MonthlyEarnings from '@/app/(DashboardLayout)/components/dashboard/MonthlyEarnings';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -78,9 +77,6 @@ const AdminDashboard = () => {
                                 lg: 8
                             }}>
                             <ProductPerformance />
-                        </Grid>
-                        <Grid size={12}>
-                            <Blog />
                         </Grid>
                     </Grid>
                 </Box>
