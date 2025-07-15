@@ -39,9 +39,9 @@ export async function GET() {
       totalCost: row.duration ? parseFloat(row.game_price) * 0.25 * row.duration : 0,
       status: row.returned ? 'Returned' : 
               (row.return_date && new Date(row.return_date) < new Date()) ? 'Overdue' : 'Active',
-      rentalDate: row.depart_date,
-      returnDate: row.return_date,
-      actualReturnDate: row.returned ? row.return_date : null,
+      rentalDate: row.depart_date ? new Date(row.depart_date.getTime() + (8 * 60 * 60 * 1000)).toISOString().split('T')[0] : null,
+      returnDate: row.return_date ? new Date(row.return_date.getTime() + (8 * 60 * 60 * 1000)).toISOString().split('T')[0] : null,
+      actualReturnDate: row.returned && row.return_date ? new Date(row.return_date.getTime() + (8 * 60 * 60 * 1000)).toISOString().split('T')[0] : null,
       daysRented: row.duration || 1,
     }));
     
@@ -115,26 +115,61 @@ export async function POST(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     const data = await request.json();
+    console.log('Received update data:', data);
+    
     const connection = await mysql.createConnection(dbConfig);
     
+    // Validate required fields
+    if (!data.id) {
+      await connection.end();
+      return NextResponse.json({ error: 'Rental ID is required' }, { status: 400 });
+    }
+    
+    // Prepare update values with proper date handling to avoid timezone issues
+    const departDate = data.rentalDate || null;
+    const returnDate = data.returnDate || null;
+    const duration = data.daysRented || null;
+    const returned = data.status === 'Returned';
+    
+    console.log('Update values:', { 
+      id: data.id, 
+      departDate,
+      returnDate, 
+      duration, 
+      returned 
+    });
+    
     // Update the rental record
-    await connection.execute(`
+    const result = await connection.execute(`
       UPDATE RentalRecord 
-      SET return_date = ?, duration = ?, returned = ?
+      SET depart_date = STR_TO_DATE(?, '%Y-%m-%d'), 
+          return_date = STR_TO_DATE(?, '%Y-%m-%d'), 
+          duration = ?, 
+          returned = ?
       WHERE id = ?
-    `, [
-      data.returnDate,
-      data.daysRented,
-      data.status === 'Returned',
-      data.id,
-    ]);
+    `, [departDate, returnDate, duration, returned, data.id]);
+    
+    console.log('Update result:', result);
+    
+    // Verify the update was successful
+    const [updatedRecord] = await connection.execute(
+      'SELECT * FROM RentalRecord WHERE id = ?',
+      [data.id]
+    );
+    console.log('Updated record:', updatedRecord);
     
     await connection.end();
     
-    return NextResponse.json({ message: 'Rental updated successfully' });
+    return NextResponse.json({ 
+      message: 'Rental updated successfully',
+      updatedRecord: (updatedRecord as any[])[0]
+    });
   } catch (error) {
     console.error('Error updating rental:', error);
-    return NextResponse.json({ error: 'Failed to update rental' }, { status: 500 });
+    return NextResponse.json({ 
+      error: 'Failed to update rental', 
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 });
   }
 }
 
