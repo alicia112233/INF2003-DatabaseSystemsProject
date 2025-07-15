@@ -62,7 +62,7 @@ async function postHandler(request: NextRequest) {
             );
 
         } finally {
-            await connection.release();
+            connection.release();
         }
 
     } catch (error) {
