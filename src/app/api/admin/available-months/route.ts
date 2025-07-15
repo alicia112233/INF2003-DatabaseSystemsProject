@@ -13,22 +13,27 @@ export async function GET(req: NextRequest) {
   try {
     const connection = await mysql.createConnection(dbConfig);
 
-    // Query distinct year-month combinations from orders table (or wherever you store purchase dates)
     const [rows]: any = await connection.execute(`
-      SELECT DISTINCT DATE_FORMAT(purchase_date, '%Y-%m') AS year_month
+      SELECT DISTINCT
+        DATE_FORMAT(purchase_date, '%Y-%m') AS date_refined
       FROM orders
-      WHERE purchase_date IS NOT NULL
-      ORDER BY year_month DESC
+
+      UNION
+
+      SELECT DISTINCT
+        DATE_FORMAT(depart_date, '%Y-%m') AS date_refined
+      FROM rentalrecord
+
+      ORDER BY date_refined DESC
     `);
 
     await connection.end();
 
-    // Map result to an array of { value, label } for frontend dropdown
-    const months = rows.map((row: { year_month: string }) => {
-      const [year, month] = row.year_month.split('-');
+    const months = rows.map((row: { date_refined: string }) => {
+      const [year, month] = row.date_refined.split('-');
       const date = new Date(parseInt(year), parseInt(month) - 1);
-      const label = date.toLocaleString('default', { month: 'long', year: 'numeric' }); // e.g. "March 2025"
-      return { value: row.year_month, label };
+      const label = date.toLocaleString('default', { month: 'long', year: 'numeric' });
+      return { value: row.date_refined, label };
     });
 
     return NextResponse.json({ months });
