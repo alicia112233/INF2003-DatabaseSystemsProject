@@ -13,54 +13,55 @@ export async function GET(req: NextRequest) {
   try {
     const connection = await mysql.createConnection(dbConfig);
 
-    // Latest 5 orders
-    const [orders]: any = await connection.execute(`
-      SELECT 
-        o.id,
-        o.purchase_date AS datetime,
-        CONCAT(
-          'Order #', o.id, ' placed by ',
-          CONCAT(UCASE(LEFT(u.firstName, 1)), LCASE(SUBSTRING(u.firstName, 2))), ' ',
-          CONCAT(UCASE(LEFT(u.lastName, 1)), LCASE(SUBSTRING(u.lastName, 2)))
-        ) AS description
-      FROM orders o
-      INNER JOIN users u ON u.id = o.user_id
-      ORDER BY o.purchase_date DESC
-      LIMIT 5;
-    `);
+    // Union query combining orders and rentals, sorted by datetime desc, limited to 10 total
+    const [results]: any = await connection.execute(`
+      SELECT
+        id,
+        datetime,
+        description,
+        type
+      FROM (
+        SELECT
+          o.id,
+          o.purchase_date AS datetime,
+          CONCAT(
+            'Order #', o.id, ' placed by ',
+            CONCAT(UCASE(LEFT(u.firstName, 1)), LCASE(SUBSTRING(u.firstName, 2))), ' ',
+            CONCAT(UCASE(LEFT(u.lastName, 1)), LCASE(SUBSTRING(u.lastName, 2)))
+          ) AS description,
+          'order' AS type
+        FROM orders o
+        INNER JOIN users u ON u.id = o.user_id
 
-    // Latest 5 rentals
-    const [rentals]: any = await connection.execute(`
-      SELECT 
-        r.id,
-        r.depart_date AS datetime,
-        CONCAT(
-          'Rental #', r.id, ' loaned by ',
-          CONCAT(UCASE(LEFT(u.firstName, 1)), LCASE(SUBSTRING(u.firstName, 2))), ' ',
-          CONCAT(UCASE(LEFT(u.lastName, 1)), LCASE(SUBSTRING(u.lastName, 2)))
-        ) AS description
-      FROM rentalrecord r
-      INNER JOIN users u ON u.id = r.user_id
-      ORDER BY r.depart_date DESC
-      LIMIT 5;
+        UNION ALL
+
+        SELECT
+          r.id,
+          r.depart_date AS datetime,
+          CONCAT(
+            'Rental #', r.id, ' loaned by ',
+            CONCAT(UCASE(LEFT(u.firstName, 1)), LCASE(SUBSTRING(u.firstName, 2))), ' ',
+            CONCAT(UCASE(LEFT(u.lastName, 1)), LCASE(SUBSTRING(u.lastName, 2)))
+          ) AS description,
+          'rental' AS type
+        FROM rentalrecord r
+        INNER JOIN users u ON u.id = r.user_id
+      ) combined
+      ORDER BY datetime DESC
+      LIMIT 10;
     `);
 
     await connection.end();
 
-    // Merge & sort
-    const combined = [...orders, ...rentals].sort(
-      (a, b) => new Date(b.datetime).getTime() - new Date(a.datetime).getTime()
-    );
-
-    const formatted = combined.map((txn: any) => ({
+    const formatted = results.map((txn: any) => ({
       time: new Date(txn.datetime).toLocaleDateString('en-US', {
         year: 'numeric',
         month: 'short',
         day: '2-digit',
       }),
-      type: 'sale',
+      type: 'sale', // or you can keep txn.type if you want distinction
       description: txn.description,
-      color: txn.description.startsWith('Order') ? 'success' : 'info',
+      color: txn.type === 'order' ? 'success' : 'info',
       link: `/sales/${txn.id}`,
     }));
 
