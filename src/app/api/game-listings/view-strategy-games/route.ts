@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const stockFilter = searchParams.get('stock');
 
-    const whereClauses: string[] = [`genre.name = 'action'`];
+    const whereClauses: string[] = [`genre.name = 'strategy'`];
 
     if (stockFilter === 'inStock') {
       whereClauses.push('g.stock_count > 0');
@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
     } else if (stockFilter === 'onSale') {
       whereClauses.push('g.promo_id IS NOT NULL');
     }
-    // Query for games with Action genre
+    // Query for games with adventure genre
     const rows = await executeQuery(`
       SELECT 
         g.id,
@@ -88,9 +88,9 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ games: formattedGames });
   } catch (error: any) {
-    console.error('Error fetching action games:', error);
+    console.error('Error fetching strategy games:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch action games', details: error.message },
+      { error: 'Failed to fetch strategy games', details: error.message },
       { status: 500 }
     );
   }

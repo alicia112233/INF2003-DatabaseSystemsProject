@@ -58,9 +58,9 @@ export const getMenuItems = (isLoggedIn: boolean, userRole: string = 'customer')
         },
         {
             id: uniqueId(),
-            title: "Horror",
+            title: "Strategy",
             icon: IconDeviceGamepad,
-            href: "/game-listings/view-horror-games",
+            href: "/game-listings/view-strategy-games",
         },
     ];
 
@@ -154,9 +154,9 @@ export const getMenuItems = (isLoggedIn: boolean, userRole: string = 'customer')
         },
         {
             id: uniqueId(),
-            title: "Horror",
+            title: "Strategy",
             icon: IconDeviceGamepad,
-            href: "/game-listings/view-horror-games",
+            href: "/game-listings/view-strategy-games",
         },
     ];
 

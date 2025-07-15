@@ -15,7 +15,7 @@ import ProductCard from '@/components/products/ProductCard';
 import GameFilters from '@/components/products/GameFilters';
 import { PriceRange, Product } from '@/types/cart';
 
-const ActionGamesPage = () => {
+const StrategyGamesPage = () => {
     const [games, setGames] = useState<Product[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -46,7 +46,7 @@ const ActionGamesPage = () => {
             const params = new URLSearchParams();
             if (stockFilter) params.append('stock', stockFilter);
 
-            const res = await fetch(`/api/game-listings/view-action-games?${params.toString()}`);
+            const res = await fetch(`/api/game-listings/view-strategy-games?${params.toString()}`);
             if (!res.ok) throw new Error(`Failed to fetch games: ${res.status}`);
             const data = await res.json();
             setGames(data.games || []);
@@ -60,7 +60,7 @@ const ActionGamesPage = () => {
 
         } catch (err: unknown) {
             if (err instanceof Error) setError(err.message);
-            else setError('Failed to fetch action games');
+            else setError('Failed to fetch strategy games');
         } finally {
             setLoading(false);
         }
@@ -110,10 +110,13 @@ const ActionGamesPage = () => {
         <Layout>
         <Container maxWidth="lg" sx={{ py: 4 }}>
             <Typography variant="h4" fontWeight={600} mb={1}>
-            Action Games
+            Strategy Games
             </Typography>
             <Typography variant="h6" color="text.secondary" sx={{ mb: 2 }}>
-            Jump into heart-pounding battles and lightning-fast reflex challenges. <br/> Perfect for thrill-seekers!
+            Sharpen your mind and outsmart your rivals! <br/>
+            Whether you’re managing empires or plotting the perfect move, <br/>
+            strategy games challenge your wits and reward your cunning.
+
             </Typography>
             <GameFilters
                 stockFilter={stockFilter}
@@ -126,7 +129,7 @@ const ActionGamesPage = () => {
 
             {games.length === 0 ? (
             <Typography variant="h6" color="text.secondary" align="center" sx={{ mt: 6 }}>
-                No action games found.
+                No strategy games found.
             </Typography>
             ) : (
             <>
@@ -168,4 +171,4 @@ const ActionGamesPage = () => {
     );
 };
 
-export default ActionGamesPage;
+export default StrategyGamesPage;

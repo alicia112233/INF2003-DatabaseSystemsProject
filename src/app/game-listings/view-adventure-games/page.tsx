@@ -1,112 +1,172 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
-  Box,Typography, Button, Card, CardContent, CardMedia, Stack
+  Container,
+  Grid,
+  Typography,
+  Box,
+  CircularProgress,
+  Button,
+  Pagination,
 } from '@mui/material';
-import PageContainer from '@/app/(DashboardLayout)/components/container/PageContainer';
 import Layout from '@/components/layout';
+import ProductCard from '@/components/products/ProductCard';
+import GameFilters from '@/components/products/GameFilters';
+import { PriceRange, Product } from '@/types/cart';
 
-type Game = {
-  id: number;
-  title: string;
-  genre: string;
-  description?: string;
-  image_url?: string;
-  price: number;
-};
+const AdventureGamesPage = () => {
+    const [games, setGames] = useState<Product[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
+    const [priceRange, setPriceRange] = useState<PriceRange>({ min: 0, max: 1000 });
 
-function capitalizeTitle(title: string) {
-  return title.replace(/\b\w/g, (c) => c.toUpperCase());
-}
+    const handlePriceRangeChange = (newRange: PriceRange) => {
+        setPriceRange(newRange);
+    };
 
-const ViewGames = () => {
-    const [games, setGames] = useState<Game[]>([]);
-    const [visibleCount, setVisibleCount] = useState(8);
+    const [currentPage, setCurrentPage] = useState(1);
+    const gamesPerPage = 12;
+
+    // Filter states
+    const [stockFilter, setStockFilter] = useState('');
+    
+    // Pagination logic
+    const indexOfLastProduct = currentPage * gamesPerPage;
+    const indexOfFirstProduct = indexOfLastProduct - gamesPerPage;
+    const currentGames = filteredProducts.slice(indexOfFirstProduct, indexOfLastProduct);
+    const totalPages = Math.ceil(filteredProducts.length / gamesPerPage);
 
     useEffect(() => {
-        fetch('/api/game-listings/view-adventure-games')
-        .then((res) => res.json())
-        .then(data => setGames(data.games || []))
-        .catch((err) => console.error('Error fetching adventure games:', err));
-    }, []);
+        const fetchGames = async () => {
+        setLoading(true);
+        setError(null);
+        try {
+            const params = new URLSearchParams();
+            if (stockFilter) params.append('stock', stockFilter);
 
-    if (games.length === 0) {
+            const res = await fetch(`/api/game-listings/view-adventure-games?${params.toString()}`);
+            if (!res.ok) throw new Error(`Failed to fetch games: ${res.status}`);
+            const data = await res.json();
+            setGames(data.games || []);
+
+            // Apply price filtering on client side
+            const filteredByPrice = (data.games as Product[]).filter((game: Product) => {
+                const price = game.price || 0;
+                return price >= priceRange.min && price <= priceRange.max;
+            });
+            setFilteredProducts(filteredByPrice);
+
+        } catch (err: unknown) {
+            if (err instanceof Error) setError(err.message);
+            else setError('Failed to fetch adventure games');
+        } finally {
+            setLoading(false);
+        }
+        };
+        fetchGames();
+    }, [stockFilter, priceRange.min, priceRange.max]);
+
+    useEffect(() => {
+        setCurrentPage(1); // reset pagination when filters change
+    }, [stockFilter, priceRange.min, priceRange.max]);
+
+    const handleRetry = () => {
+        setCurrentPage(1);
+        setGames([]);
+        setLoading(true);
+        setError(null);
+        // Re-fetch logic here if you want, or just reload the page
+        window.location.reload();
+    };
+
+    if (loading) {
         return (
-            <Box sx={{ mt: 4 }}>
-                <Typography variant="h6" color="text.secondary">No adventure games found.</Typography>
+        <Layout>
+            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 6 }}>
+            <CircularProgress />
             </Box>
+        </Layout>
         );
     }
 
-  
-    return (
-    <Box sx={{ mt: 3 }}>
-        <Typography variant="h6" sx={{ mb: 6 }} color="text.secondary">Embark on epic quests, uncover hidden secrets, and get lost in unforgettable story-driven worlds.</Typography>
-        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
-        {games.slice(0, visibleCount).map(game => (
-            <Card key={game.id} sx={{ width: 260, minHeight: 340, display: 'flex', flexDirection: 'column' }}>
-            {game.image_url && (
-                <CardMedia
-                component="img"
-                height="140"
-                image={game.image_url}
-                alt={game.title}
-                sx={{ objectFit: 'cover' }}
-                />
-            )}
-            <CardContent>
-                <Typography variant="subtitle1">{capitalizeTitle(game.title)}</Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                {game.description ? game.description.slice(0, 60) + (game.description.length > 60 ? '...' : '') : ''}
-                </Typography>
-                <Typography variant="body2" color="primary" sx={{ mb: 1 }}>
-                ${game.price}
-                </Typography>
-                <Stack direction="row" spacing={1}>
-                <Button variant="contained" color="primary" size="small" sx={{height: 50}}>Add to Cart</Button>
-                <Button
-                    variant="contained"
-                    sx={{ bgcolor: '#B8860B', '&:hover': { bgcolor: '#9A7209' }, height: 50}}
-                    onClick={async () => {
-                    await fetch('/api/wishlist', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ gameId: game.id }),
-                    });
-                    }}
-                >
-                    Add to Wishlist
-                </Button>
-                </Stack>
-            </CardContent>
-            </Card>
-        ))}
-        </Box>
-
-        {visibleCount < games.length && (
-        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
-            <Button
-            variant="outlined"
-            disabled={visibleCount >= games.length}
-            onClick={() => setVisibleCount(prev => prev + 8)}
-            >
-            Load More
+    if (error) {
+        return (
+        <Layout>
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mt: 6 }}>
+            <Typography color="error" sx={{ mb: 2 }}>
+                {error}
+            </Typography>
+            <Button variant="contained" onClick={handleRetry}>
+                Retry
             </Button>
-        </Box>
-        )}
-    </Box>
-    );
+            </Box>
+        </Layout>
+        );
+    }
 
-};
-
-export default function DigitalsPage(){
     return (
         <Layout>
-            <PageContainer title="Game Haven" description="Your ultimate gaming destination">
-                <Typography variant="h4" fontWeight={600} mb={1}>Adventure Games</Typography>
-                    <ViewGames />
-            </PageContainer>
+        <Container maxWidth="lg" sx={{ py: 4 }}>
+            <Typography variant="h4" fontWeight={600} mb={1}>
+            Adventure Games
+            </Typography>
+            <Typography variant="h6" color="text.secondary" sx={{ mb: 2 }}>
+            Embark on epic quests, uncover hidden secrets, and <br/> get lost in unforgettable story-driven worlds.
+
+            </Typography>
+            <GameFilters
+                stockFilter={stockFilter}
+                priceRange={priceRange}
+                onStockFilterChange={setStockFilter}
+                onPriceRangeChange={handlePriceRangeChange}
+                minPrice={0}
+                maxPrice={1000}
+            />
+
+            {games.length === 0 ? (
+            <Typography variant="h6" color="text.secondary" align="center" sx={{ mt: 6 }}>
+                No action games found.
+            </Typography>
+            ) : (
+            <>
+                <Box sx={{ mb: 2 }}>
+                    <Typography variant="body2" color="text.secondary">
+                        Showing {filteredProducts.length} of {games.length} games
+                    </Typography>
+                </Box>
+                <Grid container spacing={3}>
+                {currentGames.map((game) => (
+                    <Grid
+                        size={{
+                            xs: 12,
+                            md: 6,
+                            lg: 4,
+                            xl: 3,
+                        }}
+                        key={game.id}
+                    >
+                    <ProductCard product={game} />
+                    </Grid>
+                ))}
+                </Grid>
+
+                {totalPages > 1 && (
+                <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+                    <Pagination
+                    count={totalPages}
+                    page={currentPage}
+                    onChange={(_, page) => setCurrentPage(page)}
+                    color="primary"
+                    />
+                </Box>
+                )}
+            </>
+            )}
+        </Container>
         </Layout>
-  );
-}
+    );
+};
+
+export default AdventureGamesPage;
