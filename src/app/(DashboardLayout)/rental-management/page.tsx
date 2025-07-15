@@ -76,63 +76,52 @@ const RentalManagementPage = () => {
   // Fetch rentals
   const fetchRentals = async () => {
     try {
-      const res = await fetch("/api/rentals");
+      const res = await fetch("/api/rentals", {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache',
+        },
+      });
       if (res.ok) {
         const data = await res.json();
+        console.log('Fetched rentals:', data);
         setRentals(data);
       } else {
-        console.error("Failed to fetch rentals:", res.statusText);
-        // Set mock data for demonstration
-        setRentals([
-          {
-            id: 1,
-            customerEmail: "john@example.com",
-            games: [{ gameId: 1, title: "The Witcher 3", quantity: 1, dailyRate: 5.99 }],
-            totalCost: 29.95,
-            status: "Active",
-            rentalDate: "2025-06-25",
-            returnDate: "2025-07-02",
-            daysRented: 7,
-          },
-          {
-            id: 2,
-            customerEmail: "jane@example.com",
-            games: [{ gameId: 2, title: "Cyberpunk 2077", quantity: 1, dailyRate: 6.99 }],
-            totalCost: 20.97,
-            status: "Returned",
-            rentalDate: "2025-06-20",
-            returnDate: "2025-06-23",
-            actualReturnDate: "2025-06-23",
-            daysRented: 3,
-          },
-        ]);
+        const errorText = await res.text();
+        console.error("Failed to fetch rentals:", res.status, res.statusText, errorText);
+        // Only use mock data in development for debugging
+        if (process.env.NODE_ENV === 'development') {
+          console.log('Using mock data for development');
+          setRentals([
+            {
+              id: 1,
+              customerEmail: "john@example.com",
+              games: [{ gameId: 1, title: "The Witcher 3", quantity: 1, dailyRate: 5.99 }],
+              totalCost: 29.95,
+              status: "Active",
+              rentalDate: "2025-06-25",
+              returnDate: "2025-07-02",
+              daysRented: 7,
+            },
+            {
+              id: 2,
+              customerEmail: "jane@example.com",
+              games: [{ gameId: 2, title: "Cyberpunk 2077", quantity: 1, dailyRate: 6.99 }],
+              totalCost: 20.97,
+              status: "Returned",
+              rentalDate: "2025-06-20",
+              returnDate: "2025-06-23",
+              actualReturnDate: "2025-06-23",
+              daysRented: 3,
+            },
+          ]);
+        } else {
+          setRentals([]);
+        }
       }
     } catch (error) {
       console.error("Error fetching rentals:", error);
-      // Set mock data for demonstration
-      setRentals([
-        {
-          id: 1,
-          customerEmail: "john@example.com",
-          games: [{ gameId: 1, title: "The Witcher 3", quantity: 1, dailyRate: 5.99 }],
-          totalCost: 29.95,
-          status: "Active",
-          rentalDate: "2025-06-25",
-          returnDate: "2025-07-02",
-          daysRented: 7,
-        },
-        {
-          id: 2,
-          customerEmail: "jane@example.com",
-          games: [{ gameId: 2, title: "Cyberpunk 2077", quantity: 1, dailyRate: 6.99 }],
-          totalCost: 20.97,
-          status: "Returned",
-          rentalDate: "2025-06-20",
-          returnDate: "2025-06-23",
-          actualReturnDate: "2025-06-23",
-          daysRented: 3,
-        },
-      ]);
+      setRentals([]);
     }
   };
 
@@ -236,18 +225,40 @@ const RentalManagementPage = () => {
         daysRented: parseInt(form.daysRented),
       };
 
+      console.log('Submitting rental data:', rentalData);
+
       if (editRental) {
-        await fetch("/api/rentals", {
+        console.log('Updating rental with ID:', editRental.id);
+        const response = await fetch("/api/rentals", {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ ...rentalData, id: editRental.id }),
         });
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          console.error('Update failed:', errorData);
+          throw new Error(`Update failed: ${errorData.error}`);
+        }
+        
+        const result = await response.json();
+        console.log('Update successful:', result);
       } else {
-        await fetch("/api/rentals", {
+        console.log('Creating new rental');
+        const response = await fetch("/api/rentals", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(rentalData),
         });
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          console.error('Creation failed:', errorData);
+          throw new Error(`Creation failed: ${errorData.error}`);
+        }
+        
+        const result = await response.json();
+        console.log('Creation successful:', result);
       }
       
       setOpen(false);
@@ -256,6 +267,7 @@ const RentalManagementPage = () => {
       fetchRentals();
     } catch (error) {
       console.error("Error submitting rental:", error);
+      alert(error instanceof Error ? error.message : 'An error occurred');
     }
   };
 
