@@ -1,12 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { pool } from '@/app/lib/db';
-import type { ResultSetHeader } from 'mysql2';
+import type { ResultSetHeader, RowDataPacket } from 'mysql2';
 import { withPerformanceTracking } from '@/middleware/trackPerformance';
 
 // GET - Fetch all promotions
 async function getHandler() {
     try {
-        const [rows] = await pool.query('SELECT * FROM promotion ORDER BY id DESC');
+        const [rows] = await pool.query('SELECT * FROM promotion ORDER BY id DESC') as [RowDataPacket[], any];
+
+        for (let promotion of rows) {
+            const [gameRows] = await pool.query(
+                'SELECT id, title FROM Game WHERE promo_id = ?',
+                [promotion.id]
+            ) as [RowDataPacket[], any];
+            
+            promotion.selectedGameIds = Array.isArray(gameRows) ? gameRows.map((game: any) => game.id) : [];
+            promotion.selectedGames = Array.isArray(gameRows) ? gameRows : [];
+        }
+
         return NextResponse.json(rows);
     } catch (error) {
         console.error('GET /api/promotions error:', error);
