@@ -1,4 +1,3 @@
-// app/api/admin/yearly/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import mysql from 'mysql2/promise';
 
@@ -14,47 +13,49 @@ export async function GET(req: NextRequest) {
   try {
     const connection = await mysql.createConnection(dbConfig);
 
-    const [data2024]: any = await connection.execute(
-      `
-      SELECT SUM(
-        IF(p.discountValue IS NOT NULL,
-           g.price * (1 - p.discountValue / 100),
-           g.price)
-      ) AS total
-      FROM orders o
-      JOIN game g ON g.title = o.gameTitle
-      LEFT JOIN promotion p ON g.promo_id = p.id
-      WHERE YEAR(o.purchase_date) = 2024;
-      `
-    );
+    // Get current year and last year dynamically in JS
+    const currentYear = new Date().getFullYear();
+    const lastYear = currentYear - 1;
 
-    const [data2025]: any = await connection.execute(
+    // Query to get totals grouped by year, filtered to last year and current year
+    const [rows]: any = await connection.execute(
       `
-      SELECT SUM(
-        IF(p.discountValue IS NOT NULL,
-           g.price * (1 - p.discountValue / 100),
-           g.price)
-      ) AS total
+      SELECT
+        YEAR(o.purchase_date) AS order_year,
+        SUM(
+          IF(p.discountValue IS NOT NULL,
+             g.price * (1 - p.discountValue / 100),
+             g.price)
+        ) AS total
       FROM orders o
-      JOIN game g ON g.id = o.game_id
+      JOIN ordergame og ON o.id = og.order_id
+      JOIN game g ON g.id = og.game_id
       LEFT JOIN promotion p ON g.promo_id = p.id
-      WHERE YEAR(o.purchase_date) = 2025;
-      `
+      WHERE YEAR(o.purchase_date) IN (?, ?)
+      GROUP BY YEAR(o.purchase_date);
+      `,
+      [lastYear, currentYear]
     );
 
     await connection.end();
 
-    const total2024 = data2024[0].total || 0;
-    const total2025 = data2025[0].total || 0;
+    // Initialize totals
+    let totalCurrentYear = 0;
+    let totalLastYear = 0;
 
-    const percentageChange = total2024 > 0
-      ? (((total2025 - total2024) / total2024) * 100).toFixed(2)
+    for (const row of rows) {
+      if (row.order_year === currentYear) totalCurrentYear = Number(row.total) || 0;
+      else if (row.order_year === lastYear) totalLastYear = Number(row.total) || 0;
+    }
+
+    const percentageChange = totalLastYear > 0
+      ? (((totalCurrentYear - totalLastYear) / totalLastYear) * 100).toFixed(2)
       : "0";
 
     return NextResponse.json({
-      total2025,
-      total2024,
-      percentageChange
+      [currentYear]: totalCurrentYear,
+      [lastYear]: totalLastYear,
+      percentageChange,
     });
   } catch (err) {
     console.error(err);
