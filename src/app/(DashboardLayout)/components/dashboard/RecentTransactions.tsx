@@ -68,12 +68,10 @@ const RecentTransactions = () => {
               {idx < transactions.length - 1 && <TimelineConnector />}
             </TimelineSeparator>
             <TimelineContent>
-              {txn.type === 'sale' && txn.link ? (
+              {txn.type === 'sale' ? (
                 <>
                   <Typography fontWeight="600">New sale recorded</Typography>{' '}
-                  <Link href={txn.link} underline="none">
-                    {txn.description}
-                  </Link>
+                  <Typography color="textSecondary">{txn.description}</Typography>
                 </>
               ) : (
                 <Typography>{txn.description}</Typography>
