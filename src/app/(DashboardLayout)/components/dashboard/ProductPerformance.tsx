@@ -1,4 +1,3 @@
-
 import {
     Typography, Box,
     Table,
@@ -6,10 +5,8 @@ import {
     TableCell,
     TableHead,
     TableRow,
-    Chip
 } from '@mui/material';
 import DashboardCard from '@/app/(DashboardLayout)//components/shared/DashboardCard';
-
 import { useEffect, useState } from 'react';
 
 type Game = {
@@ -22,15 +19,14 @@ const ProductPerformance = () => {
     const [games, setGames] = useState<Game[]>([]);
 
     useEffect(() => {
-        fetch('/api/admin/product') 
-        .then(res => res.json())
-        .then(setGames)
-        .catch(err => console.error("Failed to fetch game performance:", err));
+        fetch('/api/admin/products')
+          .then(res => res.json())
+          .then(data => setGames(data))
+          .catch(err => console.error("Failed to fetch game performance:", err));
     }, []);
 
     return (
-
-        <DashboardCard title="Product Performance">
+        <DashboardCard title="Product Performance (Top 5)">
             <Box sx={{ overflow: 'auto', width: { xs: '280px', sm: 'auto' } }}>
                 <Table
                     aria-label="simple table"
@@ -83,7 +79,7 @@ const ProductPerformance = () => {
                                     </Box>
                                 </TableCell>
                                 <TableCell align="right">
-                                    <Typography variant="h6">${game.earnings.toFixed(2)}</Typography>
+                                    <Typography variant="h6">${game.earnings}</Typography>
                                 </TableCell>
                             </TableRow>
                         ))}
