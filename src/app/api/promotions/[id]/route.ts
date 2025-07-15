@@ -73,8 +73,9 @@ async function putHandler(request: NextRequest) {
             id: bodyId, 
             created_at, 
             updated_at, 
-            selectedGameIds,  // Handle this separately
-            selectedGames,    // Handle this separately
+            selectedGameIds,
+            selectedGames,
+            applicableToAll, 
             ...updateData 
         } = body;
         
@@ -92,13 +93,18 @@ async function putHandler(request: NextRequest) {
             'applicableToAll'
         ];
         
-        // Filter updateData to only include allowed fields
+        // Filter updateData to only include allowed fields, and add applicableToAll back
         const filteredUpdateData: { [key: string]: any } = {};
         Object.keys(updateData).forEach(key => {
             if (allowedFields.includes(key)) {
                 filteredUpdateData[key] = updateData[key];
             }
         });
+        
+        // Add applicableToAll to the update data
+        if (applicableToAll !== undefined) {
+            filteredUpdateData.applicableToAll = applicableToAll;
+        }
         
         // Update promotion if there are fields to update
         if (Object.keys(filteredUpdateData).length > 0) {
@@ -114,8 +120,14 @@ async function putHandler(request: NextRequest) {
             ) as [ResultSetHeader, any];
         }
         
-        // Handle game-promotion relationship
-        if (body.selectedGameIds !== undefined) {
+        if (applicableToAll === true || applicableToAll === 1 || applicableToAll === '1') {
+            // If applicable to all, assign this promotion to ALL games
+            console.log('Setting promotion to ALL games');
+            await connection.query(
+                'UPDATE Game SET promo_id = ?',
+                [id]
+            ) as [ResultSetHeader, any];
+        } else {
             // First, remove existing promotion from all games that had this promotion
             await connection.query(
                 'UPDATE Game SET promo_id = NULL WHERE promo_id = ?',
@@ -126,6 +138,7 @@ async function putHandler(request: NextRequest) {
             if (Array.isArray(body.selectedGameIds) && body.selectedGameIds.length > 0) {
                 const gameIds = body.selectedGameIds.map((gameId: any) => parseInt(gameId)).filter((gameId: number) => !isNaN(gameId));
                 if (gameIds.length > 0) {
+                    console.log('Setting promotion to selected games:', gameIds);
                     const placeholders = gameIds.map(() => '?').join(',');
                     await connection.query(
                         `UPDATE Game SET promo_id = ? WHERE id IN (${placeholders})`,
@@ -192,13 +205,34 @@ async function deleteHandler(request: NextRequest) {
     try {
         connection = await pool.getConnection();
         
+        // Start transaction
+        await connection.beginTransaction();
+        
+        // First, remove this promotion from all games
+        await connection.query(
+            'UPDATE Game SET promo_id = NULL WHERE promo_id = ?',
+            [id]
+        ) as [ResultSetHeader, any];
+        
+        // Then delete the promotion
         const [result] = await connection.query(
             'DELETE FROM Promotion WHERE id = ?',
             [id]
         ) as [ResultSetHeader, any];
         
+        // Commit transaction
+        await connection.commit();
+        
         return NextResponse.json({ success: true, result });
     } catch (error) {
+        // Rollback transaction on error
+        if (connection) {
+            try {
+                await connection.rollback();
+            } catch (rollbackError) {
+                console.error('Rollback error:', rollbackError);
+            }
+        }
         console.error('DELETE /api/promotions/[id] error:', error);
         return NextResponse.json(
             { error: 'Failed to delete promotion' },
