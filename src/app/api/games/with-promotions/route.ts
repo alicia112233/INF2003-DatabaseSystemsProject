@@ -1,16 +1,5 @@
 import { NextResponse } from 'next/server';
-import mysql from 'mysql2/promise';
-
-const pool = mysql.createPool({
-    host: process.env.MYSQL_HOST,
-    user: process.env.MYSQL_USER,
-    password: process.env.MYSQL_PASSWORD,
-    port: Number(process.env.MYSQL_PORT),
-    database: process.env.MYSQL_DATABASE,
-    waitForConnections: true,
-    connectionLimit: 10,
-    queueLimit: 0,
-});
+import { executeQuery } from '@/lib/database';
 
 function toTitleCase(str: string) {
     return str
@@ -21,12 +10,9 @@ function toTitleCase(str: string) {
 }
 
 export async function GET() {
-    let connection;
-    try {
-        connection = await pool.getConnection();
-        
+    try {        
         // Updated query to include promotion details and promo code
-        const [rows] = await connection.execute(`
+        const rows = await executeQuery(`
             SELECT 
                 g.id,
                 g.title,
@@ -69,9 +55,5 @@ export async function GET() {
             { error: 'Failed to fetch games' },
             { status: 500 }
         );
-    } finally {
-        if (connection) {
-            connection.release();
-        }
     }
 }

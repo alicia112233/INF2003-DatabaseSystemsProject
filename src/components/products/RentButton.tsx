@@ -36,9 +36,7 @@ const RentButton: React.FC<RentButtonProps> = ({
     fullWidth = false,
     variant = 'outlined',
     disabled = false,
-    onSuccess,
     onWarning,
-    onError,
 }) => {
     const [open, setOpen] = useState(false);
     const [days, setDays] = useState(1);

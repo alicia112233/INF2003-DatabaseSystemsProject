@@ -7,22 +7,22 @@ import { useRouter } from 'next/navigation';
 import { useCart } from '@/contexts/CartContext';
 
 const CartIcon: React.FC = () => {
-  const router = useRouter();
-  const { getCartItemCount } = useCart();
-  
-  const itemCount = getCartItemCount();
+    const router = useRouter();
+    const { getCartItemCount } = useCart();
 
-  const handleCartClick = () => {
-    router.push('/cart');
-  };
+    const itemCount = getCartItemCount();
 
-  return (
-    <IconButton onClick={handleCartClick} color="inherit">
-      <Badge badgeContent={itemCount} color="error">
-        <ShoppingCart />
-      </Badge>
-    </IconButton>
-  );
+    const handleCartClick = () => {
+        router.push('/cart');
+    };
+
+    return (
+        <IconButton onClick={handleCartClick} color="inherit">
+            <Badge badgeContent={itemCount} color="error">
+                <ShoppingCart />
+            </Badge>
+        </IconButton>
+    );
 };
 
 export default CartIcon;

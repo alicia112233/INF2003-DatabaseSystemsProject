@@ -1,18 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import mysql from 'mysql2/promise';
+import { executeQuery } from '@/lib/database';
 import bcrypt from 'bcrypt';
 
-const dbConfig = {
-    host: process.env.MYSQL_HOST,
-    user: process.env.MYSQL_USER,
-    password: process.env.MYSQL_PASSWORD,
-    port: Number(process.env.MYSQL_PORT),
-    database: process.env.MYSQL_DATABASE,
-};
-
 export async function POST(request: NextRequest) {
-    let connection;
-
     try {
         const body = await request.json();
         const { firstName, lastName, gender, contactNo, email, password } = body;
@@ -36,11 +26,8 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ errors }, { status: 400 });
         }
 
-        // Create database connection
-        connection = await mysql.createConnection(dbConfig);
-
         // Check if email already exists and is deleted
-        const [deletedUsers] = await connection.execute(
+        const deletedUsers = await executeQuery(
             'SELECT * FROM users WHERE email = ? AND is_Deleted = "T"',
             [email]
         );
@@ -50,7 +37,7 @@ export async function POST(request: NextRequest) {
         }
         
         // Check if email already exists
-        const [existingUsers] = await connection.execute(
+        const existingUsers = await executeQuery(
             'SELECT * FROM users WHERE email = ?',
             [email]
         );
@@ -64,7 +51,7 @@ export async function POST(request: NextRequest) {
         const hashedPassword = await bcrypt.hash(password, saltRounds);
 
         // Insert new user (trigger will set default avatar based on gender)
-        await connection.execute(
+        await executeQuery(
             'INSERT INTO users (firstName, lastName, gender, contactNo, email, password, is_admin, loyaltyPoints) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
             [firstName, lastName, gender, contactNo, email, hashedPassword, 'F', '0']
         );
@@ -76,9 +63,5 @@ export async function POST(request: NextRequest) {
             { error: 'An error occurred during registration' },
             { status: 500 }
         );
-    } finally {
-        if (connection) {
-            await connection.end();
-        }
     }
 }

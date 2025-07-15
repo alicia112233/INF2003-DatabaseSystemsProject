@@ -1,20 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import mysql from 'mysql2/promise';
+import { executeQuery } from '@/lib/database';
 import { RowDataPacket } from 'mysql2';
 import bcrypt from 'bcrypt';
 
-const dbConfig = {
-    host: process.env.MYSQL_HOST,
-    user: process.env.MYSQL_USER,
-    password: process.env.MYSQL_PASSWORD,
-    port: Number(process.env.MYSQL_PORT),
-    database: process.env.MYSQL_DATABASE,
-};
-
 // GET - Fetch all users
 export async function GET(req: NextRequest) {
-    let connection;
-
     try {
         const userRole = req.cookies.get('userRole')?.value;
 
@@ -25,11 +15,10 @@ export async function GET(req: NextRequest) {
             );
         }
 
-        connection = await mysql.createConnection(dbConfig);
-
-        const [rows] = await connection.query<RowDataPacket[]>(
+        // Execute query — no destructuring
+        const rows = await executeQuery(
             `SELECT * FROM users ORDER BY createdAt DESC`
-        );
+        ) as RowDataPacket[];
 
         return NextResponse.json({ users: rows });
 
@@ -39,17 +28,11 @@ export async function GET(req: NextRequest) {
             { error: 'Internal server error' },
             { status: 500 }
         );
-    } finally {
-        if (connection) {
-            await connection.end();
-        }
     }
 }
 
 // POST - Create new user
 export async function POST(req: NextRequest) {
-    let connection;
-
     try {
         const userRole = req.cookies.get('userRole')?.value;
 
@@ -82,13 +65,11 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ errors }, { status: 400 });
         }
 
-        connection = await mysql.createConnection(dbConfig);
-
-        // Check if email already exists
-        const [existingUsers] = await connection.query<RowDataPacket[]>(
+        // Check if email already exists (no destructuring)
+        const existingUsers = await executeQuery(
             'SELECT id FROM users WHERE email = ?',
             [email]
-        );
+        ) as RowDataPacket[];
 
         if (Array.isArray(existingUsers) && existingUsers.length > 0) {
             return NextResponse.json(
@@ -97,11 +78,11 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        // Check if email already exists in users but the user is deleted
-        const [deletedUsers] = await connection.query<RowDataPacket[]>(
+        // Check if email exists but deleted (no destructuring)
+        const deletedUsers = await executeQuery(
             'SELECT id FROM users WHERE email = ? AND is_deleted = "T"',
             [email]
-        );
+        ) as RowDataPacket[];
 
         if (Array.isArray(deletedUsers) && deletedUsers.length > 0) {
             return NextResponse.json(
@@ -113,11 +94,14 @@ export async function POST(req: NextRequest) {
         // Hash password
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        // Insert new user (trigger will set default avatar based on gender)
-        await connection.execute(
+        // Handle is_admin flag (ensure string 'T' or 'F')
+        const adminFlag = (is_admin === true || is_admin === 'T') ? 'T' : 'F';
+
+        // Insert new user
+        await executeQuery(
             `INSERT INTO users (firstName, lastName, gender, contactNo, email, password, is_admin) 
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
-            [firstName.trim(), lastName.trim(), gender, contactNo.trim(), email.trim(), hashedPassword, is_admin || 'F']
+             VALUES (?, ?, ?, ?, ?, ?, ?)`,
+            [firstName.trim(), lastName.trim(), gender, contactNo.trim(), email.trim(), hashedPassword, adminFlag]
         );
 
         return NextResponse.json({ message: 'User created successfully!' });
@@ -128,9 +112,5 @@ export async function POST(req: NextRequest) {
             { error: 'Failed to create user!' },
             { status: 500 }
         );
-    } finally {
-        if (connection) {
-            await connection.end();
-        }
     }
 }

@@ -1,86 +1,66 @@
 import { NextRequest, NextResponse } from 'next/server';
-import mysql from 'mysql2/promise';
-
-// Database connection configuration
-const dbConfig = {
-  host: process.env.MYSQL_HOST,
-  user: process.env.MYSQL_USER,
-  password: process.env.MYSQL_PASSWORD,
-  port: Number(process.env.MYSQL_PORT),
-  database: process.env.MYSQL_DATABASE,
-};
+import { executeQuery } from '@/lib/database';
 
 export async function POST(request: NextRequest) {
-  try {
-    const { email } = await request.json();
-
-    if (!email) {
-      return NextResponse.json(
-        { error: 'Email is required' },
-        { status: 400 }
-      );
-    }
-
-    // Create database connection
-    const connection = await mysql.createConnection(dbConfig);
-
     try {
-      // Check if user exists
-      const [rows] = await connection.execute(
-        'SELECT id, email FROM users WHERE email = ?',
-        [email]
-      );
+        const { email } = await request.json();
 
-      const users = rows as any[];
+        if (!email) {
+            return NextResponse.json(
+                { error: 'Email is required' },
+                { status: 400 }
+            );
+        }
 
-      if (users.length === 0) {
-        return NextResponse.json(
-          { error: 'No account found with this email address!' },
-          { status: 404 }
+        // 1. Check if the user exists
+        const rows = await executeQuery(
+            'SELECT id, email FROM users WHERE email = ?',
+            [email]
         );
-      }
 
-      const user = users[0];
+        const users = rows as any[];
 
-      // Generate a reset token (in production, use a proper token generation library)
-      const resetToken = Math.random().toString(36).substring(2, 15) + 
-                        Math.random().toString(36).substring(2, 15);
-      
-      // Set token expiration (1 hour from now)
-      const tokenExpiry = new Date(Date.now() + 3600000); // 1 hour
+        if (users.length === 0) {
+            return NextResponse.json(
+                { error: 'No account found with this email address!' },
+                { status: 404 }
+            );
+        }
 
-      // Store the reset token in database
-      await connection.execute(
-        'UPDATE users SET resetToken = ?, resetTokenExpiry = ? WHERE email = ?',
-        [resetToken, tokenExpiry, email]
-      );
+        const user = users[0];
 
-      // For now, we just log the reset link, we will implement the email service later
-      const resetLink = `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/authentication/reset-password?token=${resetToken}`;
-      
-      console.log('Password reset link for', email, ':', resetLink);
+        // 2. Generate a reset token
+        const resetToken = Math.random().toString(36).substring(2, 15) +
+            Math.random().toString(36).substring(2, 15);
 
-      // TODO: Implement email sending service here
-      // Example: await sendResetEmail(user.email, user.firstName, resetLink);
+        // 3. Set token expiration time (1 hour from now)
+        const tokenExpiry = new Date(Date.now() + 3600000); // 1 hour
 
-      return NextResponse.json(
-        { 
-          message: 'Password reset instructions sent successfully',
-          // In development, you might want to return the link for testing
-          ...(process.env.NODE_ENV === 'development' && { resetLink })
-        },
-        { status: 200 }
-      );
+        // 4. Store the token in the DB
+        await executeQuery(
+            'UPDATE users SET resetToken = ?, resetTokenExpiry = ? WHERE email = ?',
+            [resetToken, tokenExpiry, email]
+        );
 
-    } finally {
-      await connection.end();
+        // 5. Create reset link
+        const resetLink = `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/authentication/reset-password?token=${resetToken}`;
+
+        // 6. Log link (or send via email later)
+        console.log('Password reset link for', email, ':', resetLink);
+
+        return NextResponse.json(
+            {
+                message: 'Password reset instructions sent successfully',
+                ...(process.env.NODE_ENV === 'development' && { resetLink })
+            },
+            { status: 200 }
+        );
+
+    } catch (error) {
+        console.error('Forgot password error:', error);
+        return NextResponse.json(
+            { error: 'Internal server error' },
+            { status: 500 }
+        );
     }
-
-  } catch (error) {
-    console.error('Forgot password error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
-  }
 }

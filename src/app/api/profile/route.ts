@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { pool } from '@/app/lib/db';
+import { executeQuery } from '@/lib/database';
 import { RowDataPacket } from 'mysql2';
 
 export async function GET(req: NextRequest) {
@@ -11,10 +11,10 @@ export async function GET(req: NextRequest) {
             return NextResponse.json({ error: 'User not authenticated' }, { status: 401 });
         }
 
-        const [rows] = await pool.query<RowDataPacket[]>(
+        const rows = await executeQuery(
             'SELECT firstName, lastName, email, contactNo, gender, is_admin, avatarUrl FROM users WHERE id = ?',
             [userId]
-        );
+        ) as RowDataPacket[];
 
         if (rows.length > 0) {
             const user = rows[0];
@@ -54,7 +54,7 @@ export async function PUT(req: NextRequest) {
             return NextResponse.json({ error: 'Avatar URL is required' }, { status: 400 });
         }
 
-        const [result] = await pool.execute(
+        const result = await executeQuery(
             'UPDATE users SET avatarUrl = ? WHERE id = ?',
             [avatarUrl, userId]
         );

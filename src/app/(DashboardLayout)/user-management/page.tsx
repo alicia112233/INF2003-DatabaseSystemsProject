@@ -212,6 +212,11 @@ const UserManagement = () => {
             }
         } catch (error: any) {
             showSnackbar(error.message, 'error');
+
+            if (error.message === 'Cannot delete your own account') {
+                setDeleteDialog(false);
+                setUserToDelete(null);
+            }
         }
     };
 

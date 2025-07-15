@@ -112,7 +112,7 @@ export function middleware(request: NextRequest) {
         }
 
         // Admin-only routes
-        if (path.startsWith('/admin') || path.includes('DashboardLayout')) {
+        if (path.startsWith('/admin') || path.includes('DashboardLayout') || path.startsWith('/promotion-management')) {
             if (!isLoggedIn || userRole !== 'admin') {
                 return NextResponse.redirect(new URL('/', request.url));
             }

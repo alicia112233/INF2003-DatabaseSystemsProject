@@ -19,7 +19,6 @@ import {
     Checkbox,
     Autocomplete,
     CircularProgress,
-    Skeleton,
     Typography,
 } from '@mui/material';
 import { Promotion, CreatePromotionRequest } from '@/types/promotion';

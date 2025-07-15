@@ -64,17 +64,6 @@ const CartItem: React.FC<CartItemProps> = ({ item }) => {
     const quantity = getValidQuantity(item.quantity);
     const totalPrice = unitPrice * quantity;
 
-    console.log('Cart item data:', {
-        id: item.id,
-        title: item.title,
-        price: item.price,
-        priceType: typeof item.price,
-        quantity: item.quantity,
-        quantityType: typeof item.quantity,
-        promo_code: item.promo_code,
-        promotion: item.promotion
-    });
-
     return (
         <Card sx={{ mb: 2 }}>
             <CardContent>
