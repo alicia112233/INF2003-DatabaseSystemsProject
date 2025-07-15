@@ -220,7 +220,6 @@ CREATE TABLE IF NOT EXISTS GameGenre (
 );
 
 -- 7. Order Table
-
 CREATE TABLE IF NOT EXISTS Orders (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,

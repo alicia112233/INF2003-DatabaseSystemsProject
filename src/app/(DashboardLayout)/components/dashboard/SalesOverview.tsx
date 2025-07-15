@@ -126,8 +126,8 @@ const SalesOverview = () => {
   };
 
   const seriescolumnchart: any = [
-    { name: 'Earnings this month', data: earnings },
-    { name: 'Expense this month', data: expense },
+    { name: 'Order Earnings this month', data: earnings },
+    { name: 'Rental Earnings this month', data: expense },
   ];
 
   return (
