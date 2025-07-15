@@ -1,21 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
-import mysql from 'mysql2/promise';
+import { pool } from '@/app/lib/db';
+import { withPerformanceTracking } from '@/middleware/trackPerformance';
 
-const dbConfig = {
-    host: process.env.MYSQL_HOST,
-    user: process.env.MYSQL_USER,
-    password: process.env.MYSQL_PASSWORD,
-    port: Number(process.env.MYSQL_PORT),
-    database: process.env.MYSQL_DATABASE,
-};
-
-export async function POST(request: NextRequest) {
+async function postHandler(request: NextRequest) {
     let connection;
     
     try {
         const { promotionId, applicableToAll, selectedGameIds } = await request.json();
 
-        connection = await mysql.createConnection(dbConfig);
+        connection = await pool.getConnection();
         
         // Start transaction
         await connection.beginTransaction();
@@ -65,7 +58,9 @@ export async function POST(request: NextRequest) {
         );
     } finally {
         if (connection) {
-            await connection.end();
+            connection.release();
         }
     }
 }
+
+export const POST = withPerformanceTracking(postHandler);

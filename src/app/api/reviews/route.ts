@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import mongoose from 'mongoose';
-import Review from '@/models/Review'; // Adjust if your path differs
+import Review from '@/models/Review'; // Use default import, no curly braces
 
 // Connect to MongoDB
 async function connectDB() {

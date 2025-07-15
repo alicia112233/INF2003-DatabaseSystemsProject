@@ -1,13 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import mysql from 'mysql2/promise';
-
-const dbConfig = {
-    host: process.env.MYSQL_HOST,
-    user: process.env.MYSQL_USER,
-    password: process.env.MYSQL_PASSWORD,
-    port: Number(process.env.MYSQL_PORT),
-    database: process.env.MYSQL_DATABASE,
-};
+import { executeQuery } from '@/lib/database';
 
 function toTitleCase(str: string) {
   return str
@@ -32,14 +24,11 @@ function capitalizeFirstLetterOfParagraphs(str: string) {
 }
 
 export async function GET(request: NextRequest) {
-  try {
-    const { searchParams } = new URL(request.url);
-    const genreId = searchParams.get('genre');
-    const searchTerm = searchParams.get('search');
-    const stockFilter = searchParams.get('stock');
-
-        const pool = mysql.createPool(dbConfig);
-        const connection = await pool.getConnection();
+    try {
+        const { searchParams } = new URL(request.url);
+        const genreId = searchParams.get('genre');
+        const searchTerm = searchParams.get('search');
+        const stockFilter = searchParams.get('stock');
 
         // to filter games, then get all genres for those games
         let query = `
@@ -96,17 +85,30 @@ export async function GET(request: NextRequest) {
 
     query += ' GROUP BY g.id ORDER BY g.title ASC';
 
-        const [rows] = await connection.execute(query, queryParams);
+        const rows = await executeQuery(query, queryParams) as any[];
 
-        const gamesWithGenres = (rows as any[]).map(game => ({
+        const gamesWithGenres = rows.map(game => ({
             ...game,
+            id: game.id.toString(),
+            price: parseFloat(game.price),
+            stockCount: game.stock_count,
+            genres: game.genre_ids ? game.genre_ids.split(',').map((id: string) => parseInt(id)) : [],
+            genreNames: game.genre_names ? game.genre_names.split(',').map((genre_name: string) => toTitleCase(genre_name)) : [],
             title: toTitleCase(game.title),
             description: capitalizeFirstLetterOfParagraphs(game.description),
-            genres: game.genre_ids ? game.genre_ids.split(',').map((id: string) => parseInt(id)) : [],
-            genreNames: game.genre_names ? game.genre_names.split(',').map((genre_names: string) => toTitleCase(genre_names)) : []
+            
+            promotion: game.promo_id_alias && game.promo_isActive_alias ? {
+                id: game.promo_id_alias,
+                code: game.promo_code_alias,
+                description: game.promo_description_alias,
+                discountValue: parseFloat(game.promo_discountValue_alias),
+                discountType: game.promo_discountType_alias,
+                startDate: game.promo_startDate_alias,
+                endDate: game.promo_endDate_alias,
+                isActive: Boolean(game.promo_isActive_alias),
+            } : null,
+            promo_code: game.promo_code_alias || null,
         }));
-
-        connection.release();
 
         return NextResponse.json({ games: gamesWithGenres });
     } catch (error) {

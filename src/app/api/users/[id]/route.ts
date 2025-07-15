@@ -1,15 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import mysql from 'mysql2/promise';
+import { pool } from '@/app/lib/db';
 import { RowDataPacket } from 'mysql2';
 import bcrypt from 'bcrypt';
-
-const dbConfig = {
-    host: process.env.MYSQL_HOST,
-    user: process.env.MYSQL_USER,
-    password: process.env.MYSQL_PASSWORD,
-    port: Number(process.env.MYSQL_PORT),
-    database: process.env.MYSQL_DATABASE,
-};
 
 // PUT - Update user
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -25,7 +17,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
             return NextResponse.json({ error: 'Unauthorized access' }, { status: 403 });
         }
 
-        connection = await mysql.createConnection(dbConfig);
+        connection = await pool.getConnection();
 
         // Check if email already exists for another user
         const [existingUsers] = await connection.query<RowDataPacket[]>(
@@ -58,7 +50,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
         console.error('Error updating user:', error);
         return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
     } finally {
-        if (connection) await connection.end();
+        if (connection) connection.release();
     }
 }
 
@@ -87,7 +79,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
             );
         }
 
-        connection = await mysql.createConnection(dbConfig);
+        connection = await pool.getConnection();
 
         await connection.execute('UPDATE users SET is_Deleted = "T" WHERE id = ?', [id]);
 
@@ -101,7 +93,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
         );
     } finally {
         if (connection) {
-            await connection.end();
+            connection.release();
         }
     }
 }

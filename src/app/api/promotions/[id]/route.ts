@@ -1,157 +1,248 @@
 import { NextRequest, NextResponse } from 'next/server';
-import mysql from 'mysql2/promise';
+import { pool } from '@/app/lib/db';
+import { withPerformanceTracking } from '@/middleware/trackPerformance';
+import type { RowDataPacket, ResultSetHeader } from 'mysql2';
 
-// Database connection configuration
-const dbConfig = {
-    host: process.env.MYSQL_HOST,
-    user: process.env.MYSQL_USER,
-    password: process.env.MYSQL_PASSWORD,
-    port: Number(process.env.MYSQL_PORT),
-    database: process.env.MYSQL_DATABASE,
-};
-
-// GET single promotion which includes selected games
-export async function GET(
-    request: NextRequest,
-    { params }: { params: Promise<{ id: string }> }
-) {
+// GET handler - fetch single promotion
+async function getHandler(request: NextRequest) {
+    // Extract the ID from the URL pathname
+    const url = new URL(request.url);
+    const pathSegments = url.pathname.split('/');
+    const id = pathSegments[pathSegments.length - 1];
+    
+    let connection;
+    
     try {
-        const { id } = await params;
-        const connection = await mysql.createConnection(dbConfig);
-
-        // Get promotion details
-        const [promotionRows] = await connection.execute(
+        connection = await pool.getConnection();
+        
+        // Get the promotion
+        const [rows] = await connection.query(
             'SELECT * FROM Promotion WHERE id = ?',
             [id]
-        );
-
-        const promotions = promotionRows as any[];
-        if (promotions.length === 0) {
-            await connection.end();
-            return NextResponse.json({ error: 'Promotion not found' }, { status: 404 });
-        }
-
-        const promotion = promotions[0];
-
-        // Get selected games for this promotion (if not applicable to all)
-        let selectedGameIds: number[] = [];
-        if (!promotion.applicableToAll) {
-            const [gameRows] = await connection.execute(
-                'SELECT id FROM Game WHERE promo_id = ?',
-                [id]
+        ) as [RowDataPacket[], any];
+        
+        if (!Array.isArray(rows) || rows.length === 0) {
+            return NextResponse.json(
+                { error: 'Promotion not found' },
+                { status: 404 }
             );
-            selectedGameIds = (gameRows as any[]).map(row => row.id);
         }
-
-        await connection.end();
-
-        return NextResponse.json({
-            ...promotion,
-            selectedGameIds
-        });
+        
+        const promotion: any = rows[0];
+        
+        // Get games that have this promotion
+        const [gameRows] = await connection.query(
+            'SELECT id, title FROM Game WHERE promo_id = ?',
+            [id]
+        ) as [RowDataPacket[], any];
+        
+        // Add selectedGameIds and selectedGames to match the frontend interface
+        promotion.selectedGameIds = Array.isArray(gameRows) ? gameRows.map((game: any) => game.id) : [];
+        promotion.selectedGames = Array.isArray(gameRows) ? gameRows : [];
+        
+        return NextResponse.json(promotion);
     } catch (error) {
-        console.error('Error fetching promotion:', error);
-        return NextResponse.json({ error: 'Failed to fetch promotion' }, { status: 500 });
+        console.error('GET /api/promotions/[id] error:', error);
+        return NextResponse.json(
+            { error: 'Failed to fetch promotion' },
+            { status: 500 }
+        );
+    } finally {
+        if (connection) connection.release();
     }
 }
 
-// PUT (Update) promotion
-export async function PUT(
-    request: NextRequest,
-    { params }: { params: Promise<{ id: string }> }
-) {
+// PUT handler - update promotion
+async function putHandler(request: NextRequest) {
+    // Extract the ID from the URL pathname
+    const url = new URL(request.url);
+    const pathSegments = url.pathname.split('/');
+    const id = pathSegments[pathSegments.length - 1];
+    
     let connection;
-
+    
     try {
-        const { id } = await params;
         const body = await request.json();
-        const {
-            code,
-            description,
-            discountValue,
-            discountType,
-            maxUsage,
-            startDate,
-            endDate,
-            isActive,
-            applicableToAll,
+        connection = await pool.getConnection();
+        
+        // Start transaction
+        await connection.beginTransaction();
+        
+        // Remove fields that don't exist in the database or shouldn't be updated
+        const { 
+            id: bodyId, 
+            created_at, 
+            updated_at, 
             selectedGameIds,
+            selectedGames,
+            applicableToAll, 
+            ...updateData 
         } = body;
-
-        connection = await mysql.createConnection(dbConfig);
-
-        // Update the promotion
-        await connection.execute(
-            `UPDATE Promotion SET 
-       code = ?, description = ?, discountValue = ?, discountType = ?, maxUsage = ?, 
-       startDate = ?, endDate = ?, isActive = ?, applicableToAll = ?
-       WHERE id = ?`,
-            [
-                code,
-                description,
-                discountValue,
-                discountType,
-                maxUsage,
-                startDate,
-                endDate,
-                isActive,
-                applicableToAll,
-                id,
-            ]
-        );
-
-        // Unset this promotion from all games
-        await connection.execute(
-            'UPDATE Game SET promo_id = NULL WHERE promo_id = ?',
-            [id]
-        );
-
-        // Apply the promotion again
-        if (applicableToAll) {
-            await connection.execute('UPDATE Game SET promo_id = ?', [id]);
-        } else if (selectedGameIds && selectedGameIds.length > 0) {
-            const placeholders = selectedGameIds.map(() => '?').join(',');
-            await connection.execute(
-                `UPDATE Game SET promo_id = ? WHERE id IN (${placeholders})`,
-                [id, ...selectedGameIds]
-            );
+        
+        // Define allowed fields that exist in the Promotion table
+        const allowedFields = [
+            'code',
+            'description', 
+            'discountValue',
+            'discountType',
+            'maxUsage',
+            'usedCount',
+            'startDate',
+            'endDate',
+            'isActive',
+            'applicableToAll'
+        ];
+        
+        // Filter updateData to only include allowed fields, and add applicableToAll back
+        const filteredUpdateData: { [key: string]: any } = {};
+        Object.keys(updateData).forEach(key => {
+            if (allowedFields.includes(key)) {
+                filteredUpdateData[key] = updateData[key];
+            }
+        });
+        
+        // Add applicableToAll to the update data
+        if (applicableToAll !== undefined) {
+            filteredUpdateData.applicableToAll = applicableToAll;
         }
-
-        return NextResponse.json({ message: 'Promotion updated successfully' });
+        
+        // Update promotion if there are fields to update
+        if (Object.keys(filteredUpdateData).length > 0) {
+            const setClause = Object.keys(filteredUpdateData)
+                .map(key => `\`${key}\` = ?`)
+                .join(', ');
+            
+            const values = Object.values(filteredUpdateData);
+            
+            await connection.query(
+                `UPDATE Promotion SET ${setClause} WHERE id = ?`,
+                [...values, id]
+            ) as [ResultSetHeader, any];
+        }
+        
+        if (applicableToAll === true || applicableToAll === 1 || applicableToAll === '1') {
+            // If applicable to all, assign this promotion to ALL games
+            console.log('Setting promotion to ALL games');
+            await connection.query(
+                'UPDATE Game SET promo_id = ?',
+                [id]
+            ) as [ResultSetHeader, any];
+        } else {
+            // First, remove existing promotion from all games that had this promotion
+            await connection.query(
+                'UPDATE Game SET promo_id = NULL WHERE promo_id = ?',
+                [id]
+            ) as [ResultSetHeader, any];
+            
+            // Then, if there are selected games, assign this promotion to them
+            if (Array.isArray(body.selectedGameIds) && body.selectedGameIds.length > 0) {
+                const gameIds = body.selectedGameIds.map((gameId: any) => parseInt(gameId)).filter((gameId: number) => !isNaN(gameId));
+                if (gameIds.length > 0) {
+                    console.log('Setting promotion to selected games:', gameIds);
+                    const placeholders = gameIds.map(() => '?').join(',');
+                    await connection.query(
+                        `UPDATE Game SET promo_id = ? WHERE id IN (${placeholders})`,
+                        [id, ...gameIds]
+                    ) as [ResultSetHeader, any];
+                }
+            }
+        }
+        
+        // Commit transaction
+        await connection.commit();
+        
+        // Fetch and return the updated promotion with selected games
+        const [updatedRows] = await connection.query(
+            'SELECT * FROM Promotion WHERE id = ?',
+            [id]
+        ) as [RowDataPacket[], any];
+        
+        const updatedPromotion = updatedRows[0];
+        
+        // Get games that have this promotion
+        const [gameRows] = await connection.query(
+            'SELECT id, title FROM Game WHERE promo_id = ?',
+            [id]
+        ) as [RowDataPacket[], any];
+        
+        // Add selectedGameIds and selectedGames to match the frontend interface
+        updatedPromotion.selectedGameIds = Array.isArray(gameRows) ? gameRows.map((game: any) => game.id) : [];
+        updatedPromotion.selectedGames = Array.isArray(gameRows) ? gameRows : [];
+        
+        return NextResponse.json({ 
+            success: true, 
+            promotion: updatedPromotion 
+        });
+        
     } catch (error) {
-        console.error('Error updating promotion:', error);
+        // Rollback transaction on error
+        if (connection) {
+            try {
+                await connection.rollback();
+            } catch (rollbackError) {
+                console.error('Rollback error:', rollbackError);
+            }
+        }
+        console.error('PUT /api/promotions/[id] error:', error);
         return NextResponse.json(
             { error: 'Failed to update promotion' },
             { status: 500 }
         );
     } finally {
-        if (connection) {
-            await connection.end();
-        }
+        if (connection) connection.release();
     }
 }
 
-// DELETE promotion
-export async function DELETE(
-    request: NextRequest,
-    { params }: { params: Promise<{ id: string }> }
-) {
+// DELETE handler - delete promotion
+async function deleteHandler(request: NextRequest) {
+    // Extract the ID from the URL pathname
+    const url = new URL(request.url);
+    const pathSegments = url.pathname.split('/');
+    const id = pathSegments[pathSegments.length - 1];
+    
+    let connection;
+    
     try {
-        // Await params before using
-        const { id } = await params;
-
-        const connection = await mysql.createConnection(dbConfig);
-
-        await connection.execute(
-            'DELETE FROM promotion WHERE id = ?',
+        connection = await pool.getConnection();
+        
+        // Start transaction
+        await connection.beginTransaction();
+        
+        // First, remove this promotion from all games
+        await connection.query(
+            'UPDATE Game SET promo_id = NULL WHERE promo_id = ?',
             [id]
-        );
-
-        await connection.end();
-
-        return NextResponse.json({ message: 'Promotion deleted successfully' });
+        ) as [ResultSetHeader, any];
+        
+        // Then delete the promotion
+        const [result] = await connection.query(
+            'DELETE FROM Promotion WHERE id = ?',
+            [id]
+        ) as [ResultSetHeader, any];
+        
+        // Commit transaction
+        await connection.commit();
+        
+        return NextResponse.json({ success: true, result });
     } catch (error) {
-        console.error('Error deleting promotion:', error);
-        return NextResponse.json({ error: 'Failed to delete promotion' }, { status: 500 });
+        // Rollback transaction on error
+        if (connection) {
+            try {
+                await connection.rollback();
+            } catch (rollbackError) {
+                console.error('Rollback error:', rollbackError);
+            }
+        }
+        console.error('DELETE /api/promotions/[id] error:', error);
+        return NextResponse.json(
+            { error: 'Failed to delete promotion' },
+            { status: 500 }
+        );
+    } finally {
+        if (connection) connection.release();
     }
 }
+
+export const GET = withPerformanceTracking(getHandler);
+export const PUT = withPerformanceTracking(putHandler);
+export const DELETE = withPerformanceTracking(deleteHandler);

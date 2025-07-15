@@ -13,6 +13,9 @@ import AddToCartButton from '@/components/cart/AddToCartButton';
 import { Product } from '@/types/cart';
 import WishlistButton from '../wishlist/WishlistButton';
 import RentButton from './RentButton';
+import Snackbar from '@mui/material/Snackbar';
+import Alert from '@mui/material/Alert';
+
 
 interface ProductCardProps {
     product: Product;
@@ -196,7 +199,6 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
                     disabled={isOutOfStock}
                     buttonText={isOutOfStock ? 'No Stock' : 'Add to Cart'}
                 />
-                
                 {/* Rent Button - only show if game is in stock */}
                 {!isOutOfStock && (
                     <RentButton
@@ -205,6 +207,27 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
                         variant="outlined"
                     />
                 )}
+                {/* See Reviews Button - always show */}
+                <Box mt={1}>
+                    <a
+                        href={`/game/${product.id}`}
+                        style={{
+                            display: 'block',
+                            width: '100%',
+                            textAlign: 'center',
+                            background: '#1976d2',
+                            color: 'white',
+                            padding: '10px 0',
+                            borderRadius: '6px',
+                            fontWeight: 600,
+                            textDecoration: 'none',
+                            marginTop: 8,
+                        }}
+                        aria-label="See reviews for this game"
+                    >
+                        SEE REVIEWS
+                    </a>
+                </Box>
             </Box>
         </Card>
     );

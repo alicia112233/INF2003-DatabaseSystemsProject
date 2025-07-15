@@ -1,6 +1,6 @@
 -- This script sets up the initial database and tables for our application.
 
--- Uncomment this command below if your tables are different
+-- Comment this command below if your tables are the same!
 DROP DATABASE IF EXISTS game_haven;
 
 SET profiling = 1;
@@ -44,7 +44,7 @@ SET NEW.avatarUrl =
     ELSE NEW.avatarUrl
   END;
 
--- Default password: Password1234
+-- All Default Password: Password1234
 
 -- Admin account
 INSERT IGNORE INTO
@@ -69,7 +69,7 @@ VALUES (
         '/images/profile/user-1.jpg'
     );
 
--- user account
+-- User account
 INSERT IGNORE INTO
     game_haven.users (
         firstName,
@@ -143,10 +143,11 @@ CREATE TABLE IF NOT EXISTS Promotion (
     isActive BOOLEAN DEFAULT TRUE,
     applicableToAll BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_promotion_startDate_endDate (startDate, endDate) VISIBLE
 );
 
--- Insert Promotion data
+-- Insert some Promotion data
 INSERT IGNORE INTO
     game_haven.Promotion (
         id,
@@ -195,11 +196,13 @@ CREATE TABLE IF NOT EXISTS Game (
     image_url VARCHAR(512),
     release_date DATE,
     is_digital BOOLEAN DEFAULT FALSE,
-    stock_count INT DEFAULT 10, -- Set default stock to 10 instead of 0
+    stock_count INT DEFAULT 10,
     promo_id INT,
     head_image_url VARCHAR(255),
     screenshot_url VARCHAR(255),
     FOREIGN KEY (promo_id) REFERENCES Promotion (id)
+    -- INDEX idx_game_promo_id (promo_id) VISIBLE,
+    -- INDEX idx_game_title (title) VISIBLE
 );
 
 -- Update existing games to have stock if they currently have 0
@@ -217,10 +220,11 @@ CREATE TABLE IF NOT EXISTS GameGenre (
     PRIMARY KEY (game_id, genre_id),
     FOREIGN KEY (game_id) REFERENCES Game (id),
     FOREIGN KEY (genre_id) REFERENCES Genre (id)
+    -- UNIQUE INDEX idx_gamegenre_game_id (game_id) VISIBLE,
+    -- UNIQUE INDEX idx_gamegenre_genre_id (genre_id) VISIBLE
 );
 
--- 7. Order Table
-
+-- 7. Orders Table
 CREATE TABLE IF NOT EXISTS Orders (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
@@ -228,6 +232,8 @@ CREATE TABLE IF NOT EXISTS Orders (
     purchase_date DATE NOT NULL,
     promotion_code VARCHAR(50) NULL,
     FOREIGN KEY (user_id) REFERENCES users (id)
+    -- UNIQUE INDEX idx_orders_user_id (user_id) VISIBLE,
+    -- UNIQUE INDEX idx_orders_promotion_code (promotion_code) VISIBLE
 );
 
 -- Join table for many-to-many Orders <-> Games
@@ -239,6 +245,8 @@ CREATE TABLE IF NOT EXISTS OrderGame (
     PRIMARY KEY (order_id, game_id),
     FOREIGN KEY (order_id) REFERENCES Orders (id) ON DELETE CASCADE,
     FOREIGN KEY (game_id) REFERENCES Game (id)
+    -- UNIQUE INDEX idx_ordergame_order_id (order_id) VISIBLE,
+    -- UNIQUE INDEX idx_ordergame_game_id (game_id) VISIBLE
 );
 
 -- 8. Rental Table
@@ -252,6 +260,8 @@ CREATE TABLE IF NOT EXISTS RentalRecord (
     returned BOOLEAN DEFAULT FALSE,
     FOREIGN KEY (user_id) REFERENCES users (id),
     FOREIGN KEY (game_id) REFERENCES Game (id)
+    -- UNIQUE INDEX idx_rental_user_id (user_id) VISIBLE,
+    -- UNIQUE INDEX idx_rental_game_id (game_id) VISIBLE
 );
 
 -- 9. Wishlist Table
@@ -263,6 +273,8 @@ CREATE TABLE IF NOT EXISTS Wishlist (
     FOREIGN KEY (user_id) REFERENCES users (id),
     FOREIGN KEY (game_id) REFERENCES Game (id),
     UNIQUE KEY unique_wishlist (user_id, game_id)
+    -- UNIQUE INDEX idx_wishlist_user_id (user_id) VISIBLE,
+    -- UNIQUE INDEX idx_wishlist_game_id (game_id) VISIBLE
 );
 
 -- 10. Screenshot Table

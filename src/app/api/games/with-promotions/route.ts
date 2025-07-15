@@ -1,16 +1,6 @@
 import { NextResponse } from 'next/server';
-import mysql from 'mysql2/promise';
-
-const pool = mysql.createPool({
-    host: process.env.MYSQL_HOST,
-    user: process.env.MYSQL_USER,
-    password: process.env.MYSQL_PASSWORD,
-    port: Number(process.env.MYSQL_PORT),
-    database: process.env.MYSQL_DATABASE,
-    waitForConnections: true,
-    connectionLimit: 10,
-    queueLimit: 0,
-});
+import { pool } from '@/app/lib/db';
+import { withPerformanceTracking } from '@/middleware/trackPerformance';
 
 function toTitleCase(str: string) {
     return str
@@ -20,7 +10,7 @@ function toTitleCase(str: string) {
         .join(' ');
 }
 
-export async function GET() {
+async function handler() {
     let connection;
     try {
         connection = await pool.getConnection();
@@ -75,3 +65,5 @@ export async function GET() {
         }
     }
 }
+
+export const GET = withPerformanceTracking(handler);

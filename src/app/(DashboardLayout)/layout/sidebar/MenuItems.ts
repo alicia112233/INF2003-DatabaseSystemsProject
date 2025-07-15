@@ -2,9 +2,11 @@ import {
     IconLayoutDashboard,
     IconDeviceGamepad,
     IconUsers,
-    IconReportAnalytics,
     IconDiscount,
     IconCalendarStats,
+    IconChartLine,
+    IconChevronDown,
+    IconChevronUp,
 } from "@tabler/icons-react";
 import { Upgrade } from "./Upgrade";
 import { uniqueId } from "lodash";
@@ -19,9 +21,22 @@ interface MenuItem {
     icon?: React.ElementType | null;
     href?: string;
     content?: React.ReactNode;
+    isShowMoreButton?: boolean;
+    onClick?: () => void;
 }
 
-export const getMenuItems = (isLoggedIn: boolean, userRole: string = 'customer'): MenuItem[] => {
+interface Genre {
+    id: number;
+    name: string;
+}
+
+export const getMenuItems = (
+    isLoggedIn: boolean, 
+    userRole: string = 'customer',
+    genres: Genre[] = [],
+    showAllGenres: boolean = false,
+    handleToggleGenres?: () => void
+): MenuItem[] => {
     // Common menu items for all users
     const commonItems: MenuItem[] = [
         {
@@ -38,53 +53,39 @@ export const getMenuItems = (isLoggedIn: boolean, userRole: string = 'customer')
         },
     ];
 
-    // Guest-specific menu items (without Upgrade)
-    const guestItems: MenuItem[] = [
-        {
-            navlabel: true,
-            subheader: "CATEGORIES",
-        },
-        {
-            id: uniqueId(),
-            title: "Top Sellers",
+    // Generate genre menu items dynamically
+    const genreItems: MenuItem[] = [];
+    const maxGenresToShow = 5;
+    
+    // Determine how many genres to show
+    const genresToShow = showAllGenres ? genres : genres.slice(0, maxGenresToShow);
+    
+    // Add genre items based on showAllGenres state
+    genresToShow.forEach((genre) => {
+        genreItems.push({
+            id: `genre-${genre.id}`,
+            title: genre.name,
             icon: IconDeviceGamepad,
-            href: "/view-top-sellers",
-        },
-        {
-            id: uniqueId(),
-            title: "New Releases",
-            icon: IconDeviceGamepad,
-            href: "/view-new-releases",
-        },
-        {
-            id: uniqueId(),
-            title: "Upcoming Games",
-            icon: IconDeviceGamepad,
-            href: "/view-upcoming",
-        },
-        {
-            navlabel: true,
-            subheader: "Genres",
-        },
-        {
-            id: uniqueId(),
-            title: "Action",
-            icon: IconDeviceGamepad,
-            href: "/view-action-games",
-        },
-        {
-            id: uniqueId(),
-            title: "Adventure",
-            icon: IconDeviceGamepad,
-            href: "/view-adventure-games",
-        },
-        {
-            id: uniqueId(),
-            title: "Horror",
-            icon: IconDeviceGamepad,
-            href: "/view-horror-games",
-        },
-    ];
+            href: `/view-${genre.name.toLowerCase().replace(/\s+/g, '-')}-games`,
+        });
+    });
+    
+    // Add Show More/Show Less button if there are more genres than the limit
+    if (genres.length > maxGenresToShow && handleToggleGenres) {
+        genreItems.push({
+            id: 'toggle-genres',
+            title: showAllGenres ? 'Show Less' : 'Show More',
+            icon: showAllGenres ? IconChevronUp : IconChevronDown,
+            onClick: handleToggleGenres,
+            isShowMoreButton: true,
+        });
+    } else {
+        console.log('Not adding toggle button:', {
+            genresLength: genres.length,
+            maxGenresToShow,
+            hasHandler: !!handleToggleGenres
+        });
+    }
 
     // Admin-specific menu items
     const adminItems: MenuItem[] = [
@@ -133,10 +134,14 @@ export const getMenuItems = (isLoggedIn: boolean, userRole: string = 'customer')
             href: '/promotion-management',
         },
         {
+            navlabel: true,
+            subheader: 'SYSTEM',
+        },
+        {
             id: uniqueId(),
-            title: "Reports",
-            icon: IconReportAnalytics,
-            href: "/reports",
+            title: 'Performance',
+            icon: IconChartLine,
+            href: '/performance-dashboard',
         },
     ];
 
@@ -160,56 +165,25 @@ export const getMenuItems = (isLoggedIn: boolean, userRole: string = 'customer')
         },
         {
             navlabel: true,
-            subheader: "CATEGORIES",
+            subheader: "GENRES",
+
         },
-        {
-            id: uniqueId(),
-            title: "Top Sellers",
-            icon: IconDeviceGamepad,
-            href: "/view-top-sellers",
-        },
-        {
-            id: uniqueId(),
-            title: "New Releases",
-            icon: IconDeviceGamepad,
-            href: "/view-new-releases",
-        },
-        {
-            id: uniqueId(),
-            title: "Upcoming Games",
-            icon: IconDeviceGamepad,
-            href: "/view-upcoming",
-        },
+        ...genreItems
+    ];
+
+    // Guest items (non-logged in users)
+    const guestItems: MenuItem[] = [
         {
             navlabel: true,
-            subheader: "Genres",
+            subheader: "GENRES",
         },
-        {
-            id: uniqueId(),
-            title: "Action",
-            icon: IconDeviceGamepad,
-            href: "/view-action-games",
-        },
-        {
-            id: uniqueId(),
-            title: "Adventure",
-            icon: IconDeviceGamepad,
-            href: "/view-adventure-games",
-        },
-        {
-            id: uniqueId(),
-            title: "Horror",
-            icon: IconDeviceGamepad,
-            href: "/view-horror-games",
-        },
+        ...genreItems
     ];
 
     // Upgrade component to be placed at the bottom (only for guests)
     const upgradeItem: MenuItem = {
         id: uniqueId(),
-        title: "Upgrade",
         icon: null,
-        href: "#",
         content: React.createElement(Box, { px: 2 }, React.createElement(Upgrade)),
     };
 
@@ -218,11 +192,14 @@ export const getMenuItems = (isLoggedIn: boolean, userRole: string = 'customer')
         subheader: " ",
     };
 
+    let finalItems: MenuItem[];
     if (!isLoggedIn) {
-        return [...commonItems, ...guestItems, spacer, upgradeItem];
+        finalItems = [...commonItems, ...guestItems, spacer, upgradeItem];
     } else if (userRole === 'admin') {
-        return [...adminItems];
+        finalItems = [...adminItems];
     } else {
-        return [...commonItems, ...customerItems];
+        finalItems = [...commonItems, ...customerItems];
     }
+
+    return finalItems;
 };
