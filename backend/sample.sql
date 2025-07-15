@@ -1,7 +1,7 @@
 -- This script sets up the initial database and tables for our application.
 
 -- Uncomment this command below if your tables are different
-DROP DATABASE IF EXISTS game_haven;
+-- DROP DATABASE IF EXISTS game_haven;
 
 SET profiling = 1;
 

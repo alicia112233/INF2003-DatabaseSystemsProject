@@ -24,12 +24,13 @@ export async function GET(req: NextRequest) {
         DAY(o.purchase_date) as day,
         SUM(
           IF(p.discountValue IS NOT NULL,
-            g.price * (1 - p.discountValue / 100),
-            g.price
+            og.price * (1 - p.discountValue / 100) * og.quantity,
+            og.price * og.quantity
           )
         ) AS earnings
       FROM orders o
-      JOIN game g ON g.title = o.gameTitle
+      JOIN ordergame og ON o.id = og.order_id
+      JOIN game g ON g.id = og.game_id
       LEFT JOIN promotion p ON g.promo_id = p.id
       WHERE MONTH(o.purchase_date) = ? AND YEAR(o.purchase_date) = ?
       GROUP BY day

@@ -1,6 +1,6 @@
 import { useTheme } from '@mui/material/styles';
 import { Stack, Typography, Avatar, Fab } from '@mui/material';
-import { IconArrowDownRight, IconCurrencyDollar, IconArrowUpRight } from '@tabler/icons-react';
+import { IconArrowUpRight, IconCurrencyDollar } from '@tabler/icons-react';
 import DashboardCard from '@/app/(DashboardLayout)/components/shared/DashboardCard';
 import dynamic from "next/dynamic";
 import { useEffect, useState } from 'react';
@@ -14,9 +14,19 @@ const MonthlyEarnings = () => {
   const [total, setTotal] = useState(0);
   const [percent, setPercent] = useState(0);
 
-  // Use current month/year or let user select (hardcoded here for demo)
-  const month = 5; // May
-  const year = 2025;
+  // Calculate last month and previous month dynamically
+  const now = new Date();
+  const currentMonthDate = new Date(now.getFullYear(), now.getMonth(), 1);
+  const lastMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+
+  const lastMonth = lastMonthDate.getMonth() + 1; // 1-based
+  const lastMonthYear = lastMonthDate.getFullYear();
+
+  const currentMonth = currentMonthDate.getMonth() + 1;
+  const currentMonthYear = currentMonthDate.getFullYear();
+
+  const lastMonthLabel = lastMonthDate.toLocaleString('default', { month: 'long', year: 'numeric' });
+  const currentMonthLabel = currentMonthDate.toLocaleString('default', { month: 'long', year: 'numeric' });
 
   const theme = useTheme();
   const secondary = theme.palette.secondary.main;
@@ -25,15 +35,14 @@ const MonthlyEarnings = () => {
   const successlight = theme.palette.success.light;
   const warninglight = theme.palette.warning.light;
 
-  // Determine if percent change positive or negative for icon color
   const isPositive = percent > 0;
   const isNegative = percent < 0;
 
-    const percentBg = isPositive
-    ? '#e0f8dd' // green
+  const percentBg = isPositive
+    ? '#e0f8dd'
     : isNegative
-    ? '#feebe9' // red
-    : '#fff8de'; // yellow
+    ? '#feebe9'
+    : '#fff8de';
 
   const percentColor = isPositive
     ? successlight
@@ -47,10 +56,10 @@ const MonthlyEarnings = () => {
       color={percentColor}
       style={{
         transform: isPositive
-          ? 'rotate(0deg)'     // ↖ up
+          ? 'rotate(0deg)'
           : isNegative
-          ? 'rotate(90deg)'   // ↙ down
-          : 'rotate(45deg)',   // → neutral
+          ? 'rotate(90deg)'
+          : 'rotate(45deg)',
       }}
     />
   );
@@ -60,27 +69,48 @@ const MonthlyEarnings = () => {
   }, []);
 
   useEffect(() => {
-    fetch(`/api/admin/monthly-earnings?month=${month}&year=${year}`)
-      .then(res => res.json())
-      .then((data: { day: number; earnings: number }[]) => {
-        // Convert API response to array ordered by day, fill missing days with 0
-        const daysInMonth = new Date(year, month, 0).getDate();
-        const dailyEarnings = Array(daysInMonth).fill(0);
-        let totalMonth = 0;
+  const fetchData = async () => {
+    try {
+      const [currRes, lastRes] = await Promise.all([
+        fetch(`/api/admin/monthly-earnings?month=${currentMonth}&year=${currentMonthYear}`).then(res => res.json()),
+        fetch(`/api/admin/monthly-earnings?month=${lastMonth}&year=${lastMonthYear}`).then(res => res.json())
+      ]);
 
-        data.forEach(({ day, earnings }) => {
-          dailyEarnings[day - 1] = parseFloat(earnings.toFixed(2));
-          totalMonth += earnings;
-        });
+      const daysInCurrMonth = new Date(currentMonthYear, currentMonth, 0).getDate();
+      const dailyEarningsCurr = Array(daysInCurrMonth).fill(0);
+      let totalCurr = 0;
 
-        setEarnings(dailyEarnings);
-        setTotal(totalMonth);
+      currRes.forEach(({ day, earnings }: { day: number; earnings: number | string }) => {
+        const earningNum = typeof earnings === "number" ? earnings : parseFloat(earnings);
+        dailyEarningsCurr[day - 1] = parseFloat(earningNum.toFixed(2));
+        totalCurr += earningNum;
+      });
 
-        // For demo, random percent change (you can calculate based on last month or year)
-        setPercent(9); // example positive change
-      })
-      .catch(console.error);
-  }, [month, year]);
+      setEarnings(dailyEarningsCurr);
+      setTotal(totalCurr);
+
+      let totalLast = 0;
+      lastRes.forEach(({ earnings }: { earnings: number }) => {
+        const earningNum = typeof earnings === "number" ? earnings : parseFloat(earnings);
+        totalLast += earningNum;
+      });
+
+      let pctChange = 0;
+      if (totalLast > 0) {
+        pctChange = ((totalCurr - totalLast) / totalLast) * 100;
+      } else if (totalCurr > 0) {
+        pctChange = 100;
+      }
+      setPercent(parseFloat(pctChange.toFixed(1)));
+
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  fetchData();
+}, [lastMonth, lastMonthYear, currentMonth, currentMonthYear]);
+
 
   const optionscolumnchart: ApexOptions = {
     chart: {
@@ -108,7 +138,7 @@ const MonthlyEarnings = () => {
 
   return (
     <DashboardCard
-      title="Monthly Earnings"
+      title={`Monthly Earnings (${currentMonthLabel})`}
       action={
         <Fab color="secondary" size="medium" sx={{ color: '#ffffff' }}>
           <IconCurrencyDollar width={24} />
@@ -134,7 +164,7 @@ const MonthlyEarnings = () => {
             {isPositive ? `+${percent}%` : `${percent}%`}
           </Typography>
           <Typography variant="subtitle2" color="textSecondary">
-            last month
+            compared to {lastMonthLabel}
           </Typography>
         </Stack>
       </>
