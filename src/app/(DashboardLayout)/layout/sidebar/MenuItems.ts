@@ -110,12 +110,6 @@ export const getMenuItems = (isLoggedIn: boolean, userRole: string = 'customer')
             icon: IconDiscount,
             href: '/promotion-management',
         },
-        {
-            id: uniqueId(),
-            title: "Reports",
-            icon: IconReportAnalytics,
-            href: "/reports",
-        },
     ];
 
     // Customer-specific menu items
