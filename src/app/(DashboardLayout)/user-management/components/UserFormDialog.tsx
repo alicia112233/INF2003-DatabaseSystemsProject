@@ -141,7 +141,7 @@ const UserFormDialog: React.FC<UserFormDialogProps> = ({
                         size={{
                             xs: 12,
                             md: 6,
-                            lg: 8,
+                            lg: 6,
                         }}
                     >
                         <TextField
@@ -157,7 +157,7 @@ const UserFormDialog: React.FC<UserFormDialogProps> = ({
                         size={{
                             xs: 12,
                             md: 6,
-                            lg: 4,
+                            lg: 6,
                         }}
                     >
                         <TextField
