@@ -112,14 +112,23 @@ export function middleware(request: NextRequest) {
         }
 
         // Admin-only routes
-        if (path.startsWith('/admin') || path.includes('DashboardLayout') || path.startsWith('/promotion-management')) {
+        if (path.startsWith('/admin') || path.includes('DashboardLayout') || 
+            path.startsWith('/promotion-management') ||
+            path.startsWith('/orders-management') || path.startsWith('/rental-management')) {
             if (!isLoggedIn || userRole !== 'admin') {
                 return NextResponse.redirect(new URL('/', request.url));
             }
         }
 
+        if (path.startsWith('/profile')) {
+            if (!isLoggedIn) {
+                return NextResponse.redirect(new URL('/', request.url));
+            }
+            // Both admin and customer can access profile, so no role restriction here
+        }
+
         // Customer-only routes (cart, wishlist, orders, etc.)
-        const customerOnlyRoutes = ['/cart', '/wishlist', '/my-orders', '/profile'];
+        const customerOnlyRoutes = ['/cart', '/wishlist', '/my-orders'];
         const isCustomerOnlyRoute = customerOnlyRoutes.some(route => path === route || path.startsWith(route));
         
         if (isCustomerOnlyRoute) {
