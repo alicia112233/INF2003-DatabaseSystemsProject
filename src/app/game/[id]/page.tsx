@@ -1,5 +1,5 @@
-import ScreenshotCarousel from '@/components/ReviewSection/ScreenshotCarousel';
-import ReviewSection from '@/components/ReviewSection/ReviewSection';
+import ScreenshotCarousel from '@/components/reviewsection/ScreenshotCarousel';
+import ReviewSection from '@/components/reviewsection/ReviewSection';
 import mysql from 'mysql2/promise';
 
 interface Game {

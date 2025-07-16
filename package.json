@@ -1,11 +1,15 @@
 {
   "type": "module",
   "scripts": {
-    "predev": "node setupDb.mjs",
+    "predev": "node scripts/initMongoDB.mjs && node setupDb.mjs && node scripts/populateReviews.mjs",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "init-mongodb": "node scripts/initMongoDB.mjs",
+    "populate-reviews": "node scripts/populateReviews.mjs",
+    "populate-reviews-force": "node scripts/populateReviews.mjs --force",
+    "verify-mongodb": "node scripts/verifyMongoDB.mjs",
     "test:review": "ts-node --project tsconfig.cli.json scripts/testReview.ts"
   },
   "dependencies": {
