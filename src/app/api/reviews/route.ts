@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import mongoose from 'mongoose';
 import dbConnect from '@/utils/mongodb';
-import { getAuthUser, isAuthenticated } from '@/middleware/auth';
+import { getAuthUser, isAuthenticated, isAdmin } from '@/middleware/auth';
 
 // Define the Review schema directly in the API route for testing
 const ReviewSchema = new mongoose.Schema({
@@ -9,7 +9,8 @@ const ReviewSchema = new mongoose.Schema({
     userId: { type: Number, required: true },
     rating: { type: Number, required: true, min: 1, max: 5 },
     review: { type: String, required: true },
-    createdAt: { type: Date, default: Date.now }
+    createdAt: { type: Date, default: Date.now },
+    updatedAt: { type: Date }
 }, {
     collection: 'reviews'
 });
@@ -125,5 +126,127 @@ export async function POST(req: NextRequest) {
     
     const errorMessage = err instanceof Error ? err.message : 'Unknown error';
     return NextResponse.json({ error: 'Failed to create review', details: errorMessage }, { status: 500 });
+  }
+}
+
+// PUT to update a review (admin only)
+export async function PUT(req: NextRequest) {
+  try {
+    // Check if user is authenticated and is admin
+    const authUser = getAuthUser(req);
+    if (!authUser) {
+      return NextResponse.json({ 
+        error: 'Authentication required',
+        message: 'You must be logged in to edit reviews.'
+      }, { status: 401 });
+    }
+
+    if (!isAdmin(req)) {
+      return NextResponse.json({ 
+        error: 'Unauthorized',
+        message: 'Only administrators can edit reviews.'
+      }, { status: 403 });
+    }
+
+    const data = await req.json();
+    const { reviewId, rating, review } = data;
+
+    console.log('Admin review update request:', { 
+      reviewId, 
+      adminUserId: authUser.userId, 
+      rating, 
+      review 
+    });
+
+    // Validate required fields
+    if (!reviewId || !rating || typeof rating !== 'number' || rating < 1 || rating > 5) {
+      return NextResponse.json({ error: 'Invalid input' }, { status: 400 });
+    }
+
+    if (!review || review.trim().length === 0) {
+      return NextResponse.json({ error: 'Review text is required' }, { status: 400 });
+    }
+
+    await dbConnect();
+
+    // Find and update the review
+    const updatedReview = await Review.findByIdAndUpdate(
+      reviewId,
+      {
+        rating: Number(rating),
+        review: review.trim(),
+        updatedAt: new Date(), // Add timestamp for when it was last updated
+      },
+      { new: true } // Return the updated document
+    );
+
+    if (!updatedReview) {
+      return NextResponse.json({ error: 'Review not found' }, { status: 404 });
+    }
+
+    console.log('Review updated successfully by admin:', {
+      reviewId: updatedReview._id,
+      adminUserId: authUser.userId,
+    });
+    
+    return NextResponse.json(updatedReview, { status: 200 });
+  } catch (err) {
+    console.error('Error updating review:', err);
+    const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+    return NextResponse.json({ error: 'Failed to update review', details: errorMessage }, { status: 500 });
+  }
+}
+
+// DELETE a review (admin only)
+export async function DELETE(req: NextRequest) {
+  try {
+    // Check if user is authenticated and is admin
+    const authUser = getAuthUser(req);
+    if (!authUser) {
+      return NextResponse.json({ 
+        error: 'Authentication required',
+        message: 'You must be logged in to delete reviews.'
+      }, { status: 401 });
+    }
+
+    if (!isAdmin(req)) {
+      return NextResponse.json({ 
+        error: 'Unauthorized',
+        message: 'Only administrators can delete reviews.'
+      }, { status: 403 });
+    }
+
+    const reviewId = req.nextUrl.searchParams.get('reviewId');
+    if (!reviewId) {
+      return NextResponse.json({ error: 'Missing reviewId' }, { status: 400 });
+    }
+
+    console.log('Admin review deletion request:', { 
+      reviewId, 
+      adminUserId: authUser.userId 
+    });
+
+    await dbConnect();
+
+    // Find and delete the review
+    const deletedReview = await Review.findByIdAndDelete(reviewId);
+
+    if (!deletedReview) {
+      return NextResponse.json({ error: 'Review not found' }, { status: 404 });
+    }
+
+    console.log('Review deleted successfully by admin:', {
+      reviewId: deletedReview._id,
+      adminUserId: authUser.userId,
+    });
+    
+    return NextResponse.json({ 
+      message: 'Review deleted successfully',
+      deletedReview: deletedReview
+    }, { status: 200 });
+  } catch (err) {
+    console.error('Error deleting review:', err);
+    const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+    return NextResponse.json({ error: 'Failed to delete review', details: errorMessage }, { status: 500 });
   }
 }

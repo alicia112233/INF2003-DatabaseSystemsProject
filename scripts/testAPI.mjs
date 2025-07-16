@@ -3,7 +3,7 @@ async function testReviewsAPI() {
   const baseUrl = 'http://localhost:3002';
   
   try {
-    console.log('🧪 Testing Reviews API...\n');
+    console.log('Testing Reviews API...\n');
     
     // Test 1: Get reviews for a game
     console.log('1. Testing GET /api/reviews?gameId=1180030');
@@ -12,14 +12,14 @@ async function testReviewsAPI() {
     
     if (getResponse.ok) {
       const reviews = await getResponse.json();
-      console.log('✅ GET request successful');
+      console.log('GET request successful');
       console.log('Reviews found:', reviews.length);
       if (reviews.length > 0) {
         console.log('Sample review:', reviews[0]);
       }
     } else {
       const error = await getResponse.json();
-      console.log('❌ GET request failed:', error);
+      console.log('GET request failed:', error);
     }
     
     console.log('\n' + '='.repeat(50) + '\n');
@@ -44,15 +44,15 @@ async function testReviewsAPI() {
     
     if (postResponse.ok) {
       const newReview = await postResponse.json();
-      console.log('✅ POST request successful');
+      console.log('POST request successful');
       console.log('New review created:', newReview);
     } else {
       const error = await postResponse.json();
-      console.log('❌ POST request failed:', error);
+      console.log('POST request failed:', error);
     }
     
   } catch (error) {
-    console.error('❌ Test failed with error:', error.message);
+    console.error('Test failed with error:', error.message);
   }
 }
 

@@ -5,8 +5,10 @@ import {
     IconDiscount,
     IconCalendarStats,
     IconChartLine,
+    IconChartBar,
     IconChevronDown,
     IconChevronUp,
+    IconMessageCircle,
 } from "@tabler/icons-react";
 import { Upgrade } from "./Upgrade";
 import { uniqueId } from "lodash";
@@ -132,6 +134,18 @@ export const getMenuItems = (
             title: 'Promotions',
             icon: IconDiscount,
             href: '/promotion-management',
+        },
+        {
+            id: uniqueId(),
+            title: 'Reviews',
+            icon: IconMessageCircle,
+            href: '/review-management',
+        },
+        {
+            id: uniqueId(),
+            title: 'Review Statistics',
+            icon: IconChartBar,
+            href: '/review-statistics',
         },
         {
             navlabel: true,
