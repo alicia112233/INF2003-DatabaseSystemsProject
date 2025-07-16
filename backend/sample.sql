@@ -229,6 +229,12 @@ CREATE TABLE IF NOT EXISTS Orders (
     FOREIGN KEY (user_id) REFERENCES users (id)
 );
 
+INSERT IGNORE INTO game_haven.Orders (id, user_id, total, purchase_date, promotion_code) VALUES
+(1, 2, 5.98, '2024-06-16', NULL),
+(2, 2, 45.96, '2024-07-16', NULL),
+(3, 2, 21.96, '2025-06-16', NULL),
+(4, 2, 45.96, '2025-07-16', NULL);
+
 -- Join table for many-to-many Orders <-> Games
 CREATE TABLE IF NOT EXISTS OrderGame (
     order_id INT NOT NULL,

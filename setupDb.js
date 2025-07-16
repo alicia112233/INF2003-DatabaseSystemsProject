@@ -14,6 +14,32 @@ async function importCSVtoMySQL(connection, table, filePath, insertFn) {
     }
 }
 
+async function insertOrderGameRecords(connection) {
+    const orderGames = [
+        { order_id: 1, game_id: 205690, quantity: 1, price: 4.99 },
+        { order_id: 1, game_id: 435790, quantity: 1, price: 0.99 },
+        { order_id: 2, game_id: 205690, quantity: 1, price: 4.99 },
+        { order_id: 2, game_id: 793460, quantity: 1, price: 24.99 },
+        { order_id: 2, game_id: 1684530, quantity: 1, price: 9.99 },
+        { order_id: 2, game_id: 2006770, quantity: 1, price: 5.99 },
+        { order_id: 3, game_id: 205690, quantity: 1, price: 4.99 },
+        { order_id: 3, game_id: 435790, quantity: 1, price: 0.99 },
+        { order_id: 3, game_id: 1684530, quantity: 1, price: 9.99 },
+        { order_id: 3, game_id: 2006770, quantity: 1, price: 5.99 },
+        { order_id: 4, game_id: 205690, quantity: 1, price: 4.99 },
+        { order_id: 4, game_id: 793460, quantity: 1, price: 24.99 },
+        { order_id: 4, game_id: 1684530, quantity: 1, price: 9.99 },
+        { order_id: 4, game_id: 2006770, quantity: 1, price: 5.99 },
+    ];
+
+    for (const item of orderGames) {
+        await connection.query(
+            'INSERT IGNORE INTO OrderGame (order_id, game_id, quantity, price) VALUES (?, ?, ?, ?)',
+            [item.order_id, item.game_id, item.quantity, item.price]
+        );
+    }
+}
+
 async function setupDatabase() {
     console.log('Setting up database...');
     try {
@@ -55,7 +81,7 @@ async function setupDatabase() {
                     parseFloat(row.Price) || 0,
                     row.HeaderImage,
                     row.ReleaseDate && row.ReleaseDate !== '' ? new Date(row.ReleaseDate) : null,
-                    null // platform (if you have it in your CSV, replace null with row.Platform)
+                    null
                 ]
             );
         });
@@ -71,6 +97,8 @@ async function setupDatabase() {
                 );
             }
         });
+
+        await insertOrderGameRecords(connection);
 
         console.log('Database setup and CSV import completed successfully');
         await connection.end();
