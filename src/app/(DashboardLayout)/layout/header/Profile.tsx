@@ -185,6 +185,12 @@ const Profile = () => {
                             </ListItemIcon>
                             <ListItemText>My Rentals</ListItemText>
                         </MenuItem>
+                        <MenuItem onClick={() => handleMenuItemClick('/my-reviews')}>
+                            <ListItemIcon>
+                                <IconStar width={20} />
+                            </ListItemIcon>
+                            <ListItemText>My Reviews</ListItemText>
+                        </MenuItem>
                     </>
                 )}
                 <MenuItem>

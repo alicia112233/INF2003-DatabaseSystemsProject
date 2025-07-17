@@ -22,6 +22,14 @@ export function middleware(request: NextRequest) {
             expires: new Date(0),
             path: '/',
         });
+        redirectResponse.cookies.set('userId', '', {
+            expires: new Date(0),
+            path: '/',
+        });
+        redirectResponse.cookies.set('userEmail', '', {
+            expires: new Date(0),
+            path: '/',
+        });
         
         // Add header to trigger localStorage clearing on client side
         redirectResponse.headers.set('x-clear-storage', 'true');
@@ -52,6 +60,14 @@ export function middleware(request: NextRequest) {
                 expires: new Date(0),
                 path: '/',
             });
+            redirectResponse.cookies.set('userId', '', {
+                expires: new Date(0),
+                path: '/',
+            });
+            redirectResponse.cookies.set('userEmail', '', {
+                expires: new Date(0),
+                path: '/',
+            });
 
             // Add a special header to trigger localStorage clearing
             redirectResponse.headers.set('x-server-restarted', 'true');
@@ -68,6 +84,14 @@ export function middleware(request: NextRequest) {
                 path: '/',
             });
             response.cookies.set('userRole', '', {
+                expires: new Date(0),
+                path: '/',
+            });
+            response.cookies.set('userId', '', {
+                expires: new Date(0),
+                path: '/',
+            });
+            response.cookies.set('userEmail', '', {
                 expires: new Date(0),
                 path: '/',
             });

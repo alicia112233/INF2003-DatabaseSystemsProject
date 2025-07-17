@@ -10,11 +10,14 @@ import {
     Chip,
     Snackbar,
     Alert,
+    CardActionArea,
 } from '@mui/material';
+import { useRouter } from 'next/navigation';
 import AddToCartButton from '@/components/cart/AddToCartButton';
 import { Product } from '@/types/cart';
 import WishlistButton from '../wishlist/WishlistButton';
 import RentButton from './RentButton';
+import ReviewSummary from '../reviews/ReviewSummary';
 
 interface ProductCardProps {
     product: Product;
@@ -23,6 +26,11 @@ interface ProductCardProps {
 const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
     const isOutOfStock = product.stockCount === 0; 
     const [snack, setSnack] = useState({ open: false, msg: '', severity: 'success' });
+    const router = useRouter();
+
+    const handleCardClick = () => {
+        router.push(`/product/${product.id}`);
+    };
 
     const truncateText = (text: string, maxLength: number) => {
         if (text.length <= maxLength) 
@@ -123,17 +131,18 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
                 />
             )}
 
-            <CardMedia
-                component="img"
-                height="200"
-                image={product.image_url || '/images/products/noprodimg.png'}
-                alt={product.title}
-            />
+            <CardActionArea onClick={handleCardClick}>
+                <CardMedia
+                    component="img"
+                    height="200"
+                    image={product.image_url || '/images/products/noprodimg.png'}
+                    alt={product.title}
+                />
 
-            <CardContent sx={{ flexGrow: 1 }}>
-                <Typography gutterBottom variant="h6" component="div">
-                    {product.title}
-                </Typography>
+                <CardContent sx={{ flexGrow: 1 }}>
+                    <Typography gutterBottom variant="h6" component="div">
+                        {product.title}
+                    </Typography>
 
                 {genres.length > 0 && (
                     <Box sx={{ mb: 1, display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
@@ -155,6 +164,11 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
                 <Typography variant="body2" color="text.secondary" paragraph>
                     {product.description ? truncateText(product.description, 100) : ''}
                 </Typography>
+
+                {/* Review Summary */}
+                <Box sx={{ mb: 2 }}>
+                    <ReviewSummary gameId={product.id} />
+                </Box>
 
                 <Box display="flex" justifyContent="space-between" alignItems="center" mt={2}>
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, mb: 1 }}>
@@ -191,6 +205,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
                     )} */}
                 </Box>
             </CardContent>
+            </CardActionArea>
 
             {isCustomer() && (
                 <Box sx={{ p: 2, pt: 0 }}>

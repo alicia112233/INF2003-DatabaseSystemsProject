@@ -5,6 +5,7 @@ import {
     IconReportAnalytics,
     IconDiscount,
     IconCalendarStats,
+    IconStar,
 } from "@tabler/icons-react";
 import { Upgrade } from "./Upgrade";
 import { uniqueId } from "lodash";
@@ -95,6 +96,12 @@ export const getMenuItems = (isLoggedIn: boolean, userRole: string = 'customer')
             href: "/rental-management",
         },
         {
+            id: uniqueId(),
+            title: "Review Management",
+            icon: IconStar,
+            href: "/review-management",
+        },
+        {
             navlabel: true,
             subheader: "ADMIN MANAGEMENT",
         },
@@ -129,6 +136,12 @@ export const getMenuItems = (isLoggedIn: boolean, userRole: string = 'customer')
             title: "My Rentals",
             icon: IconCalendarStats,
             href: "/my-rentals",
+        },
+        {
+            id: uniqueId(),
+            title: "My Reviews",
+            icon: IconStar,
+            href: "/my-reviews",
         },
         {
             navlabel: true,

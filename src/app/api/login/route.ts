@@ -79,7 +79,7 @@ export async function POST(req: NextRequest) {
 
             // Set cookies on the server side
             response.cookies.set('userId', user.id.toString(), {
-                httpOnly: true,
+                httpOnly: false, // Allow client-side access for this cookie
                 secure: process.env.NODE_ENV === 'production',
                 sameSite: 'strict',
                 maxAge: 86400 // 24 hours

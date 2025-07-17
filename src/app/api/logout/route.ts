@@ -33,6 +33,14 @@ export async function POST() {
             path: '/',
         });
 
+        response.cookies.set('userId', '', {
+            httpOnly: false,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
+            expires: new Date(0),
+            path: '/',
+        });
+
         return response;
     } catch (error) {
         console.error('Logout error:', error);

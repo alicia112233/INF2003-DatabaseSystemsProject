@@ -3,6 +3,7 @@ import { executeQuery, executeTransaction } from '@/lib/database';
 
 // GET single promotion which includes selected games
 export async function GET(
+    request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
@@ -102,6 +103,7 @@ export async function PUT(
 
 // DELETE promotion
 export async function DELETE(
+    request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
