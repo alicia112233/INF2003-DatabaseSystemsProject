@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { executeQuery } from '@/lib/database';
 import { RowDataPacket } from 'mysql2';
+import { withPerformanceTracking } from '@/middleware/trackPerformance';
 
-export async function GET(req: NextRequest) {
+async function getHandler(req: NextRequest) {
     try {
         const userId = req.cookies.get('userId')?.value;
         const userRole = req.cookies.get('userRole')?.value;
@@ -38,7 +39,7 @@ export async function GET(req: NextRequest) {
     }
 }
 
-export async function PUT(req: NextRequest) {
+async function putHandler(req: NextRequest) {
     try {
         const userId = req.cookies.get('userId')?.value;
         const userRole = req.cookies.get('userRole')?.value;
@@ -75,3 +76,6 @@ export async function PUT(req: NextRequest) {
         return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
     }
 }
+
+export const PUT = withPerformanceTracking(putHandler);
+export const GET = withPerformanceTracking(getHandler);

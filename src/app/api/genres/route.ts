@@ -9,7 +9,7 @@ function toProperCase(str: string) {
         .join(' ');
 }
 
-export async function GET() {
+async function handler() {
     try {
         const rows = await executeQuery(`
             SELECT DISTINCT id, name 
@@ -31,3 +31,5 @@ export async function GET() {
         );
     }
 }
+
+export const GET = withPerformanceTracking(handler);

@@ -2,9 +2,13 @@ import {
     IconLayoutDashboard,
     IconDeviceGamepad,
     IconUsers,
-    IconReportAnalytics,
     IconDiscount,
     IconCalendarStats,
+    IconChartLine,
+    IconChartBar,
+    IconChevronDown,
+    IconChevronUp,
+    IconMessageCircle,
 } from "@tabler/icons-react";
 import { Upgrade } from "./Upgrade";
 import { uniqueId } from "lodash";
@@ -19,9 +23,22 @@ interface MenuItem {
     icon?: React.ElementType | null;
     href?: string;
     content?: React.ReactNode;
+    isShowMoreButton?: boolean;
+    onClick?: () => void;
 }
 
-export const getMenuItems = (isLoggedIn: boolean, userRole: string = 'customer'): MenuItem[] => {
+interface Genre {
+    id: number;
+    name: string;
+}
+
+export const getMenuItems = (
+    isLoggedIn: boolean, 
+    userRole: string = 'customer',
+    genres: Genre[] = [],
+    showAllGenres: boolean = false,
+    handleToggleGenres?: () => void
+): MenuItem[] => {
     // Common menu items for all users
     const commonItems: MenuItem[] = [
         {
@@ -132,7 +149,7 @@ export const getMenuItems = (isLoggedIn: boolean, userRole: string = 'customer')
         },
         {
             navlabel: true,
-            subheader: "Genres",
+            subheader: "GENRES",
         },
         {
             id: uniqueId(),
@@ -157,9 +174,7 @@ export const getMenuItems = (isLoggedIn: boolean, userRole: string = 'customer')
     // Upgrade component to be placed at the bottom (only for guests)
     const upgradeItem: MenuItem = {
         id: uniqueId(),
-        title: "Upgrade",
         icon: null,
-        href: "#",
         content: React.createElement(Box, { px: 2 }, React.createElement(Upgrade)),
     };
 
@@ -168,11 +183,14 @@ export const getMenuItems = (isLoggedIn: boolean, userRole: string = 'customer')
         subheader: " ",
     };
 
+    let finalItems: MenuItem[];
     if (!isLoggedIn) {
-        return [...commonItems, ...guestItems, spacer, upgradeItem];
+        finalItems = [...commonItems, ...guestItems, spacer, upgradeItem];
     } else if (userRole === 'admin') {
-        return [...adminItems];
+        finalItems = [...adminItems];
     } else {
-        return [...commonItems, ...customerItems];
+        finalItems = [...commonItems, ...customerItems];
     }
+
+    return finalItems;
 };

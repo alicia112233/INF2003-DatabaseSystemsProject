@@ -114,3 +114,6 @@ export async function POST(req: NextRequest) {
         );
     }
 }
+
+export const GET = withPerformanceTracking(getHandler);
+export const POST = withPerformanceTracking(postHandler);

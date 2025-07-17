@@ -1,9 +1,5 @@
 # Game Haven – Hybrid Game Collection Store
 
-<!-- Main image of Template -->
-
-[![Next Js](https://adminmart.com/wp-content/uploads/2023/03/modernize-free-next-js-admin-template.png)](https://adminmart.com/product/modernize-free-nextjs-admin-template/?ref=56)
-
 ## Skill Stash
 
 [![Next Js](https://skillicons.dev/icons?i=nextjs)](https://nextjs.org/)
@@ -27,9 +23,41 @@
 
 ## Database Comparison 🌓
 
-| Relational DB (MySQL)                                | NoSQL (MongoDB)                           |
-| ---------------------------------------------------- | ----------------------------------------- |
-| User Accounts<br />Order Records<br />Rental Records | Ratings<br />Reviews<br />Recommendations |
+| Relational DB (MySQL)                                                                 | NoSQL (MongoDB)                                                     |
+| ------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| User Accounts<br />Game Genres<br />Promotions<br />Order Records<br />Rental Records | Ratings<br />Reviews<br />Recommendations<br />Performance Analysis |
+
+##### Our Game Store Landing Page & All Games Page
+
+<div style="display: flex; gap: 10px;">
+
+  <img src="public/images/homepage.png" alt="Game Haven Homepage" width="48%" />
+  <img src="public/images/all-games.png" alt="Game Haven Game Page" width="48%" />
+
+</div>
+
+##### Login & Sign Up Pages
+
+<div style="display: flex; gap: 10px;">
+
+  <img src="public/images/loginpage.png" alt="Game Haven Login Page" width="48%" />
+  <img src="public/images/register.png" alt="Game Haven Sign Up Page" width="48%" />
+
+</div>
+
+##### Forgot Password & Rental Management
+
+<div style="display: flex;">
+  <img src="public/images/forgetpwd.png" alt="Game Haven Forgot Password Page" width="48%" />
+  <img src="public/images/rentals.png" alt="Game Haven Rental Management" width="48%" />
+</div>
+
+##### User Management & Promotion Management
+
+<div style="display: flex;">
+  <img src="public/images/user-mgmt.png" alt="Game Haven User Management Page" width="48%" />
+  <img src="public/images/promo-mgmt.png" alt="Game Haven Promotion Management" width="48%" />
+</div>
 
 ## Getting Started
 

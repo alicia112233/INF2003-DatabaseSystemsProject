@@ -36,8 +36,13 @@ export async function GET(
             selectedGameIds
         });
     } catch (error) {
-        console.error('Error fetching promotion:', error);
-        return NextResponse.json({ error: 'Failed to fetch promotion' }, { status: 500 });
+        console.error('GET /api/promotions/[id] error:', error);
+        return NextResponse.json(
+            { error: 'Failed to fetch promotion' },
+            { status: 500 }
+        );
+    } finally {
+        if (connection) connection.release();
     }
 }
 
@@ -47,19 +52,21 @@ export async function PUT(
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const { id } = await params;
         const body = await request.json();
-        const {
-            code,
-            description,
-            discountValue,
-            discountType,
-            maxUsage,
-            startDate,
-            endDate,
-            isActive,
-            applicableToAll,
+        connection = await pool.getConnection();
+        
+        // Start transaction
+        await connection.beginTransaction();
+        
+        // Remove fields that don't exist in the database or shouldn't be updated
+        const { 
+            id: bodyId, 
+            created_at, 
+            updated_at, 
             selectedGameIds,
+            selectedGames,
+            applicableToAll, 
+            ...updateData 
         } = body;
 
         await executeTransaction(async (connection) => {
@@ -92,7 +99,15 @@ export async function PUT(
 
         return NextResponse.json({ message: 'Promotion updated successfully' });
     } catch (error) {
-        console.error('Error updating promotion:', error);
+        // Rollback transaction on error
+        if (connection) {
+            try {
+                await connection.rollback();
+            } catch (rollbackError) {
+                console.error('Rollback error:', rollbackError);
+            }
+        }
+        console.error('PUT /api/promotions/[id] error:', error);
         return NextResponse.json(
             { error: 'Failed to update promotion' },
             { status: 500 }
@@ -121,7 +136,24 @@ export async function DELETE(
 
         return NextResponse.json({ message: 'Promotion deleted successfully' });
     } catch (error) {
-        console.error('Error deleting promotion:', error);
-        return NextResponse.json({ error: 'Failed to delete promotion' }, { status: 500 });
+        // Rollback transaction on error
+        if (connection) {
+            try {
+                await connection.rollback();
+            } catch (rollbackError) {
+                console.error('Rollback error:', rollbackError);
+            }
+        }
+        console.error('DELETE /api/promotions/[id] error:', error);
+        return NextResponse.json(
+            { error: 'Failed to delete promotion' },
+            { status: 500 }
+        );
+    } finally {
+        if (connection) connection.release();
     }
 }
+
+export const GET = withPerformanceTracking(getHandler);
+export const PUT = withPerformanceTracking(putHandler);
+export const DELETE = withPerformanceTracking(deleteHandler);

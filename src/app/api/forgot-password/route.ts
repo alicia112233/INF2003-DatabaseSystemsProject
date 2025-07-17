@@ -11,6 +11,12 @@ export async function POST(request: NextRequest) {
                 { status: 400 }
             );
         }
+        if (!email) {
+            return NextResponse.json(
+                { error: 'Email is required' },
+                { status: 400 }
+            );
+        }
 
         // 1. Check if the user exists
         const rows = await executeQuery(
@@ -64,3 +70,5 @@ export async function POST(request: NextRequest) {
         );
     }
 }
+
+export const POST = withPerformanceTracking(postHandler);

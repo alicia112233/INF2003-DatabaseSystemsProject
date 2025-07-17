@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import { executeQuery } from '@/lib/database';
+import { pool } from '@/app/lib/db';
+import { withPerformanceTracking } from '@/middleware/trackPerformance';
 
 function toTitleCase(str: string) {
     return str
@@ -11,6 +13,11 @@ function toTitleCase(str: string) {
 
 export async function GET() {
     try {        
+async function handler() {
+    let connection;
+    try {
+        connection = await pool.getConnection();
+        
         // Updated query to include promotion details and promo code
         const rows = await executeQuery(`
             SELECT 
@@ -57,3 +64,5 @@ export async function GET() {
         );
     }
 }
+
+export const GET = withPerformanceTracking(handler);

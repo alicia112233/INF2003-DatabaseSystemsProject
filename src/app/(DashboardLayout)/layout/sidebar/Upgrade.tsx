@@ -10,7 +10,7 @@ export const Upgrade = () => {
             gap={2}
             sx={{ 
                 mt: 3, 
-                p: 3, 
+                p: 2, 
                 bgcolor: 'primary.light', 
                 borderRadius: '8px',
                 position: 'relative',
@@ -34,9 +34,9 @@ export const Upgrade = () => {
             <Box 
                 sx={{
                     position: 'absolute',
-                    right: '-20px', // Adjust this value to control how much the image overflows
+                    right: '-50px',
                     top: '-35px',
-                    zIndex: 1 // Ensure the image appears above other elements
+                    zIndex: 1
                 }}
             >
                 <Image 
