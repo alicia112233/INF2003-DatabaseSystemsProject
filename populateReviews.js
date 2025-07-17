@@ -23,9 +23,7 @@ async function populateReviews() {
         const db = client.db('game_haven');
         const reviewsCollection = db.collection('reviews');
         
-        // Clear existing reviews (optional - comment out if you want to keep existing data)
-        await reviewsCollection.deleteMany({});
-        console.log('Cleared existing reviews');
+        console.log('Checking for existing reviews...');
         
         // Transform data to match MongoDB schema
         const transformedReviews = reviewsData.map(review => ({
@@ -37,29 +35,56 @@ async function populateReviews() {
             updatedAt: new Date(review.createdAt) // Set updatedAt to same as createdAt initially
         }));
         
-        // Insert reviews in batches
-        const batchSize = 100;
-        let insertedCount = 0;
+        // Check for duplicates and filter out existing reviews
+        const newReviews = [];
+        let skippedCount = 0;
         
-        for (let i = 0; i < transformedReviews.length; i += batchSize) {
-            const batch = transformedReviews.slice(i, i + batchSize);
-            const result = await reviewsCollection.insertMany(batch);
-            insertedCount += result.insertedCount;
-            console.log(`Inserted ${insertedCount}/${transformedReviews.length} reviews`);
+        for (const review of transformedReviews) {
+            // Check if a review with the same userId and gameId already exists
+            const existingReview = await reviewsCollection.findOne({
+                userId: review.userId,
+                gameId: review.gameId
+            });
+            
+            if (!existingReview) {
+                newReviews.push(review);
+            } else {
+                skippedCount++;
+            }
         }
         
-        console.log(`Successfully inserted ${insertedCount} reviews into MongoDB`);
+        console.log(`Found ${newReviews.length} new reviews to insert`);
+        console.log(`Skipped ${skippedCount} existing reviews`);
+        
+        if (newReviews.length === 0) {
+            console.log('No new reviews to insert. All reviews already exist.');
+        } else {
+            // Insert new reviews in batches
+            const batchSize = 100;
+            let insertedCount = 0;
+            
+            for (let i = 0; i < newReviews.length; i += batchSize) {
+                const batch = newReviews.slice(i, i + batchSize);
+                const result = await reviewsCollection.insertMany(batch);
+                insertedCount += result.insertedCount;
+                console.log(`Inserted ${insertedCount}/${newReviews.length} new reviews`);
+            }
+        }
+        
+        console.log(`Successfully inserted ${newReviews.length > 0 ? insertedCount : 0} new reviews into MongoDB`);
         
         // Verify insertion
-        const count = await reviewsCollection.countDocuments();
-        console.log(`Total reviews in collection: ${count}`);
+        const totalCount = await reviewsCollection.countDocuments();
+        console.log(`Total reviews in collection: ${totalCount}`);
         
-        // Show sample of inserted data
-        const sampleReviews = await reviewsCollection.find({}).limit(3).toArray();
-        console.log('\nSample inserted reviews:');
-        sampleReviews.forEach(review => {
-            console.log(`- Game ${review.gameId}: ${review.rating} stars - "${review.comment}"`);
-        });
+        // Show sample of inserted data (if any new reviews were added)
+        if (newReviews.length > 0) {
+            const sampleReviews = await reviewsCollection.find({}).limit(3).toArray();
+            console.log('\nSample reviews in collection:');
+            sampleReviews.forEach(review => {
+                console.log(`- Game ${review.gameId}: ${review.rating} stars - "${review.comment}"`);
+            });
+        }
         
     } catch (error) {
         console.error('Error populating reviews:', error);

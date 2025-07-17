@@ -1,6 +1,6 @@
 {
   "scripts": {
-    "predev": "node setupDb.js",
+    "predev": "node setupDb.js && node populateReviews.js",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
