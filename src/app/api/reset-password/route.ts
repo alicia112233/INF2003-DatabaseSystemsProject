@@ -22,15 +22,26 @@ export async function POST(request: NextRequest) {
 
         // Find user with valid reset token
         const rows = await executeQuery(
-            'SELECT id, email, resetToken, resetTokenExpiry FROM users WHERE resetToken = ? AND resetTokenExpiry > NOW()',
+            'SELECT id, email, resetToken, resetTokenExpiry FROM users WHERE resetToken = ?',
             [token]
         );
 
         const users = rows as any[];
-
-        if (users.length === 0) {
+        
+        if (users.length > 0) {
+            const user = users[0];
+            
+            // Check if token is expired
+            if (new Date(user.resetTokenExpiry) <= new Date()) {
+                return NextResponse.json(
+                    { error: 'Reset token has expired' },
+                    { status: 400 }
+                );
+            }
+        } else {
+            console.log('No user found with token:', token);
             return NextResponse.json(
-                { error: 'Invalid or expired reset token' },
+                { error: 'Invalid reset token' },
                 { status: 400 }
             );
         }
