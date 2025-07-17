@@ -5,11 +5,12 @@ import type { NextRequest } from 'next/server';
 let hasHandledRestart = false;
 
 export function middleware(request: NextRequest) {
-    // Continue with the request
+    const path = request.nextUrl.pathname;
     const response = NextResponse.next();
-     
+
     // Handle logout route specifically - always process this first
-    if (request.nextUrl.pathname === '/logout') {
+    if (path === '/logout') {
+        // console.log('Processing logout request');
         const redirectResponse = NextResponse.redirect(new URL('/', request.url));
         
         // Clear authentication cookies
@@ -37,8 +38,8 @@ export function middleware(request: NextRequest) {
         const isLoggedIn = request.cookies.get('isLoggedIn')?.value;
         const userRole = request.cookies.get('userRole')?.value;
 
-        if (request.nextUrl.pathname !== '/' && (isLoggedIn || userRole)) {
-            console.log(`Server restart detected - redirecting from ${request.nextUrl.pathname} to home`);
+        if (path !== '/' && (isLoggedIn || userRole)) {
+            console.log(`Server restart detected - redirecting from ${path} to home`);
 
             const redirectResponse = NextResponse.redirect(new URL('/', request.url));
 
@@ -52,7 +53,7 @@ export function middleware(request: NextRequest) {
                 path: '/',
             });
 
-            // a special header to trigger localStorage clearing
+            // Add a special header to trigger localStorage clearing
             redirectResponse.headers.set('x-server-restarted', 'true');
             redirectResponse.headers.set('x-clear-storage', 'true');
 
@@ -60,7 +61,7 @@ export function middleware(request: NextRequest) {
         }
 
         // If on home page, just clear cookies without redirect
-        if (request.nextUrl.pathname === '/' && (isLoggedIn || userRole)) {
+        if (path === '/' && (isLoggedIn || userRole)) {
             console.log('Server restart detected on home page - clearing cookies');
             response.cookies.set('isLoggedIn', '', {
                 expires: new Date(0),
@@ -77,7 +78,7 @@ export function middleware(request: NextRequest) {
 
         // Public routes that don't require authentication
         const publicRoutes = ['/', '/products', '/authentication'];
-        const isPublicRoute = publicRoutes.some(route => request.nextUrl.pathname === route || request.nextUrl.pathname.startsWith(route));
+        const isPublicRoute = publicRoutes.some(route => path === route || path.startsWith(route));
 
         // Protected routes logic - only redirect if not on a public route
         if (!isPublicRoute && !isLoggedIn) {
@@ -94,7 +95,7 @@ export function middleware(request: NextRequest) {
         const userRole = request.cookies.get('userRole')?.value;
 
         // Home page logic
-        if (request.nextUrl.pathname === '/') {
+        if (path === '/') {
             if (isLoggedIn && userRole === 'admin') {
                 return NextResponse.redirect(new URL('/admin-dashboard', request.url));
             }
@@ -103,7 +104,7 @@ export function middleware(request: NextRequest) {
 
         // Public routes that don't require authentication
         const publicRoutes = ['/', '/products', '/authentication'];
-        const isPublicRoute = publicRoutes.some(route => request.nextUrl.pathname === route || request.nextUrl.pathname.startsWith(route));
+        const isPublicRoute = publicRoutes.some(route => path === route || path.startsWith(route));
 
         // Protected routes logic - only redirect if not on a public route
         if (!isPublicRoute && !isLoggedIn) {

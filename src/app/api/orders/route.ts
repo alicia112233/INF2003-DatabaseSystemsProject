@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { executeQuery, executeTransaction } from "@/lib/database";
 import type { ResultSetHeader, RowDataPacket } from "mysql2";
-import { pool } from "@/app/lib/db";
-import { withPerformanceTracking } from "@/middleware/trackPerformance";
 
 // GET: Fetch all orders
 export async function GET() {

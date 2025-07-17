@@ -8,14 +8,13 @@ import {
     Typography,
     Box,
     Chip,
+    Snackbar,
+    Alert,
 } from '@mui/material';
 import AddToCartButton from '@/components/cart/AddToCartButton';
 import { Product } from '@/types/cart';
 import WishlistButton from '../wishlist/WishlistButton';
 import RentButton from './RentButton';
-import Snackbar from '@mui/material/Snackbar';
-import Alert from '@mui/material/Alert';
-
 
 interface ProductCardProps {
     product: Product;
@@ -96,13 +95,15 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
                 top: 8, 
                 right: 8, 
                 zIndex: 1000,
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'flex-end',
-                gap: 1,
-                background: 'none',
-                boxShadow: 'none',
-                border: 'none',
+                background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.7))',
+                borderRadius: '50%',
+                padding: '2px',
+                boxShadow: '0 2px 3px rgba(0, 0, 0, 0.15)',
+                border: '1px solid rgba(255, 255, 255, 0.3)',
+                '&:hover': {
+                    background: 'linear-gradient(135deg, rgba(255, 255, 255, 1), rgba(255, 255, 255, 0.9))',
+                    boxShadow: '0 4px 5px rgba(0, 0, 0, 0.2)',
+                }
             }}>
                 {isCustomer() && <WishlistButton product={product} />}
             </Box>
@@ -191,44 +192,31 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
                 </Box>
             </CardContent>
 
-            <Box sx={{ p: 2, pt: 0 }}>
-                <AddToCartButton
-                    product={product}
-                    fullWidth
-                    variant={!isOutOfStock ? 'contained' : 'outlined'}
-                    disabled={isOutOfStock}
-                    buttonText={isOutOfStock ? 'No Stock' : 'Add to Cart'}
-                />
-                {/* Rent Button - only show if game is in stock */}
-                {!isOutOfStock && (
-                    <RentButton
+            {isCustomer() && (
+                <Box sx={{ p: 2, pt: 0 }}>
+                    <AddToCartButton
                         product={product}
                         fullWidth
-                        variant="outlined"
+                        variant={!isOutOfStock ? 'contained' : 'outlined'}
+                        disabled={isOutOfStock}
+                        buttonText={isOutOfStock ? 'No Stock' : 'Add to Cart'}
+                        onSuccess={(message) => setSnack({ open: true, msg: message, severity: 'success' })}
+                        onWarning={(message) => setSnack({ open: true, msg: message, severity: 'warning' })}
+                        onError={(message) => setSnack({ open: true, msg: message, severity: 'error' })}
                     />
-                )}
-                {/* See Reviews Button - always show */}
-                <Box mt={1}>
-                    <a
-                        href={`/game/${product.id}`}
-                        style={{
-                            display: 'block',
-                            width: '100%',
-                            textAlign: 'center',
-                            background: '#1976d2',
-                            color: 'white',
-                            padding: '10px 0',
-                            borderRadius: '6px',
-                            fontWeight: 600,
-                            textDecoration: 'none',
-                            marginTop: 8,
-                        }}
-                        aria-label="See reviews for this game"
-                    >
-                        SEE REVIEWS
-                    </a>
+                    
+                    {!isOutOfStock && (
+                        <RentButton
+                            product={product}
+                            fullWidth
+                            variant="outlined"
+                            onSuccess={(message) => setSnack({ open: true, msg: message, severity: 'success' })}
+                            onWarning={(message) => setSnack({ open: true, msg: message, severity: 'warning' })}
+                            onError={(message) => setSnack({ open: true, msg: message, severity: 'error' })}
+                        />
+                    )}
                 </Box>
-            </Box>
+            )}
         </Card>
     );
 };

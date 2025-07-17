@@ -2,13 +2,9 @@ import {
     IconLayoutDashboard,
     IconDeviceGamepad,
     IconUsers,
+    IconReportAnalytics,
     IconDiscount,
     IconCalendarStats,
-    IconChartLine,
-    IconChartBar,
-    IconChevronDown,
-    IconChevronUp,
-    IconMessageCircle,
 } from "@tabler/icons-react";
 import { Upgrade } from "./Upgrade";
 import { uniqueId } from "lodash";
@@ -23,22 +19,9 @@ interface MenuItem {
     icon?: React.ElementType | null;
     href?: string;
     content?: React.ReactNode;
-    isShowMoreButton?: boolean;
-    onClick?: () => void;
 }
 
-interface Genre {
-    id: number;
-    name: string;
-}
-
-export const getMenuItems = (
-    isLoggedIn: boolean, 
-    userRole: string = 'customer',
-    genres: Genre[] = [],
-    showAllGenres: boolean = false,
-    handleToggleGenres?: () => void
-): MenuItem[] => {
+export const getMenuItems = (isLoggedIn: boolean, userRole: string = 'customer'): MenuItem[] => {
     // Common menu items for all users
     const commonItems: MenuItem[] = [
         {
@@ -149,7 +132,7 @@ export const getMenuItems = (
         },
         {
             navlabel: true,
-            subheader: "GENRES",
+            subheader: "Genres",
         },
         {
             id: uniqueId(),
@@ -174,7 +157,9 @@ export const getMenuItems = (
     // Upgrade component to be placed at the bottom (only for guests)
     const upgradeItem: MenuItem = {
         id: uniqueId(),
+        title: "Upgrade",
         icon: null,
+        href: "#",
         content: React.createElement(Box, { px: 2 }, React.createElement(Upgrade)),
     };
 
@@ -183,14 +168,11 @@ export const getMenuItems = (
         subheader: " ",
     };
 
-    let finalItems: MenuItem[];
     if (!isLoggedIn) {
-        finalItems = [...commonItems, ...guestItems, spacer, upgradeItem];
+        return [...commonItems, ...guestItems, spacer, upgradeItem];
     } else if (userRole === 'admin') {
-        finalItems = [...adminItems];
+        return [...adminItems];
     } else {
-        finalItems = [...commonItems, ...customerItems];
+        return [...commonItems, ...customerItems];
     }
-
-    return finalItems;
 };

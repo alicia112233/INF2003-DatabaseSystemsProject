@@ -7,8 +7,6 @@ import YearlyBreakup from '@/app/(DashboardLayout)/components/dashboard/YearlyBr
 import RecentTransactions from '@/app/(DashboardLayout)/components/dashboard/RecentTransactions';
 import ProductPerformance from '@/app/(DashboardLayout)/components/dashboard/ProductPerformance';
 import MonthlyEarnings from '@/app/(DashboardLayout)/components/dashboard/MonthlyEarnings';
-import ReviewManagement from '@/app/(DashboardLayout)/components/dashboard/ReviewManagement';
-import ReviewStatisticsCard from '@/app/(DashboardLayout)/components/dashboard/ReviewStatisticsCard';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import Layout from '@/components/layout';
@@ -72,20 +70,6 @@ const AdminDashboard = () => {
                                 lg: 4
                             }}>
                             <RecentTransactions />
-                        </Grid>
-                        <Grid
-                            size={{
-                                xs: 12,
-                                lg: 4
-                            }}>
-                            <ReviewManagement />
-                        </Grid>
-                        <Grid
-                            size={{
-                                xs: 12,
-                                lg: 4
-                            }}>
-                            <ReviewStatisticsCard />
                         </Grid>
                         <Grid
                             size={{

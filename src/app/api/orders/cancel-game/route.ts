@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { executeTransaction } from "@/lib/database";
 import type { ResultSetHeader, RowDataPacket } from "mysql2";
 
+// POST: Cancel a specific game from an order
 export async function POST(req: NextRequest) {
     try {
         const { orderId, gameId } = await req.json();

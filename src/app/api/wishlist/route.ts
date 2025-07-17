@@ -64,7 +64,6 @@ export async function DELETE(req: NextRequest) {
 
         const body = await req.json();
 
-
         const { gameId } = body;
         if (!gameId) return NextResponse.json({ error: 'No gameId provided' }, { status: 400 });
 
@@ -80,7 +79,3 @@ export async function DELETE(req: NextRequest) {
         return NextResponse.json({ error: 'Failed to remove from wishlist' }, { status: 500 });
     }
 }
-
-export const GET = withPerformanceTracking(getHandler);
-export const POST = withPerformanceTracking(postHandler);
-export const DELETE = withPerformanceTracking(deleteHandler);

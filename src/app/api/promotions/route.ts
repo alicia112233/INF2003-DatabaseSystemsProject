@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { pool } from '@/app/lib/db';
-import type { ResultSetHeader, RowDataPacket } from 'mysql2';
-import { withPerformanceTracking } from '@/middleware/trackPerformance';
+import { executeQuery, executeTransaction } from '@/lib/database';
+import type { ResultSetHeader } from 'mysql2';
 
 // GET - Fetch all promotions
 export async function GET() {

@@ -6,8 +6,6 @@ import ProductCard from '@/components/products/ProductCard';
 import ProductFilters from '@/components/products/ProductFilters';
 import Layout from '@/components/layout';
 import { PriceRange, Product } from '@/types/cart';
-import Link from 'next/link';
-
 
 const ProductsPage = () => {
     const [games, setGames] = useState<Product[]>([]);

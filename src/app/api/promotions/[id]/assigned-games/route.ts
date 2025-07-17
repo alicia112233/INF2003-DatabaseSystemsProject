@@ -7,9 +7,7 @@ export async function GET(
 ) {
     try {
         const { id } = await context.params;
-        const { id } = await context.params;
         const promotionId = parseInt(id);
-
 
         if (isNaN(promotionId)) {
             return NextResponse.json({ error: 'Invalid promotion ID' }, { status: 400 });

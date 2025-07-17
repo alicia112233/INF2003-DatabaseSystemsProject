@@ -86,22 +86,6 @@ async function setupDatabase() {
             );
         });
 
-        // Import Screenshots
-        await importCSVtoMySQL(connection, 'screenshot', path.join('backend', 'data', 'Screenshots_Table.csv'), async (conn, row) => {
-            const gameId = parseInt(row.AppID);
-            const url = row.ScreenshotURL?.trim();
-
-            if (gameId && url) {
-                await conn.query(
-                    'INSERT IGNORE INTO screenshot (game_id, url) VALUES (?, ?)',
-                    [gameId, url]
-                );
-                console.log(`Inserted screenshot: game_id=${gameId}, url=${url}`);
-            } else {
-                console.warn(`Skipped screenshot row: AppID=${row.AppID}, ScreenshotURL=${row.ScreenshotURL}`);
-            }
-        });
-
         // Import GameGenre
         await importCSVtoMySQL(connection, 'GameGenre', path.join('backend', 'data', 'GameGenre.csv'), async (conn, row) => {
             const game_id = parseInt(row.game_id);
