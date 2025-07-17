@@ -269,10 +269,10 @@ CREATE TABLE IF NOT EXISTS Wishlist (
     UNIQUE KEY unique_wishlist (user_id, game_id)
 );
 
---10. Screenshots Table
+-- 10. Screenshots Table
 CREATE TABLE IF NOT EXISTS Screenshots (
     id INT AUTO_INCREMENT PRIMARY KEY,
     game_id INT NOT NULL,
     screenshot_url VARCHAR(255) NOT NULL,
-    FOREIGN KEY (game_id) REFERENCES Game (id),
+    FOREIGN KEY (game_id) REFERENCES Game (id)
 );
