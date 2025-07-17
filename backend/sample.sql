@@ -198,7 +198,6 @@ CREATE TABLE IF NOT EXISTS Game (
     stock_count INT DEFAULT 10, -- Set default stock to 10 instead of 0
     promo_id INT,
     head_image_url VARCHAR(255),
-    screenshot_url VARCHAR(255),
     FOREIGN KEY (promo_id) REFERENCES Promotion (id)
 );
 
@@ -268,4 +267,12 @@ CREATE TABLE IF NOT EXISTS Wishlist (
     FOREIGN KEY (user_id) REFERENCES users (id),
     FOREIGN KEY (game_id) REFERENCES Game (id),
     UNIQUE KEY unique_wishlist (user_id, game_id)
+);
+
+--10. Screenshots Table
+CREATE TABLE IF NOT EXISTS Screenshots (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    game_id INT NOT NULL,
+    screenshot_url VARCHAR(255) NOT NULL,
+    FOREIGN KEY (game_id) REFERENCES Game (id),
 );
