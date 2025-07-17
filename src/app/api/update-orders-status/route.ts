@@ -3,14 +3,11 @@ import { executeQuery } from '@/lib/database';
 
 export async function POST() {
     try {
-        // Update all existing 'Pending' orders to 'Completed'
-        const result = await executeQuery(
-            `UPDATE Orders SET status = 'Completed' WHERE status = 'Pending'`
-        );
-
+        // Orders table doesn't have a status column - this endpoint is not applicable
+        // All orders are considered completed upon creation
         return NextResponse.json({
             success: true,
-            message: `Updated ${(result as any).affectedRows} orders from Pending to Completed`
+            message: "Orders table doesn't have status column. All orders are completed upon creation."
         });
 
     } catch (error: any) {
