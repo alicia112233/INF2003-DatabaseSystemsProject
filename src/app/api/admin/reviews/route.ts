@@ -39,7 +39,7 @@ export async function GET(req: NextRequest) {
                 try {
                     const users = await executeQuery(
                         'SELECT id, firstName, lastName, email FROM users WHERE id = ?',
-                        [review.userId]
+                        [parseInt(review.userId)]
                     );
                     reviewObj.user = (users as any[])[0] || null;
                 } catch (error) {
@@ -51,7 +51,7 @@ export async function GET(req: NextRequest) {
                 try {
                     const games = await executeQuery(
                         'SELECT id, title, image_url FROM Game WHERE id = ?',
-                        [review.gameId]
+                        [parseInt(review.gameId)]
                     );
                     reviewObj.game = (games as any[])[0] || null;
                 } catch (error) {

@@ -3,6 +3,7 @@ import dbConnect from '@/utils/mongodb';
 import Review from '@/models/Review';
 import { cookies } from 'next/headers';
 import { requireAuth } from '@/utils/auth';
+import { executeQuery } from '@/lib/database';
 
 // GET: /api/reviews?gameId=xxx&userId=xxx&page=1&limit=10&all=true
 export async function GET(req: NextRequest) {
@@ -40,6 +41,32 @@ export async function GET(req: NextRequest) {
         } else {
             // Return all reviews without pagination for specific game/user queries
             const reviews = await Review.find(filter).sort({ createdAt: -1 });
+            
+            // If userId is provided, enrich with game information for my-reviews page
+            if (userId) {
+                const reviewsWithDetails = await Promise.all(
+                    reviews.map(async (review) => {
+                        const reviewObj = review.toObject();
+                        
+                        // Get game information
+                        try {
+                            const games = await executeQuery(
+                                'SELECT id, title, image_url FROM Game WHERE id = ?',
+                                [parseInt(review.gameId)]
+                            );
+                            reviewObj.game = (games as any[])[0] || null;
+                        } catch (error) {
+                            console.error('Error fetching game:', error);
+                            reviewObj.game = null;
+                        }
+                        
+                        return reviewObj;
+                    })
+                );
+                
+                return NextResponse.json(reviewsWithDetails);
+            }
+            
             return NextResponse.json(reviews);
         }
     } catch (error) {
