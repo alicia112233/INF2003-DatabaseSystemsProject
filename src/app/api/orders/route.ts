@@ -118,6 +118,11 @@ export async function PUT(req: NextRequest) {
     try {
         const data = await req.json();
 
+        // Validate required fields
+        if (!data.id) {
+            return NextResponse.json({ error: "Order ID is required" }, { status: 400 });
+        }
+
         // Look up user_id by email if provided
         let user_id = undefined;
         if (data.email) {
@@ -151,8 +156,10 @@ export async function PUT(req: NextRequest) {
 
                 if (updateFields.length > 0) {
                     updateParams.push(data.id);
+                    const updateQuery = `UPDATE Orders SET ${updateFields.join(', ')} WHERE id = ?`;
+                    
                     const [orderResult] = await connection.query<ResultSetHeader>(
-                        `UPDATE Orders SET ${updateFields.join(', ')} WHERE id = ?`,
+                        updateQuery,
                         updateParams
                     );
 
@@ -164,6 +171,19 @@ export async function PUT(req: NextRequest) {
 
             // Update games if provided
             if (data.games && Array.isArray(data.games)) {
+                // Validate games data
+                for (const game of data.games) {
+                    if (!game.gameId || game.gameId <= 0) {
+                        throw new Error(`Invalid game ID: ${game.gameId}`);
+                    }
+                    if (!game.quantity || game.quantity <= 0) {
+                        throw new Error(`Invalid quantity for game ${game.gameId}: ${game.quantity}`);
+                    }
+                    if (!game.price || game.price < 0) {
+                        throw new Error(`Invalid price for game ${game.gameId}: ${game.price}`);
+                    }
+                }
+                
                 // Delete existing games for this order
                 await connection.query(
                     `DELETE FROM OrderGame WHERE order_id = ?`,

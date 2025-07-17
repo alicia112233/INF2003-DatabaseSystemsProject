@@ -16,6 +16,7 @@ import {
     DialogContent,
     DialogActions,
     Paper,
+    Typography,
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -29,10 +30,17 @@ type GameSelection = {
     price: number;
 };
 
+type GameFromAPI = {
+    game_id: number;
+    title: string;
+    quantity: number;
+    price: number;
+};
+
 type Order = {
     id: number;
     email: string;
-    games: GameSelection[];
+    games: GameFromAPI[]; // API returns game_id format
     total: number;
     createdAt: string;
 };
@@ -123,43 +131,118 @@ const OrdersManagementPage = () => {
     };
 
     const handleRemoveGame = (idx: number) => {
-        setForm((prev) => ({
-            ...prev,
-            games: prev.games.filter((_, i) => i !== idx),
-        }));
+        setForm((prev) => {
+            const newGames = prev.games.filter((_, i) => i !== idx);
+            // Recalculate total after removing game
+            const total = newGames.reduce((sum, g) => sum + (Number(g.price) * Number(g.quantity)), 0);
+            return {
+                ...prev,
+                games: newGames,
+                total: total.toFixed(2)
+            };
+        });
     };
 
     // Add or update order
     const handleSubmit = async () => {
-        if (editOrder) {
-            await fetch("/api/orders", {
-                method: "PUT",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    ...form,
-                    id: editOrder.id,
-                    total: parseFloat(form.total),
-                }),
+        try {
+            // Validate form data
+            if (!form.email.trim()) {
+                alert('Please enter a customer email');
+                return;
+            }
+            
+            if (!form.games || form.games.length === 0) {
+                alert('Please add at least one game');
+                return;
+            }
+            
+            // Filter out invalid games
+            const validGames = form.games.filter(game => {
+                return game.gameId > 0 && 
+                       game.title.trim() && 
+                       game.quantity > 0 && 
+                       game.price > 0;
             });
-        } else {
-            await fetch("/api/orders", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ ...form, total: parseFloat(form.total) }),
-            });
+            
+            if (validGames.length === 0) {
+                alert('Please ensure all games have valid data (ID > 0, title, quantity > 0, price > 0)');
+                return;
+            }
+            
+            // Recalculate total based on valid games
+            const recalculatedTotal = validGames.reduce((sum, g) => sum + (Number(g.price) * Number(g.quantity)), 0);
+            
+            const orderData = {
+                email: form.email,
+                games: validGames,
+                total: recalculatedTotal,
+            };
+            
+            console.log('Submitting order data:', orderData);
+            
+            if (editOrder) {
+                const response = await fetch("/api/orders", {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        ...orderData,
+                        id: editOrder.id,
+                    }),
+                });
+                
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    console.error('PUT /api/orders error:', errorData);
+                    alert(`Error updating order: ${errorData.error || 'Unknown error'}`);
+                    return;
+                }
+                
+                const result = await response.json();
+                console.log('Order updated successfully:', result);
+            } else {
+                const response = await fetch("/api/orders", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(orderData),
+                });
+                
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    console.error('POST /api/orders error:', errorData);
+                    alert(`Error creating order: ${errorData.error || 'Unknown error'}`);
+                    return;
+                }
+                
+                const result = await response.json();
+                console.log('Order created successfully:', result);
+            }
+            
+            setOpen(false);
+            setEditOrder(null);
+            setForm({ email: "", games: [], total: "" });
+            fetchOrders();
+        } catch (error) {
+            console.error('Error in handleSubmit:', error);
+            alert('An unexpected error occurred. Please try again.');
         }
-        setOpen(false);
-        setEditOrder(null);
-        setForm({ email: "", games: [], total: "" });
-        fetchOrders();
     };
 
     // Edit order
     const handleEdit = (order: Order) => {
         setEditOrder(order);
+        
+        // Transform the games data to match the expected format
+        const transformedGames = order.games ? order.games.map(game => ({
+            gameId: game.game_id, // Convert from API format
+            title: game.title,
+            quantity: game.quantity,
+            price: game.price
+        })) : [];
+        
         setForm({
             email: order.email,
-            games: order.games || [],
+            games: transformedGames,
             total: order.total.toString(),
         });
         setOpen(true);
@@ -281,47 +364,61 @@ const OrdersManagementPage = () => {
                         >
                             Add Game
                         </Button>
-                        {form.games.map((g, idx) => (
-                            <Box key={idx} display="flex" gap={1} alignItems="center" mb={1}>
-                                <TextField
-                                    label="Game ID"
-                                    type="number"
-                                    value={g.gameId}
-                                    onChange={e => handleGameChange(idx, "gameId", Number(e.target.value))}
-                                    sx={{ width: 90 }}
-                                />
-                                <TextField
-                                    label="Title"
-                                    value={g.title}
-                                    onChange={e => handleGameChange(idx, "title", e.target.value)}
-                                    sx={{ width: 120 }}
-                                    InputProps={{ readOnly: true }}
-                                    placeholder="Auto-filled"
-                                />
-                                <TextField
-                                    label="Qty"
-                                    type="number"
-                                    value={g.quantity}
-                                    onChange={e => handleGameChange(idx, "quantity", Number(e.target.value))}
-                                    sx={{ width: 60 }}
-                                />
-                                <TextField
-                                    label="Price"
-                                    type="number"
-                                    value={g.price}
-                                    onChange={e => handleGameChange(idx, "price", Number(e.target.value))}
-                                    sx={{ width: 80 }}
-                                    InputProps={{ readOnly: true }}
-                                    placeholder="Auto-filled"
-                                />
-                                <Button
-                                    color="error"
-                                    onClick={() => handleRemoveGame(idx)}
-                                >
-                                    Remove
-                                </Button>
-                            </Box>
-                        ))}
+                        {form.games.map((g, idx) => {
+                            const isGameValid = g.gameId > 0 && g.title.trim() && g.quantity > 0 && g.price > 0;
+                            return (
+                                <Box key={idx} display="flex" gap={1} alignItems="center" mb={1}>
+                                    <TextField
+                                        label="Game ID"
+                                        type="number"
+                                        value={g.gameId}
+                                        onChange={e => handleGameChange(idx, "gameId", Number(e.target.value))}
+                                        sx={{ width: 90 }}
+                                        error={g.gameId <= 0}
+                                        helperText={g.gameId <= 0 ? "Required" : ""}
+                                    />
+                                    <TextField
+                                        label="Title"
+                                        value={g.title}
+                                        onChange={e => handleGameChange(idx, "title", e.target.value)}
+                                        sx={{ width: 120 }}
+                                        InputProps={{ readOnly: true }}
+                                        placeholder="Auto-filled"
+                                        error={!g.title.trim()}
+                                    />
+                                    <TextField
+                                        label="Qty"
+                                        type="number"
+                                        value={g.quantity}
+                                        onChange={e => handleGameChange(idx, "quantity", Number(e.target.value))}
+                                        sx={{ width: 60 }}
+                                        error={g.quantity <= 0}
+                                        helperText={g.quantity <= 0 ? "Required" : ""}
+                                    />
+                                    <TextField
+                                        label="Price"
+                                        type="number"
+                                        value={g.price}
+                                        onChange={e => handleGameChange(idx, "price", Number(e.target.value))}
+                                        sx={{ width: 80 }}
+                                        InputProps={{ readOnly: true }}
+                                        placeholder="Auto-filled"
+                                        error={g.price <= 0}
+                                    />
+                                    <Button
+                                        color="error"
+                                        onClick={() => handleRemoveGame(idx)}
+                                    >
+                                        Remove
+                                    </Button>
+                                    {!isGameValid && (
+                                        <Typography variant="caption" color="error">
+                                            Incomplete
+                                        </Typography>
+                                    )}
+                                </Box>
+                            );
+                        })}
                     </Box>
                     <TextField
                         label="Total"
