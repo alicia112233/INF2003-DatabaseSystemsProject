@@ -39,10 +39,10 @@ interface Game {
 
 interface Review {
     _id: string;
-    userId: string;
-    gameId: string;
+    userId: number;
+    gameId: number;
     rating: number;
-    comment: string;
+    review: string;
     createdAt: string;
     updatedAt: string;
     user?: User;
@@ -62,7 +62,7 @@ const MyReviews = () => {
     
     const [form, setForm] = useState({
         rating: 1,
-        comment: ''
+        review: ''
     });
 
     const reviewsPerPage = 6;
@@ -113,7 +113,7 @@ const MyReviews = () => {
         setEditReview(review);
         setForm({
             rating: review.rating,
-            comment: review.comment
+            review: review.review
         });
         setOpen(true);
     };
@@ -150,7 +150,7 @@ const MyReviews = () => {
     const resetForm = () => {
         setForm({
             rating: 1,
-            comment: ''
+            review: ''
         });
     };
 
@@ -235,9 +235,9 @@ const MyReviews = () => {
                                             </Box>
                                         </Box>
                                         
-                                        {review.comment && (
+                                        {review.review && (
                                             <Typography variant="body2" sx={{ mb: 2 }}>
-                                                {review.comment}
+                                                {review.review}
                                             </Typography>
                                         )}
                                         
@@ -298,11 +298,11 @@ const MyReviews = () => {
                                 label="Your Review"
                                 multiline
                                 rows={4}
-                                value={form.comment}
-                                onChange={(e) => setForm(prev => ({ ...prev, comment: e.target.value }))}
+                                value={form.review}
+                                onChange={(e) => setForm(prev => ({ ...prev, review: e.target.value }))}
                                 placeholder="Share your thoughts about this game..."
                                 inputProps={{ maxLength: 1000 }}
-                                helperText={`${form.comment.length}/1000 characters`}
+                                helperText={`${form.review.length}/1000 characters`}
                             />
                         </Box>
                     </DialogContent>

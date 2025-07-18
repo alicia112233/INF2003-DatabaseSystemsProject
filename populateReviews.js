@@ -27,10 +27,10 @@ async function populateReviews() {
         
         // Transform data to match MongoDB schema
         const transformedReviews = reviewsData.map(review => ({
-            userId: review.userId.toString(), // Convert to string as expected by the schema
-            gameId: review.gameId.toString(), // Convert to string as expected by the schema
+            userId: review.userId, // Keep as integer
+            gameId: review.gameId, // Keep as integer
             rating: review.rating,
-            comment: review.review, // Map 'review' field to 'comment' field
+            review: review.review, // Keep 'review' field as is
             createdAt: new Date(review.createdAt), // Convert string to Date object
             updatedAt: new Date(review.createdAt) // Set updatedAt to same as createdAt initially
         }));
@@ -56,12 +56,13 @@ async function populateReviews() {
         console.log(`Found ${newReviews.length} new reviews to insert`);
         console.log(`Skipped ${skippedCount} existing reviews`);
         
+        let insertedCount = 0;
+        
         if (newReviews.length === 0) {
             console.log('No new reviews to insert. All reviews already exist.');
         } else {
             // Insert new reviews in batches
             const batchSize = 100;
-            let insertedCount = 0;
             
             for (let i = 0; i < newReviews.length; i += batchSize) {
                 const batch = newReviews.slice(i, i + batchSize);
@@ -82,7 +83,7 @@ async function populateReviews() {
             const sampleReviews = await reviewsCollection.find({}).limit(3).toArray();
             console.log('\nSample reviews in collection:');
             sampleReviews.forEach(review => {
-                console.log(`- Game ${review.gameId}: ${review.rating} stars - "${review.comment}"`);
+                console.log(`- Game ${review.gameId}: ${review.rating} stars - "${review.review}"`);
             });
         }
         
