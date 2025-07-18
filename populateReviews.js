@@ -72,7 +72,7 @@ async function populateReviews() {
             }
         }
         
-        console.log(`Successfully inserted ${newReviews.length > 0 ? insertedCount : 0} new reviews into MongoDB`);
+        console.log(`Successfully inserted ${insertedCount} new reviews into MongoDB`);
         
         // Verify insertion
         const totalCount = await reviewsCollection.countDocuments();
