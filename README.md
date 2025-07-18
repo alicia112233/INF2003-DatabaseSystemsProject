@@ -2,7 +2,7 @@
 
 ### Snapshots of our application
 
-### Home Page & Products Page
+### Landing Page & Products Page
 <table>
   <tr>
     <td><img src="public/images/git_images/homepage.png" alt="homepage" width="400"/></td>
@@ -10,18 +10,18 @@
   </tr>
 </table>
 
-### Game Genre & Login Page
+### Login Page & Registration
 <table>
   <tr>
-    <td><img src="public/images/git_images/specific-genre.png" alt="specific-genre" width="400"/></td>
     <td><img src="public/images/git_images/login.png" alt="login" width="400"/></td>
+    <td><img src="public/images/git_images/registration.png" alt="registration" width="400"/></td>
   </tr>
 </table>
 
-### Registration & Forgot Password Page
+### Profile Management & Forget Password
 <table>
   <tr>
-    <td><img src="public/images/git_images/registration.png" alt="registration" width="400"/></td>
+    <td><img src="public/images/git_images/profile.png" alt="profile" width="400"/></td>
     <td><img src="public/images/git_images/forgot-pwd.png" alt="forgot-pwd" width="400"/></td>
   </tr>
 </table>
@@ -34,33 +34,10 @@
   </tr>
 </table>
 
-### Rental Management & Review Management Page
+### Cart Page & Wish List
 <table>
   <tr>
-    <td><img src="public/images/git_images/rentals.png" alt="rentals" width="400"/></td>
-    <td><img src="public/images/git_images/reviews.jpg" alt="reviews" width="400"/></td>
-  </tr>
-</table>
-
-### User Management & Promotion Management Page
-<table>
-  <tr>
-    <td><img src="public/images/git_images/users.png" alt="users" width="400"/></td>
-    <td><img src="public/images/git_images/promotion.png" alt="promotion" width="400"/></td>
-  </tr>
-</table>
-
-### Profile Management & Cart Page
-<table>
-  <tr>
-    <td><img src="public/images/git_images/profile.png" alt="profile" width="400"/></td>
     <td><img src="public/images/git_images/cart.png" alt="cart" width="400"/></td>
-  </tr>
-</table>
-
-### Wishlist Page
-<table>
-  <tr>
     <td><img src="public/images/git_images/wishlist.png" alt="wishlist" /></td>
   </tr>
 </table>
