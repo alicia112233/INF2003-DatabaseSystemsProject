@@ -60,10 +60,10 @@ interface Game {
 
 interface Review {
     _id: string;
-    userId: string;
-    gameId: string;
+    userId: number;
+    gameId: number;
     rating: number;
-    comment: string;
+    review: string;
     createdAt: string;
     updatedAt: string;
     user?: User;
@@ -99,7 +99,7 @@ const ReviewManagement = () => {
     
     const [form, setForm] = useState({
         rating: 1,
-        comment: ''
+        review: ''
     });
 
     useEffect(() => {
@@ -131,7 +131,7 @@ const ReviewManagement = () => {
 
                 if (filters.searchTerm) {
                     filteredReviews = filteredReviews.filter((review: Review) =>
-                        review.comment.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
+                        review.review.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
                         review.user?.firstName.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
                         review.user?.lastName.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
                         review.game?.title.toLowerCase().includes(filters.searchTerm.toLowerCase())
@@ -155,7 +155,7 @@ const ReviewManagement = () => {
         setEditReview(review);
         setForm({
             rating: review.rating,
-            comment: review.comment
+            review: review.review
         });
         setOpen(true);
     };
@@ -231,7 +231,7 @@ const ReviewManagement = () => {
     const resetForm = () => {
         setForm({
             rating: 1,
-            comment: ''
+            review: ''
         });
     };
 
@@ -327,7 +327,7 @@ const ReviewManagement = () => {
                                 <TableCell>User</TableCell>
                                 <TableCell>Game</TableCell>
                                 <TableCell>Rating</TableCell>
-                                <TableCell>Comment</TableCell>
+                                                                                <TableCell>Review</TableCell>
                                 <TableCell>Date</TableCell>
                                 <TableCell>Actions</TableCell>
                             </TableRow>
@@ -388,9 +388,9 @@ const ReviewManagement = () => {
                                         </TableCell>
                                         <TableCell>
                                             <Typography variant="body2" sx={{ maxWidth: 200 }}>
-                                                {review.comment.length > 50 
-                                                    ? `${review.comment.substring(0, 50)}...` 
-                                                    : review.comment || 'No comment'}
+                                                {review.review.length > 50 
+                                                    ? `${review.review.substring(0, 50)}...`
+                                                    : review.review || 'No review'}
                                             </Typography>
                                         </TableCell>
                                         <TableCell>
@@ -451,12 +451,12 @@ const ReviewManagement = () => {
                         </Box>
                         <TextField
                             fullWidth
-                            label="Comment"
+                            label="Review"
                             multiline
                             rows={4}
-                            value={form.comment}
-                            onChange={(e) => setForm(prev => ({ ...prev, comment: e.target.value }))}
-                            placeholder="Enter review comment..."
+                            value={form.review}
+                            onChange={(e) => setForm(prev => ({ ...prev, review: e.target.value }))}
+                            placeholder="Enter review text..."
                         />
                     </Box>
                 </DialogContent>
@@ -521,9 +521,9 @@ const ReviewManagement = () => {
                                     </Box>
                                     
                                     <Box>
-                                        <Typography variant="body2" gutterBottom>Comment:</Typography>
+                                        <Typography variant="body2" gutterBottom>Review:</Typography>
                                         <Typography variant="body1">
-                                            {selectedReview.comment || 'No comment provided'}
+                                            {selectedReview.review || 'No review provided'}
                                         </Typography>
                                     </Box>
                                 </CardContent>

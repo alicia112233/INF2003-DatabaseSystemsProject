@@ -17,8 +17,8 @@ export async function GET(req: NextRequest) {
         const showAll = searchParams.get('all') === 'true';
         
         let filter: any = {};
-        if (gameId) filter.gameId = gameId;
-        if (userId) filter.userId = userId;
+        if (gameId) filter.gameId = parseInt(gameId);
+        if (userId) filter.userId = parseInt(userId);
         
         if (showAll) {
             // Return paginated results when fetching all reviews
@@ -87,7 +87,7 @@ export async function POST(req: NextRequest) {
         }
         
         const data = await req.json();
-        const { gameId, rating, comment } = data;
+        const { gameId, rating, review: reviewText } = data;
         
         // Validate required fields
         if (!gameId || !rating) {
@@ -100,16 +100,16 @@ export async function POST(req: NextRequest) {
         }
         
         // Check if user already reviewed this game
-        const existingReview = await Review.findOne({ userId: auth.userId, gameId });
+        const existingReview = await Review.findOne({ userId: parseInt(auth.userId || '0'), gameId: parseInt(gameId) });
         if (existingReview) {
             return NextResponse.json({ error: 'You have already reviewed this game' }, { status: 400 });
         }
         
         const review = await Review.create({
-            userId: auth.userId,
-            gameId,
+            userId: parseInt(auth.userId || '0'),
+            gameId: parseInt(gameId),
             rating,
-            comment: comment || '',
+            review: reviewText || '',
             createdAt: new Date()
         });
         

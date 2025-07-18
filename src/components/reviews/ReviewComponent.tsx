@@ -39,10 +39,10 @@ interface Game {
 
 interface Review {
     _id: string;
-    userId: string;
-    gameId: string;
+    userId: number;
+    gameId: number;
     rating: number;
-    comment: string;
+    review: string;
     createdAt: string;
     updatedAt: string;
     user?: User;
@@ -68,7 +68,7 @@ const ReviewComponent: React.FC<ReviewComponentProps> = ({ gameId, gameTitle }) 
     
     const [form, setForm] = useState({
         rating: 1,
-        comment: ''
+        review: ''
     });
 
     const reviewsPerPage = 5;
@@ -130,7 +130,7 @@ const ReviewComponent: React.FC<ReviewComponentProps> = ({ gameId, gameTitle }) 
                 
                 // Find user's review if logged in
                 if (currentUserId) {
-                    const userReviewFound = data.find((review: Review) => review.userId === currentUserId);
+                    const userReviewFound = data.find((review: Review) => review.userId.toString() === currentUserId);
                     setUserReview(userReviewFound || null);
                 }
             } else {
@@ -160,7 +160,7 @@ const ReviewComponent: React.FC<ReviewComponentProps> = ({ gameId, gameTitle }) 
                 body: JSON.stringify({
                     gameId,
                     rating: form.rating,
-                    comment: form.comment
+                    review: form.review
                 })
             });
 
@@ -189,7 +189,7 @@ const ReviewComponent: React.FC<ReviewComponentProps> = ({ gameId, gameTitle }) 
         setEditReview(review);
         setForm({
             rating: review.rating,
-            comment: review.comment
+            review: review.review
         });
         setOpen(true);
     };
@@ -197,7 +197,7 @@ const ReviewComponent: React.FC<ReviewComponentProps> = ({ gameId, gameTitle }) 
     const resetForm = () => {
         setForm({
             rating: 1,
-            comment: ''
+            review: ''
         });
     };
 
@@ -328,7 +328,7 @@ const ReviewComponent: React.FC<ReviewComponentProps> = ({ gameId, gameTitle }) 
                                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', mb: 2 }}>
                                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                                             <Avatar sx={{ width: 40, height: 40 }}>
-                                                {review.user?.firstName?.[0] || review.userId.substring(0, 1).toUpperCase()}
+                                                {review.user?.firstName?.[0] || review.userId.toString().substring(0, 1).toUpperCase()}
                                             </Avatar>
                                             <Box>
                                                 <Typography variant="subtitle1" fontWeight="medium">
@@ -342,7 +342,7 @@ const ReviewComponent: React.FC<ReviewComponentProps> = ({ gameId, gameTitle }) 
                                                 </Box>
                                             </Box>
                                         </Box>
-                                        {review.userId === currentUserId && (
+                                        {review.userId.toString() === currentUserId && (
                                             <Chip
                                                 label="Your Review"
                                                 color="primary"
@@ -352,9 +352,9 @@ const ReviewComponent: React.FC<ReviewComponentProps> = ({ gameId, gameTitle }) 
                                         )}
                                     </Box>
                                     
-                                    {review.comment && (
+                                    {review.review && (
                                         <Typography variant="body1">
-                                            {review.comment}
+                                            {review.review}
                                         </Typography>
                                     )}
                                     
@@ -403,11 +403,11 @@ const ReviewComponent: React.FC<ReviewComponentProps> = ({ gameId, gameTitle }) 
                             label="Your Review"
                             multiline
                             rows={4}
-                            value={form.comment}
-                            onChange={(e) => setForm(prev => ({ ...prev, comment: e.target.value }))}
+                            value={form.review}
+                            onChange={(e) => setForm(prev => ({ ...prev, review: e.target.value }))}
                             placeholder="Share your thoughts about this game..."
                             inputProps={{ maxLength: 1000 }}
-                            helperText={`${form.comment.length}/1000 characters`}
+                            helperText={`${form.review.length}/1000 characters`}
                         />
                     </Box>
                 </DialogContent>

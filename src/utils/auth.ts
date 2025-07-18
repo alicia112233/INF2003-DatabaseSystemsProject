@@ -47,6 +47,6 @@ export async function requireAdmin() {
     return auth;
 }
 
-export function canModifyReview(reviewUserId: string, currentUserId: string, userRole?: string): boolean {
-    return reviewUserId === currentUserId || userRole === 'admin';
+export function canModifyReview(reviewUserId: string | number, currentUserId: string, userRole?: string): boolean {
+    return reviewUserId.toString() === currentUserId || userRole === 'admin';
 }
