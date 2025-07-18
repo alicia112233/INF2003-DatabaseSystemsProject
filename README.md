@@ -1,6 +1,6 @@
 # Game Haven – Hybrid Game Collection Store
 
-### Snapshots of our application
+### Snapshots of Our Advanced Features
 
 ### Landing Page & Products Page
 <table>
@@ -38,7 +38,7 @@
 <table>
   <tr>
     <td><img src="public/images/git_images/cart.png" alt="cart" width="400"/></td>
-    <td><img src="public/images/git_images/wishlist.png" alt="wishlist" /></td>
+    <td><img src="public/images/git_images/wishlist.png" alt="wishlist" width="400"/></td>
   </tr>
 </table>
 
