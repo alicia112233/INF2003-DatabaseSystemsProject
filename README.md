@@ -1,6 +1,6 @@
 # Game Haven – Hybrid Game Collection Store
 
-### Snapshots of Our Advanced Features
+### Snapshots of Our Features
 
 ### Landing Page & Products Page
 <table>
@@ -55,13 +55,17 @@
 <img src="https://skillicons.dev/icons?i=materialui" height="32" alt="Material UI"> 
 </a>
 <a href="https://www.typescriptlang.org/">
- <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/typescript/typescript-original.svg" alt="typescript" width="32" height="32" />
+ <img src="https://skillicons.dev/icons?i=typescript" alt="typescript" width="32" height="32" />
 </a>
 <a href="https://redux.js.org/">
  <img src="https://skillicons.dev/icons?i=redux" height="32" alt="Redux">
 </a>
- <img src="https://nodesk.co/remote-companies/assets/logos/mongodb.924dfe83c7f1a1b774d5e5e86c9691957daa9514d431dbe1254c6bc0c92f163e.jpg" height="32" alt="MongoDB" />
- <img src="https://images.icon-icons.com/3053/PNG/512/mysql_workbench_macos_bigsur_icon_189924.png" height="34" alt="mysql" >
+<a href="https://www.mongodb.com/">
+ <img src="https://skillicons.dev/icons?i=mongodb" height="32" alt="MongoDB" />
+</a>
+<a href="https://www.mysql.com/">
+ <img src="https://skillicons.dev/icons?i=mysql" height="32" alt="mysql" >
+</a>
 </div>
 
 ## Database Comparison 🌓
